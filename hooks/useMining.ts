@@ -109,8 +109,8 @@ export function useMining(): UseMiningReturn {
 
             // Global wordlist index to track position
             let wordlistIndex = 0;
-            const wordlist = await import('@/lib/mining/cnpj-wordlist').then(m => m.FULL_CNPJ_WORDLIST);
-            console.log(`📋 Wordlist loaded: ${wordlist.length} CNPJs`);
+            const wordlist = await import('@/lib/mining/cnpj-wordlist').then(m => m.CNPJ_WORDLIST_2025);
+            console.log(`📋 Wordlist 2025-2026 loaded: ${wordlist.length} CNPJs`);
 
             while (foundCompanies.length < MINING_QUANTITY) {
                 // Check if mining was stopped
