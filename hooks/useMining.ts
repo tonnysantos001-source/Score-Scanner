@@ -107,19 +107,38 @@ export function useMining(): UseMiningReturn {
         try {
             console.log(`🎯 Iniciando mineração com geração aleatória de CNPJs...`);
 
+            // Global wordlist index to track position
+            let wordlistIndex = 0;
+            const wordlist = await import('@/lib/mining/cnpj-wordlist').then(m => m.FULL_CNPJ_WORDLIST);
+            console.log(`📋 Wordlist loaded: ${wordlist.length} CNPJs`);
+
             while (foundCompanies.length < MINING_QUANTITY) {
                 // Check if mining was stopped
                 if (abortControllerRef.current.signal.aborted) {
                     break;
                 }
 
-                // Generate random valid CNPJ with UF preference
                 let cnpj: string;
-                do {
-                    cnpj = generateValidCNPJ(filters.uf); // Pass UF preference
-                } while (triedCNPJs.current.has(cnpj));
 
+                // Strategy: 90% wordlist, 10% generation
+                const useWordlist = Math.random() < 0.9 && wordlistIndex < wordlist.length;
 
+                if (useWordlist) {
+                    // Use wordlist (90%)
+                    cnpj = wordlist[wordlistIndex++];
+                    console.log(`📋 [Wordlist ${wordlistIndex}/${wordlist.length}] Testing: ${cnpj}`);
+                } else {
+                    // Generate random (10% or when wordlist exhausted)
+                    do {
+                        cnpj = generateValidCNPJ(filters.uf);
+                    } while (triedCNPJs.current.has(cnpj));
+                    console.log(`🎲 [Generated] Testing: ${cnpj}`);
+                }
+
+                // Skip if already tried
+                if (triedCNPJs.current.has(cnpj)) {
+                    continue;
+                }
                 triedCNPJs.current.add(cnpj);
                 tried++;
 
