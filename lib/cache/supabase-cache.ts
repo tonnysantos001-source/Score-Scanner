@@ -74,6 +74,8 @@ export class SupabaseCache {
      * Fetch used CNPJs from Supabase
      */
     static async fetchUsed(): Promise<CNPJUsedEntry[]> {
+        if (!supabase) return []; // Supabase not available
+
         try {
             const { data, error } = await supabase
                 .from('cnpj_used')
