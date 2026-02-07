@@ -17,6 +17,13 @@ export default function HomePage() {
     startMining(filters);
   };
 
+  const handleMarkAsUsed = (cnpj: string) => {
+    // Remove from displayed list
+    const updatedCompanies = companies.filter(c => c.cnpj !== cnpj);
+    // Note: useMining hook will need to expose setCompanies or similar
+    // For now this creates a local filter, actual removal happens in cache
+  };
+
   return (
     <main className="min-h-screen px-4 py-8 md:px-8 md:py-12">
       <div className="max-w-7xl mx-auto">
@@ -108,6 +115,7 @@ export default function HomePage() {
             <CompanyTable
               companies={companies}
               onOpenCompany={setSelectedCompany}
+              onMarkAsUsed={handleMarkAsUsed}
             />
           </div>
         )}

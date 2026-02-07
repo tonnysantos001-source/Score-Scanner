@@ -4,16 +4,32 @@ import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency } from '@/lib/utils/formatters';
 import { getTrustScoreColor, getTrustScoreLabel } from '@/lib/utils/trust-score';
-import { Building2, MapPin, TrendingUp, FileText } from 'lucide-react';
+import { Building2, MapPin, TrendingUp, FileText, Trash2 } from 'lucide-react';
+import { cnpjCache } from '@/lib/cache/cnpj-cache';
+import { toast } from 'sonner';
 
 interface CompanyCardProps {
     company: EnhancedCompanyData;
     onClick: () => void;
+    onMarkAsUsed?: (cnpj: string) => void;
 }
 
-export default function CompanyCard({ company, onClick }: CompanyCardProps) {
+export default function CompanyCard({ company, onClick, onMarkAsUsed }: CompanyCardProps) {
     const scoreColor = getTrustScoreColor(company.trust_score_breakdown.level);
     const scoreLabel = getTrustScoreLabel(company.trust_score_breakdown.level);
+
+    const handleMarkAsUsed = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Don't trigger card click
+
+        cnpjCache.markAsUsed(company.cnpj);
+        toast.success(`${company.razao_social} marcada como usada`, {
+            description: 'Esta empresa não aparecerá mais em futuras minerações',
+        });
+
+        if (onMarkAsUsed) {
+            onMarkAsUsed(company.cnpj);
+        }
+    };
 
     return (
         <div className="glass-card p-6 cursor-pointer hover:scale-[1.02] transition-transform" onClick={onClick}>
@@ -53,8 +69,8 @@ export default function CompanyCard({ company, onClick }: CompanyCardProps) {
 
                 {/* Situação */}
                 <span className={`ml-2 ${company.tipo_situacao_cadastral.toUpperCase() === 'ATIVA' || company.tipo_situacao_cadastral === '2'
-                        ? 'badge-success'
-                        : 'badge-warning'
+                    ? 'badge-success'
+                    : 'badge-warning'
                     }`}>
                     {company.tipo_situacao_cadastral}
                 </span>
@@ -95,9 +111,20 @@ export default function CompanyCard({ company, onClick }: CompanyCardProps) {
                 </div>
             </div>
 
-            {/* Action hint */}
-            <div className="mt-4 pt-4 border-t border-[var(--color-border)] text-center text-xs text-[var(--color-text-muted)]">
-                Clique para ver detalhes e exportar PDF
+            {/* Actions */}
+            <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
+                <div className="text-xs text-[var(--color-text-muted)]">
+                    Clique para ver detalhes
+                </div>
+
+                <button
+                    onClick={handleMarkAsUsed}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-500/10 hover:text-red-500 text-[var(--color-text-muted)]"
+                    title="Marcar como usada"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Marcar como Usada
+                </button>
             </div>
         </div>
     );

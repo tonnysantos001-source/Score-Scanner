@@ -3,6 +3,7 @@ import { EnhancedCompanyData } from '@/types/company';
 import { MiningFilters, MiningProgress, MINING_QUANTITY } from '@/types/filters';
 import { generateValidCNPJ } from '@/lib/mining/cnpj-generator';
 import { matchesFilters } from '@/lib/mining/filter-matcher';
+import { cnpjCache } from '@/lib/cache/cnpj-cache';
 
 interface UseMiningReturn {
     companies: EnhancedCompanyData[];
@@ -105,12 +106,22 @@ export function useMining(): UseMiningReturn {
         let consecutiveErrors = 0;
 
         try {
-            console.log(`🎯 Iniciando mineração com geração aleatória de CNPJs...`);
+            console.log(`🎯 Iniciando mineração com CACHE INTELIGENTE...`);
 
-            // Global wordlist index to track position
-            let wordlistIndex = 0;
+            // Initialize cache
+            await cnpjCache.initialize();
+            const cacheStats = cnpjCache.getStats();
+            console.log(`📊 Cache: ${cacheStats.whitelist} whitelist, ${cacheStats.blacklist} blacklist, ${cacheStats.used} used`);
+
+            // Get available sources
+            const cachedCNPJs = cnpjCache.getAvailableCNPJs();
             const wordlist = await import('@/lib/mining/cnpj-wordlist').then(m => m.CNPJ_WORDLIST_2025);
-            console.log(`📋 Wordlist 2025-2026 loaded: ${wordlist.length} CNPJs`);
+
+            console.log(`📋 Sources: ${cachedCNPJs.length} cached + ${wordlist.length} wordlist`);
+
+            // Indices for tracking
+            let cacheIndex = 0;
+            let wordlistIndex = 0;
 
             while (foundCompanies.length < MINING_QUANTITY) {
                 // Check if mining was stopped
@@ -119,26 +130,35 @@ export function useMining(): UseMiningReturn {
                 }
 
                 let cnpj: string;
+                let source: string;
 
-                // Strategy: 90% wordlist, 10% generation
-                const useWordlist = Math.random() < 0.9 && wordlistIndex < wordlist.length;
+                // INTELLIGENT PRIORITIZATION:
+                // 95% Cached (already validated) >>> 4% Wordlist >>> 1% Generation
+                const rand = Math.random();
 
-                if (useWordlist) {
-                    // Use wordlist (90%)
+                if (rand < 0.95 && cacheIndex < cachedCNPJs.length) {
+                    // Use cache (95% - HIGHEST priority)
+                    cnpj = cachedCNPJs[cacheIndex++];
+                    source = `💎 Cache ${cacheIndex}/${cachedCNPJs.length}`;
+                } else if (rand < 0.99 && wordlistIndex < wordlist.length) {
+                    // Use wordlist (4%)
                     cnpj = wordlist[wordlistIndex++];
-                    console.log(`📋 [Wordlist ${wordlistIndex}/${wordlist.length}] Testing: ${cnpj}`);
+                    source = `📋 Wordlist ${wordlistIndex}/${wordlist.length}`;
                 } else {
-                    // Generate random (10% or when wordlist exhausted)
+                    // Generate random (1% - discovery)
                     do {
                         cnpj = generateValidCNPJ(filters.uf);
                     } while (triedCNPJs.current.has(cnpj));
-                    console.log(`🎲 [Generated] Testing: ${cnpj}`);
+                    source = `🎲 Generated`;
                 }
 
-                // Skip if already tried
-                if (triedCNPJs.current.has(cnpj)) {
+                // Skip if already tried or should skip (blacklist/used)
+                if (triedCNPJs.current.has(cnpj) || cnpjCache.shouldSkip(cnpj)) {
                     continue;
                 }
+
+                console.log(`${source} Testing: ${cnpj}`);
+
                 triedCNPJs.current.add(cnpj);
                 tried++;
 
@@ -164,15 +184,25 @@ export function useMining(): UseMiningReturn {
                     if (!company) {
                         // CNPJ not found (404) or error fetching
                         console.log(`❌ CNPJ ${cnpj} não encontrado (404 ou erro na API)`);
+
+                        // Add to blacklist
+                        cnpjCache.processMiningResult(cnpj, {
+                            found: false,
+                            reason: 'NOT_FOUND',
+                        });
                     } else if (matchesFilters(company, filters)) {
                         foundCompanies.push(company);
 
-                        console.log(`✅ ENCONTRADO! ${company.razao_social} - Total: ${foundCompanies.length}/${MINING_QUANTITY}`)
+                        console.log(`✅ ENCONTRADO! ${company.razao_social} - Total: ${foundCompanies.length}/${MINING_QUANTITY}`);
 
-                            ;
+                        // Add to whitelist cache
+                        cnpjCache.processMiningResult(cnpj, {
+                            found: true,
+                            active: true,
+                            data: company,
+                        });
 
-                        // Update state immediately when found
-                        setCompanies([...foundCompanies]);
+                        // Update progress with new company found
                         setProgress({
                             tried,
                             found: foundCompanies.length,
@@ -183,8 +213,15 @@ export function useMining(): UseMiningReturn {
 
                         consecutiveErrors = 0;
                     } else {
-                        // Company exists but doesn't match filters
-                        console.log(`⚠️ CNPJ ${cnpj} encontrado mas rejeitado pelos filtros`);
+                        // Doesn't match filters
+                        console.log(`⏭️  CNPJ ${cnpj} não corresponde aos filtros`);
+
+                        // Add to blacklist (filtered out)
+                        cnpjCache.processMiningResult(cnpj, {
+                            found: true,
+                            active: true,  // Company exists but filtered
+                            reason: 'FILTERED',
+                        });
                     }
 
                 } catch (err) {
