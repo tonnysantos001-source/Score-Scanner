@@ -11,6 +11,8 @@ export class SupabaseCache {
      * Fetch whitelist from Supabase
      */
     static async fetchWhitelist(): Promise<CNPJWhitelistEntry[]> {
+        if (!supabase) return []; // Supabase not available
+
         try {
             const { data, error } = await supabase
                 .from('cnpj_whitelist')
@@ -44,6 +46,8 @@ export class SupabaseCache {
      * Fetch blacklist from Supabase
      */
     static async fetchBlacklist(): Promise<CNPJBlacklistEntry[]> {
+        if (!supabase) return []; // Supabase not available
+
         try {
             const { data, error } = await supabase
                 .from('cnpj_blacklist')
@@ -95,6 +99,8 @@ export class SupabaseCache {
      * Insert or update whitelist entry
      */
     static async upsertWhitelist(entry: CNPJWhitelistEntry): Promise<void> {
+        if (!supabase) return; // Supabase not available
+
         try {
             const { error } = await supabase
                 .from('cnpj_whitelist')
@@ -127,6 +133,8 @@ export class SupabaseCache {
      * Insert blacklist entry
      */
     static async insertBlacklist(entry: CNPJBlacklistEntry): Promise<void> {
+        if (!supabase) return; // Supabase not available
+
         try {
             const { error } = await supabase
                 .from('cnpj_blacklist')
@@ -152,6 +160,8 @@ export class SupabaseCache {
      * Insert used entry
      */
     static async insertUsed(cnpj: string): Promise<void> {
+        if (!supabase) return; // Supabase not available
+
         try {
             const { error } = await supabase
                 .from('cnpj_used')
@@ -173,6 +183,8 @@ export class SupabaseCache {
      * Get cache statistics from Supabase
      */
     static async getStats() {
+        if (!supabase) return { whitelist: 0, blacklist: 0, used: 0 };
+
         try {
             const [whitelistCount, blacklistCount, usedCount] = await Promise.all([
                 supabase.from('cnpj_whitelist').select('*', { count: 'exact', head: true }),
