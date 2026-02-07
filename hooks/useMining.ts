@@ -16,8 +16,8 @@ interface UseMiningReturn {
 
 const MINING_CONFIG = {
     maxParallelRequests: 1,
-    delayBetweenRequests: 25000, // 25 seconds - ReceitaWS allows 3 req/min!
-    delayOnRateLimit: 60000, // 60 seconds wait on rate limit
+    delayBetweenRequests: 5000, // 5 seconds - faster mining, accept some rate limits
+    delayOnRateLimit: 30000, // 30 seconds wait on rate limit (reduced)
     retryAttempts: 2,
     maxConsecutiveErrors: 100, // Allow many 404s
 };
@@ -105,12 +105,7 @@ export function useMining(): UseMiningReturn {
         let consecutiveErrors = 0;
 
         try {
-            // Import known CNPJs
-            const { getShuffledKnownCNPJs } = await import('@/lib/mining/known-cnpjs');
-            const knownCNPJs = getShuffledKnownCNPJs();
-            let knownIndex = 0;
-
-            console.log(`🎯 Iniciando mineração com ${knownCNPJs.length} CNPJs conhecidos primeiro...`);
+            console.log(`🎯 Iniciando mineração com geração aleatória de CNPJs...`);
 
             while (foundCompanies.length < MINING_QUANTITY) {
                 // Check if mining was stopped
@@ -118,27 +113,29 @@ export function useMining(): UseMiningReturn {
                     break;
                 }
 
-                // Get CNPJ: first use known CNPJs, then generate random
+                // Generate random valid CNPJ
                 let cnpj: string;
-                if (knownIndex < knownCNPJs.length) {
-                    cnpj = knownCNPJs[knownIndex];
-                    knownIndex++;
-                    console.log(`📋 Testando CNPJ conhecido ${knownIndex}/${knownCNPJs.length}: ${cnpj}`);
-                } else {
-                    // Fallback to random generation
-                    do {
-                        cnpj = generateValidCNPJ();
-                    } while (triedCNPJs.current.has(cnpj));
-                    console.log(`🎲 Gerando CNPJ aleatório: ${cnpj}`);
-                }
+                do {
+                    cnpj = generateValidCNPJ();
+                } while (triedCNPJs.current.has(cnpj));
 
                 triedCNPJs.current.add(cnpj);
                 tried++;
 
+                // Update progress IMMEDIATELY before testing
+                setProgress({
+                    tried,
+                    found: foundCompanies.length,
+                    target: MINING_QUANTITY,
+                    percentage: (foundCompanies.length / MINING_QUANTITY) * 100,
+                    isComplete: false,
+                });
+
+                console.log(`🔍 Testando CNPJ ${tried}: ${cnpj}`);
+
                 try {
                     // Apply delay BEFORE making request (except first one)
                     if (tried > 1) {
-                        console.log(`⏳ Aguardando ${MINING_CONFIG.delayBetweenRequests / 1000}s antes da próxima requisição...`);
                         await sleep(MINING_CONFIG.delayBetweenRequests);
                     }
 
@@ -146,6 +143,8 @@ export function useMining(): UseMiningReturn {
 
                     if (company && matchesFilters(company, filters)) {
                         foundCompanies.push(company);
+
+                        console.log(`✅ ENCONTRADO! ${company.razao_social} - Total: ${foundCompanies.length}/${MINING_QUANTITY}`);
 
                         // Update state immediately when found
                         setCompanies([...foundCompanies]);
@@ -158,6 +157,8 @@ export function useMining(): UseMiningReturn {
                         });
 
                         consecutiveErrors = 0;
+                    } else {
+                        console.log(`⚠️ CNPJ ${cnpj} não atende aos filtros ou não está ativo`);
                     }
 
                 } catch (err) {
@@ -167,7 +168,7 @@ export function useMining(): UseMiningReturn {
 
                     // Check for rate limiting
                     if (err instanceof Error && err.message === 'RATE_LIMIT') {
-                        console.log(`❌ Rate limit detected! Aguardando ${MINING_CONFIG.delayOnRateLimit / 1000}s...`);
+                        console.log(`❌ Rate limit detectado! Aguardando ${MINING_CONFIG.delayOnRateLimit / 1000}s...`);
                         await sleep(MINING_CONFIG.delayOnRateLimit);
                         console.log('✅ Retomando mineração após rate limit...');
                         consecutiveErrors = 0; // Reset errors on rate limit
@@ -175,18 +176,12 @@ export function useMining(): UseMiningReturn {
                         continue;
                     }
 
+                    console.log(`❌ Erro ao testar CNPJ ${cnpj}: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+
                     consecutiveErrors++;
                     if (consecutiveErrors >= MINING_CONFIG.maxConsecutiveErrors) {
                         throw new Error('Muitos erros consecutivos. Tente relaxar os filtros.');
                     }
-                }
-
-                // Update progress
-                if (tried % 5 === 0) {
-                    setProgress(prev => ({
-                        ...prev,
-                        tried,
-                    }));
                 }
 
                 // Safety limit - stop after trying too many
