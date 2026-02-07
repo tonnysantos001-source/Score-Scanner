@@ -16,8 +16,8 @@ interface UseMiningReturn {
 
 const MINING_CONFIG = {
     maxParallelRequests: 1,
-    delayBetweenRequests: 3000, // 3 seconds - avoid rate limit!
-    delayOnRateLimit: 15000, // 15 seconds wait on rate limit
+    delayBetweenRequests: 25000, // 25 seconds - ReceitaWS allows 3 req/min!
+    delayOnRateLimit: 60000, // 60 seconds wait on rate limit
     retryAttempts: 2,
     maxConsecutiveErrors: 100, // Allow many 404s
 };
@@ -136,6 +136,12 @@ export function useMining(): UseMiningReturn {
                 tried++;
 
                 try {
+                    // Apply delay BEFORE making request (except first one)
+                    if (tried > 1) {
+                        console.log(`⏳ Aguardando ${MINING_CONFIG.delayBetweenRequests / 1000}s antes da próxima requisição...`);
+                        await sleep(MINING_CONFIG.delayBetweenRequests);
+                    }
+
                     const company = await fetchCompany(cnpj);
 
                     if (company && matchesFilters(company, filters)) {
@@ -153,9 +159,6 @@ export function useMining(): UseMiningReturn {
 
                         consecutiveErrors = 0;
                     }
-
-                    // Rate limiting
-                    await sleep(MINING_CONFIG.delayBetweenRequests);
 
                 } catch (err) {
                     if (err instanceof Error && err.name === 'AbortError') {
