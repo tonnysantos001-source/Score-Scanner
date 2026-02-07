@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Multi-API configuration for parallel requests
+// Multi-API configuration - prioritize working APIs first
 const CNPJ_APIS = [
-    {
-        name: 'BrasilAPI',
-        buildUrl: (cnpj: string) => `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
-        priority: 1,
-    },
     {
         name: 'ReceitaWS',
         buildUrl: (cnpj: string) => `https://receitaws.com.br/v1/cnpj/${cnpj}`,
+        priority: 1, // Works! Use first
+    },
+    {
+        name: 'BrasilAPI',
+        buildUrl: (cnpj: string) => `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
         priority: 2,
     },
     {
@@ -20,7 +20,7 @@ const CNPJ_APIS = [
 ];
 
 /**
- * Fetch from a single API with timeout
+ * Fetch from a single API with timeout and proper headers
  */
 async function fetchFromAPI(url: string, apiName: string, timeoutMs: number = 8000) {
     const controller = new AbortController();
@@ -29,14 +29,19 @@ async function fetchFromAPI(url: string, apiName: string, timeoutMs: number = 80
     try {
         const response = await fetch(url, {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json',
+                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+            },
             signal: controller.signal,
         });
 
         clearTimeout(timeout);
 
         if (!response.ok) {
-            throw new Error(`${apiName}: HTTP ${response.status}`);
+            throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
@@ -46,7 +51,7 @@ async function fetchFromAPI(url: string, apiName: string, timeoutMs: number = 80
         clearTimeout(timeout);
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         console.log(`❌ ${apiName} falhou: ${errorMsg}`);
-        throw new Error(`${apiName}: ${errorMsg}`);
+        throw error;
     }
 }
 
@@ -54,11 +59,33 @@ async function fetchFromAPI(url: string, apiName: string, timeoutMs: number = 80
  * Normalize data from different APIs to a common format
  */
 function normalizeCompanyData(data: any, source: string) {
-    // Different APIs return slightly different field names
-    // Normalize to a common structure
+    if (source === 'ReceitaWS') {
+        // ReceitaWS specific normalization
+        return {
+            cnpj: data.cnpj,
+            razao_social: data.nome || data.razao_social,
+            nome_fantasia: data.fantasia || data.nome_fantasia,
+            situacao_cadastral: data.situacao || 'ATIVA',
+            data_situacao_cadastral: data.data_situacao || data.data_situacao_cadastral,
+            uf: data.uf,
+            municipio: data.municipio,
+            bairro: data.bairro,
+            logradouro: data.logradouro,
+            numero: data.numero,
+            cep: data.cep,
+            email: data.email,
+            telefone: data.telefone,
+            atividade_principal: data.atividade_principal ? [data.atividade_principal] : [],
+            atividades_secundarias: data.atividades_secundarias || [],
+            natureza_juridica: data.natureza_juridica,
+            capital_social: parseFloat(String(data.capital_social || 0).replace(/[^\d,]/g, '').replace(',', '.')) || 0,
+            porte: data.porte,
+            data_inicio_atividade: data.abertura || data.data_inicio_atividade,
+            qsa: data.qsa || [],
+        };
+    }
 
     if (source === 'MinhaReceita') {
-        // MinhaReceita uses different field names
         return {
             cnpj: data.cnpj,
             razao_social: data.razao_social || data.nome,
@@ -76,34 +103,9 @@ function normalizeCompanyData(data: any, source: string) {
             atividade_principal: data.atividade_principal || [],
             atividades_secundarias: data.atividades_secundarias || [],
             natureza_juridica: data.natureza_juridica,
-            capital_social: data.capital_social,
+            capital_social: data.capital_social || 0,
             porte: data.porte,
             data_inicio_atividade: data.data_inicio_atividade,
-            qsa: data.qsa || [],
-        };
-    }
-
-    if (source === 'ReceitaWS') {
-        return {
-            cnpj: data.cnpj,
-            razao_social: data.nome,
-            nome_fantasia: data.fantasia,
-            situacao_cadastral: data.situacao || 'ATIVA',
-            data_situacao_cadastral: data.data_situacao,
-            uf: data.uf,
-            municipio: data.municipio,
-            bairro: data.bairro,
-            logradouro: data.logradouro,
-            numero: data.numero,
-            cep: data.cep,
-            email: data.email,
-            telefone: data.telefone,
-            atividade_principal: data.atividade_principal ? [data.atividade_principal] : [],
-            atividades_secundarias: data.atividades_secundarias || [],
-            natureza_juridica: data.natureza_juridica,
-            capital_social: parseFloat(String(data.capital_social || 0).replace(/[^\d,]/g, '').replace(',', '.')),
-            porte: data.porte,
-            data_inicio_atividade: data.abertura,
             qsa: data.qsa || [],
         };
     }
@@ -124,10 +126,8 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Clean CNPJ
         const cleanCNPJ = cnpj.replace(/\D/g, '');
 
-        // Simple validation
         if (cleanCNPJ.length !== 14) {
             return NextResponse.json(
                 { error: 'INVALID_CNPJ', message: 'CNPJ inválido' },
@@ -135,39 +135,33 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        console.log(`🔍 Buscando CNPJ ${cleanCNPJ} em ${CNPJ_APIS.length} APIs simultaneamente...`);
+        console.log(`🔍 Buscando CNPJ ${cleanCNPJ} em ${CNPJ_APIS.length} APIs...`);
 
-        // Create parallel requests to all APIs
+        // Create parallel requests
         const apiPromises = CNPJ_APIS.map(api =>
             fetchFromAPI(api.buildUrl(cleanCNPJ), api.name)
         );
 
-        // Race: use the first successful response
+        // Use Promise.race to get first successful response
         try {
             const result = await Promise.race(apiPromises);
 
             if (result.success) {
-                // Normalize data
                 const normalizedData = normalizeCompanyData(result.data, result.source);
 
-                // Add trust score and metadata
+                // Calculate simple trust score based on available data
+                const trustScore = calculateBasicTrustScore(normalizedData);
+
                 const enhancedData = {
                     ...normalizedData,
-                    trust_score: 75,
-                    trust_score_breakdown: {
-                        total: 75,
-                        tempo_atividade: 20,
-                        capital_social: 15,
-                        situacao_cadastral: 20,
-                        porte_empresa: 10,
-                        regularidade_fiscal: 10,
-                    },
-                    data_source: result.source, // Track which API responded
+                    trust_score: trustScore.total,
+                    trust_score_breakdown: trustScore,
+                    data_source: result.source,
                     cached_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                 };
 
-                console.log(`✨ Dados retornados com sucesso via ${result.source}`);
+                console.log(`✨ Retornando dados via ${result.source}`);
 
                 return NextResponse.json(enhancedData, {
                     headers: {
@@ -176,23 +170,26 @@ export async function GET(request: NextRequest) {
                 });
             }
         } catch (raceError) {
-            // All APIs failed - try to get more details
+            // If race fails, wait for all and check results
             const allResults = await Promise.allSettled(apiPromises);
-            const errors = allResults
-                .filter(r => r.status === 'rejected')
-                .map((r: any) => r.reason?.message || 'Unknown error');
+            const errors: string[] = [];
+
+            for (const result of allResults) {
+                if (result.status === 'rejected') {
+                    errors.push(result.reason?.message || 'Unknown error');
+                }
+            }
 
             console.error('❌ Todas as APIs falharam:', errors);
 
-            // Check if it's a rate limit issue
+            // Check error types
             if (errors.some(e => e.includes('429') || e.includes('403'))) {
                 return NextResponse.json(
-                    { error: 'RATE_LIMIT', message: 'Limite de requisições excedido em todas as APIs' },
+                    { error: 'RATE_LIMIT', message: 'Limite de requisições excedido' },
                     { status: 429 }
                 );
             }
 
-            // Check if CNPJ was not found
             if (errors.some(e => e.includes('404'))) {
                 return NextResponse.json(
                     { error: 'NOT_FOUND', message: 'CNPJ não encontrado' },
@@ -203,7 +200,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json(
                 {
                     error: 'ALL_APIS_FAILED',
-                    message: 'Todas as APIs falharam ao buscar o CNPJ',
+                    message: 'Falha ao buscar CNPJ em todas as APIs',
                     details: errors,
                 },
                 { status: 503 }
@@ -211,7 +208,7 @@ export async function GET(request: NextRequest) {
         }
 
     } catch (error) {
-        console.error('❌ Erro geral na API route:', error);
+        console.error('❌ Erro na API route:', error);
         return NextResponse.json(
             { error: 'INTERNAL_ERROR', message: 'Erro interno do servidor' },
             { status: 500 }
@@ -219,6 +216,41 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// Vercel configuration
+/**
+ * Calculate basic trust score
+ */
+function calculateBasicTrustScore(data: any) {
+    let total = 0;
+
+    // Situação cadastral (20 pts)
+    const situacaoAtiva = 20;
+    if (data.situacao_cadastral === 'ATIVA') total += situacaoAtiva;
+
+    // Capital social (15 pts)
+    const capitalScore = Math.min(15, (data.capital_social || 0) > 100000 ? 15 : 5);
+    total += capitalScore;
+
+    // Tempo de atividade (20 pts) - simplified
+    const tempoAtividade = 20;
+    total += tempoAtividade;
+
+    // Porte (10 pts)
+    const porteScore = 10;
+    total += porteScore;
+
+    // Regularidade fiscal (10 pts) - default
+    const regularidade = 10;
+    total += regularidade;
+
+    return {
+        total,
+        tempo_atividade: tempoAtividade,
+        capital_social: capitalScore,
+        situacao_cadastral: situacaoAtiva,
+        porte_empresa: porteScore,
+        regularidade_fiscal: regularidade,
+    };
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
