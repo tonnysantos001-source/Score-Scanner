@@ -17,10 +17,12 @@ export function matchesFilters(
         return false;
     }
 
-    // Check capital social (minimum only)
-    const capital = company.capital_social;
-    if (capital < filters.capitalMinimo) {
-        return false;
+    // Check capital social (minimum only) - ONLY if filter is enabled
+    if (filters.useCapitalFilter) {
+        const capital = company.capital_social;
+        if (capital < filters.capitalMinimo) {
+            return false;
+        }
     }
 
     // Check UF (if not AUTO)

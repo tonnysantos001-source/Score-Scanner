@@ -6,6 +6,9 @@ export interface MiningFilters {
     // Capital Social minimum only
     capitalMinimo: number;
 
+    // Toggle to enable/disable capital filter
+    useCapitalFilter: boolean; // false = accept any active company
+
     // Geographic filters - single UF or 'AUTO'
     uf: string; // 'AUTO' for automatic, or specific UF like 'SP'
 
@@ -15,6 +18,7 @@ export interface MiningFilters {
 
 export const DEFAULT_MINING_FILTERS: MiningFilters = {
     capitalMinimo: 10000,      // R$ 10.000
+    useCapitalFilter: false,   // Disabled by default for faster mining
     uf: 'AUTO',                // Automatic (all states)
     porte: 'TODOS',
 };

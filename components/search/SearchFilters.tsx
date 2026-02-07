@@ -33,24 +33,47 @@ export default function SearchFilters({ onStartMining, disabled = false }: Searc
             </div>
 
             <div className="space-y-6">
-                {/* Capital Social - Only Minimum */}
+                {/* Capital Social - Only Minimum with Toggle */}
                 <div>
-                    <label className="flex items-center gap-2 text-sm font-semibold mb-3 uppercase tracking-wide">
-                        <TrendingUp className="w-4 h-4" />
-                        Capital Social Mínimo
-                    </label>
+                    <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
+                            <TrendingUp className="w-4 h-4" />
+                            Capital Social Mínimo
+                        </label>
+                        <button
+                            type="button"
+                            onClick={() => setFilters({ ...filters, useCapitalFilter: !filters.useCapitalFilter })}
+                            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${filters.useCapitalFilter
+                                ? 'bg-[var(--color-accent-primary)]'
+                                : 'bg-[var(--color-bg-tertiary)]'
+                                }`}
+                        >
+                            <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${filters.useCapitalFilter ? 'translate-x-8' : 'translate-x-1'
+                                    }`}
+                            />
+                        </button>
+                    </div>
                     <input
                         type="number"
                         value={filters.capitalMinimo}
                         onChange={(e) => setFilters({ ...filters, capitalMinimo: Number(e.target.value) })}
-                        className="input text-lg font-semibold"
+                        className={`input text-lg font-semibold ${!filters.useCapitalFilter ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
                         min="0"
                         step="10000"
                         placeholder="Ex: 10000"
+                        disabled={!filters.useCapitalFilter}
                     />
-                    <p className="text-sm text-[var(--color-text-muted)] mt-2">
-                        {formatCurrency(filters.capitalMinimo)}
-                    </p>
+                    {filters.useCapitalFilter ? (
+                        <p className="text-sm text-[var(--color-text-muted)] mt-2">
+                            {formatCurrency(filters.capitalMinimo)}
+                        </p>
+                    ) : (
+                        <p className="text-sm text-[var(--color-accent-primary)] mt-2 font-semibold">
+                            ✅ Filtro desativado - Qualquer capital social será aceito
+                        </p>
+                    )}
                 </div>
 
                 {/* UF Selection - Dropdown */}
@@ -93,7 +116,11 @@ export default function SearchFilters({ onStartMining, disabled = false }: Searc
             {/* Info Box */}
             <div className="mt-6 p-4 bg-[var(--color-accent-primary)]/10 border border-[var(--color-accent-primary)]/30 rounded-xl">
                 <p className="text-sm text-center font-semibold">
-                    🎯 O sistema vai buscar <span className="text-[var(--color-accent-primary)] text-lg">{MINING_QUANTITY} empresas ATIVAS</span> que atendem aos filtros
+                    🎯 O sistema vai buscar <span className="text-[var(--color-accent-primary)] text-lg">{MINING_QUANTITY} empresas ATIVAS</span>
+                    {filters.useCapitalFilter
+                        ? ' que atendem aos filtros'
+                        : ' (todos os CNPJs ativos - filtro de capital desativado)'
+                    }
                 </p>
             </div>
 
