@@ -202,6 +202,9 @@ export function useMining(): UseMiningReturn {
                             data: company,
                         });
 
+                        // ✅ UPDATE REACT STATE so it appears in UI!
+                        setCompanies([...foundCompanies]);
+
                         // Update progress with new company found
                         setProgress({
                             tried,
