@@ -1,4 +1,25 @@
 /**
+ * CNPJ prefixes by Brazilian state (first 2 digits)
+ * These indicate the state where the company was registered
+ */
+const UF_PREFIXES: Record<string, string[]> = {
+    'SP': ['62', '61', '60', '59', '05', '04', '03', '02', '01', '00'], // São Paulo
+    'RJ': ['33', '34', '42', '31', '32'], // Rio de Janeiro
+    'MG': ['17', '26', '18', '25', '16'], // Minas Gerais
+    'RS': ['87', '88', '96', '97'], // Rio Grande do Sul
+    'PR': ['76', '77', '78', '79', '80', '81'], // Paraná
+    'SC': ['82', '83', '84'], // Santa Catarina
+    'BA': ['13', '14', '15', '40', '41'], // Bahia
+    'PE': ['09', '10', '11'], // Pernambuco
+    'CE': ['07', '08'], // Ceará
+    'GO': ['01', '02', '03'], // Goiás
+    'PA': ['04', '05'], // Pará
+    'ES': ['27', '28'], // Espírito Santo
+    'DF': ['00', '01', '02', '03'], // Distrito Federal
+    'AUTO': ['00', '01', '02', '03', '04', '05', '33', '60', '61', '62'], // Most common
+};
+
+/**
  * Known CNPJ bases from real companies (first 8 digits)
  * These improve success rate when generating random CNPJs
  */
@@ -38,19 +59,34 @@ function calculateCNPJDigit(cnpjBase: string, weights: number[]): string {
 }
 
 /**
- * Generate a valid CNPJ using known bases
+ * Generate a valid CNPJ using smart strategies
+ * @param preferredUF - Optional UF to prefer in generation
  */
-export function generateValidCNPJ(): string {
-    // Random strategy: 70% use known base, 30% completely random
-    const useKnownBase = Math.random() < 0.7;
+export function generateValidCNPJ(preferredUF?: string): string {
+    // Strategy distribution:
+    // 50% - Use UF prefix (more likely to exist)
+    // 30% - Use known base (guaranteed to exist)
+    // 20% - Completely random
 
+    const random = Math.random();
     let base: string;
 
-    if (useKnownBase && CNPJ_BASES.length > 0) {
-        // Pick random known base
+    if (random < 0.5) {
+        // Strategy 1: Use UF prefix (50%)
+        const uf = preferredUF && UF_PREFIXES[preferredUF] ? preferredUF : 'AUTO';
+        const prefixes = UF_PREFIXES[uf];
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+
+        // Generate remaining 6 digits randomly
+        const remaining = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+        base = prefix + remaining;
+
+    } else if (random < 0.8) {
+        // Strategy 2: Use known base (30%)
         base = CNPJ_BASES[Math.floor(Math.random() * CNPJ_BASES.length)];
+
     } else {
-        // Generate completely random base
+        // Strategy 3: Completely random (20%)
         base = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
     }
 

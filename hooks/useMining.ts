@@ -113,11 +113,12 @@ export function useMining(): UseMiningReturn {
                     break;
                 }
 
-                // Generate random valid CNPJ
+                // Generate random valid CNPJ with UF preference
                 let cnpj: string;
                 do {
-                    cnpj = generateValidCNPJ();
+                    cnpj = generateValidCNPJ(filters.uf); // Pass UF preference
                 } while (triedCNPJs.current.has(cnpj));
+
 
                 triedCNPJs.current.add(cnpj);
                 tried++;

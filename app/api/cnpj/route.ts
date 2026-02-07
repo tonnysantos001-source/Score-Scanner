@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchCNPJFromAnyProvider } from '@/lib/api/cnpj-providers';
 
 export async function GET(request: NextRequest) {
     try {
@@ -22,65 +23,34 @@ export async function GET(request: NextRequest) {
 
         console.log(`🔍 [API] Buscando CNPJ: ${cleanCNPJ}`);
 
-        // Fetch from ReceitaWS
-        const apiUrl = `https://receitaws.com.br/v1/cnpj/${cleanCNPJ}`;
-        console.log(`📡 [API] URL: ${apiUrl}`);
+        // Try all providers with automatic fallback
+        const result = await fetchCNPJFromAnyProvider(cleanCNPJ);
 
-        const response = await fetch(apiUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'application/json',
-            },
-        });
-
-        console.log(`📊 [API] Status ReceitaWS: ${response.status}`);
-        console.log(`📊 [API] Headers:`, Object.fromEntries(response.headers.entries()));
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.log(`❌ [API] Erro ReceitaWS: ${response.status} - ${errorText}`);
-
-            if (response.status === 404) {
-                return NextResponse.json({ error: 'NOT_FOUND', details: errorText }, { status: 404 });
-            }
-            if (response.status === 429) {
-                return NextResponse.json({ error: 'RATE_LIMIT', details: errorText }, { status: 429 });
-            }
-            if (response.status === 403) {
-                return NextResponse.json({ error: 'BLOCKED', details: 'ReceitaWS bloqueou requisição' }, { status: 403 });
-            }
-            return NextResponse.json({ error: 'API_ERROR', details: errorText }, { status: 500 });
+        if (!result.success) {
+            console.log(`❌ [API] CNPJ não encontrado em nenhum provider`);
+            return NextResponse.json(
+                { error: 'NOT_FOUND', details: result.error },
+                { status: 404 }
+            );
         }
 
-        const data = await response.json();
-        console.log(`✅ [API] Dados recebidos para: ${data.nome || 'SEM NOME'}`);
+        console.log(`✅ [API] Sucesso com ${result.provider}`);
 
-        // Check if ReceitaWS returned an error in JSON
-        if (data.status === 'ERROR') {
-            console.log(`❌ [API] ReceitaWS retornou erro: ${data.message}`);
-            return NextResponse.json({ error: 'NOT_FOUND', details: data.message }, { status: 404 });
-        }
+        // Add trust score calculation
+        const trust_score = 75; // Placeholder
 
-        // Return enhanced data
         return NextResponse.json({
-            cnpj: data.cnpj,
-            razao_social: data.nome,
-            nome_fantasia: data.fantasia,
-            tipo_situacao_cadastral: data.situacao || 'ATIVA',
-            uf: data.uf,
-            municipio: data.municipio,
-            capital_social: parseFloat(String(data.capital_social || 0).replace(/[^\\d,]/g, '').replace(',', '.')) || 0,
-            porte: data.porte || 'NAO_INFORMADO',
-            qsa: data.qsa || [],
-            trust_score: 75,
+            ...result.data,
+            trust_score,
             trust_score_breakdown: {
-                total: 75,
+                total: trust_score,
                 tempo_atividade: 20,
                 capital_social: 15,
                 situacao_cadastral: 20,
                 porte_empresa: 10,
                 regularidade_fiscal: 10,
             },
+            provider: result.provider, // Include which provider was used
         });
 
     } catch (error) {
