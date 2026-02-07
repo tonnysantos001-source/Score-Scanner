@@ -14,25 +14,31 @@ export function matchesFilters(
         company.tipo_situacao_cadastral === '2';
 
     if (!isActive) {
+        console.log(`❌ Rejeitado: ${company.cnpj} - Status: ${company.tipo_situacao_cadastral} (não ativo)`);
         return false;
     }
 
-    // Check capital social (minimum only) - ONLY if filter is enabled
+    // Check capital social - ONLY if filter is enabled
     if (filters.useCapitalFilter) {
         const capital = company.capital_social;
         if (capital < filters.capitalMinimo) {
+            console.log(`❌ Rejeitado: ${company.cnpj} - Capital R$ ${capital} < R$ ${filters.capitalMinimo}`);
             return false;
         }
     }
 
-    // Check UF (if not AUTO)
-    if (filters.uf !== 'AUTO' && company.uf !== filters.uf) {
-        return false;
+    // Check UF - ONLY if filter is enabled AND not AUTO
+    if (filters.useUfFilter && filters.uf !== 'AUTO') {
+        if (company.uf !== filters.uf) {
+            console.log(`❌ Rejeitado: ${company.cnpj} - UF ${company.uf} !== ${filters.uf}`);
+            return false;
+        }
     }
 
-    // Check porte (if not "TODOS")
-    if (filters.porte !== 'TODOS') {
+    // Check porte - ONLY if filter is enabled AND not TODOS
+    if (filters.usePorteFilter && filters.porte !== 'TODOS') {
         if (company.porte !== filters.porte) {
+            console.log(`❌ Rejeitado: ${company.cnpj} - Porte ${company.porte} !== ${filters.porte}`);
             return false;
         }
     }

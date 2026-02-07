@@ -9,8 +9,14 @@ export interface MiningFilters {
     // Toggle to enable/disable capital filter
     useCapitalFilter: boolean; // false = accept any active company
 
+    // Toggle to enable/disable UF filter
+    useUfFilter: boolean; // false = accept any UF
+
     // Geographic filters - single UF or 'AUTO'
     uf: string; // 'AUTO' for automatic, or specific UF like 'SP'
+
+    // Toggle to enable/disable porte filter
+    usePorteFilter: boolean; // false = accept any porte
 
     // Company size
     porte: 'ME' | 'EPP' | 'DEMAIS' | 'TODOS';
@@ -18,9 +24,11 @@ export interface MiningFilters {
 
 export const DEFAULT_MINING_FILTERS: MiningFilters = {
     capitalMinimo: 10000,      // R$ 10.000
-    useCapitalFilter: false,   // Disabled by default for faster mining
+    useCapitalFilter: false,   // Disabled by default
     uf: 'AUTO',                // Automatic (all states)
+    useUfFilter: false,        // Disabled by default - accept ANY UF
     porte: 'TODOS',
+    usePorteFilter: false,     // Disabled by default - accept ANY porte
 };
 
 // Fixed quantity - always 20
