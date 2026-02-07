@@ -141,10 +141,15 @@ export function useMining(): UseMiningReturn {
 
                     const company = await fetchCompany(cnpj);
 
-                    if (company && matchesFilters(company, filters)) {
+                    if (!company) {
+                        // CNPJ not found (404) or error fetching
+                        console.log(`❌ CNPJ ${cnpj} não encontrado (404 ou erro na API)`);
+                    } else if (matchesFilters(company, filters)) {
                         foundCompanies.push(company);
 
-                        console.log(`✅ ENCONTRADO! ${company.razao_social} - Total: ${foundCompanies.length}/${MINING_QUANTITY}`);
+                        console.log(`✅ ENCONTRADO! ${company.razao_social} - Total: ${foundCompanies.length}/${MINING_QUANTITY}`)
+
+                            ;
 
                         // Update state immediately when found
                         setCompanies([...foundCompanies]);
@@ -158,7 +163,8 @@ export function useMining(): UseMiningReturn {
 
                         consecutiveErrors = 0;
                     } else {
-                        console.log(`⚠️ CNPJ ${cnpj} não atende aos filtros ou não está ativo`);
+                        // Company exists but doesn't match filters
+                        console.log(`⚠️ CNPJ ${cnpj} encontrado mas rejeitado pelos filtros`);
                     }
 
                 } catch (err) {
