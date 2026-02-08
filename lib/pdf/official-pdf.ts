@@ -1,7 +1,3 @@
-/**
- * Official PDF Generator - Matches Receita Federal CNPJ Certificate
- */
-
 import jsPDF from 'jspdf';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
@@ -9,7 +5,7 @@ import { formatCNPJ } from '@/lib/utils/cnpj';
 // Brasil coat of arms as base64 (simplified version)
 const BRASIL_COAT_OF_ARMS = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCI+PGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMjAiIGZpbGw9IiMwMDk3MzkiLz48Y2lyY2xlIGN4PSIyNSIgY3k9IjI1IiByPSIxNSIgZmlsbD0iI0ZGREYwMCIvPjwvc3ZnPg==`;
 
-export async function generateOfficialPDF(company: EnhancedCompanyData) {
+export async function generateOfficialPDF(company: EnhancedCompanyData): Promise<Blob> {
     const doc = new jsPDF('p', 'mm', 'a4');
 
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -20,7 +16,6 @@ export async function generateOfficialPDF(company: EnhancedCompanyData) {
     try {
         doc.addImage(BRASIL_COAT_OF_ARMS, 'PNG', 15, y, 15, 15);
     } catch (error) {
-        // Coat of arms is optional, continue without it
         console.log('Could not add coat of arms:', error);
     }
 
@@ -169,6 +164,6 @@ export async function generateOfficialPDF(company: EnhancedCompanyData) {
     doc.setFontSize(7);
     doc.text(`Documento gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, y, { align: 'center' });
 
-    // Download
-    doc.save(`CNPJ_${company.cnpj}_Comprovante.pdf`);
+    // Return as Blob for inline viewing
+    return doc.output('blob');
 }

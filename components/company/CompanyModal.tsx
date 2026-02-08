@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import EditableField from '@/components/ui/EditableField';
-import { X, FileText, Share2, CheckCircle2 } from 'lucide-react';
+import { X, FileText, Share2, CheckCircle2, Eye, Download, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CompanyModalProps {
     company: EnhancedCompanyData;
@@ -17,19 +17,33 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [telefone, setTelefone] = useState(company.telefone || company.ddd_telefone_1 || company.custom_phone || '');
     const [email, setEmail] = useState(company.email || company.custom_email || '');
     const [observacoes, setObservacoes] = useState(company.custom_notes || '');
+    const [showPDFViewer, setShowPDFViewer] = useState(false);
+    const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
 
-    const handleExportPDF = async () => {
+    const handleOpenPDF = async () => {
         try {
             const { generateOfficialPDF } = await import('@/lib/pdf/official-pdf');
-            await generateOfficialPDF(company);
+            const blob = await generateOfficialPDF(company);
+            setPdfBlob(blob);
+            setShowPDFViewer(true);
             toast.success('PDF gerado!', {
-                description: 'Download iniciado automaticamente',
+                description: 'Visualize ou baixe o documento',
             });
         } catch (error) {
             console.error('Error generating PDF:', error);
-            toast.error('Erro ao gerar PDF', {
-                description: 'Tente novamente',
-            });
+            toast.error('Erro ao gerar PDF');
+        }
+    };
+
+    const handleDownloadPDF = () => {
+        if (pdfBlob) {
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `CNPJ_${company.cnpj}_Comprovante.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.success('Download iniciado!');
         }
     };
 
@@ -42,26 +56,19 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
 ✅ Situação: ${company.tipo_situacao_cadastral}
 💰 Capital Social: ${formatCurrency(company.capital_social)}
 📍 ${company.municipio} - ${company.uf}
-🏷️ CNAE: ${company.cnae_fiscal} - ${company.cnae_fiscal_descricao}
-${telefone ? `📞 Telefone: ${telefone}` : ''}
-${email ? `📧 Email: ${email}` : ''}
-
-Dados verificados pela BrasilAPI
+${telefone ? `📞 ${telefone}` : ''}
+${email ? `📧 ${email}` : ''}
     `.trim();
 
         navigator.clipboard.writeText(text);
-        toast.success('Dados copiados!', {
-            description: 'Cole no Facebook agora',
-        });
+        toast.success('Dados copiados!');
     };
 
     const validateOnFacebook = () => {
-        const url = `https://developers.facebook.com/tools/debug/`;
-        window.open(url, '_blank');
+        window.open('https://developers.facebook.com/tools/debug/', '_blank');
     };
 
     const saveChanges = () => {
-        // Save editable fields to localStorage
         const savedData = {
             cnpj: company.cnpj,
             custom_phone: telefone,
@@ -74,226 +81,232 @@ Dados verificados pela BrasilAPI
         existing[company.cnpj] = savedData;
         localStorage.setItem('company_edits', JSON.stringify(existing));
 
-        toast.success('Dados salvos!', {
-            description: 'Suas edições foram salvas localmente',
-        });
+        toast.success('Dados salvos!');
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 fade-in" onClick={onClose}>
-            <div
-                className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar"
-                onClick={(e) => e.stopPropagation()}
+        <>
+            {/* Main Modal */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50"
+                onClick={onClose}
             >
-                {/* Header */}
-                <div className="sticky top-0 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] p-6 flex items-start justify-between z-10">
-                    <div>
-                        <h2 className="text-2xl font-bold mb-1">
-                            <span className="text-[var(--color-accent-primary)]">DOSSIÊ EMPRESARIAL</span>{' '}
-                            <span className="text-white">FULL</span>
-                        </h2>
-                        <p className="text-sm text-[var(--color-text-muted)]">
-                            Confira os dados abaixo para o Gerenciador de Negócios
-                        </p>
+                <motion.div
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 20 }}
+                    transition={{ type: 'spring', damping: 25 }}
+                    className="glass-card max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="p-5 border-b border-[var(--color-border)] flex items-center justify-between">
+                        <div>
+                            <h2 className="text-xl font-bold">
+                                <span className="text-gradient">Dossiê Empresarial</span>
+                            </h2>
+                            <p className="text-xs text-[var(--color-text-muted)]">
+                                {company.razao_social}
+                            </p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-lg transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
 
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-lg transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+                    {/* Content - 2 columns, no scroll */}
+                    <div className="p-5 grid grid-cols-2 gap-6 overflow-y-auto custom-scrollbar">
+                        {/* Column 1: Company Info */}
+                        <div className="space-y-4">
+                            {/* Basic */}
+                            <div>
+                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">📋 DADOS CADASTRAIS</h3>
+                                <div className="space-y-2 text-sm">
+                                    <InfoRow label="CNPJ" value={formatCNPJ(company.cnpj)} />
+                                    <InfoRow label="Abertura" value={formatDate(company.data_inicio_atividade)} />
+                                    <InfoRow label="Situação" value={company.tipo_situacao_cadastral} />
+                                </div>
+                            </div>
 
-                {/* Content */}
-                <div className="p-6 space-y-6">
-                    {/* Basic Info - Read Only */}
-                    <div>
-                        <h3 className="text-lg font-bold mb-4 text-[var(--color-accent-primary)]">
-                            📋 DADOS CADASTRAIS
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <EditableField
-                                label="RAZÃO SOCIAL COMPLETA"
-                                value={company.razao_social}
-                                readOnly
-                            />
-                            <EditableField
-                                label="NÚMERO DO CNPJ"
-                                value={formatCNPJ(company.cnpj)}
-                                readOnly
-                            />
-                            <EditableField
-                                label="DATA DE ABERTURA"
-                                value={formatDate(company.data_inicio_atividade)}
-                                readOnly
-                            />
-                            <EditableField
-                                label="SITUAÇÃO CADASTRAL"
-                                value={company.tipo_situacao_cadastral}
-                                readOnly
-                            />
+                            {/* Financial */}
+                            <div>
+                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">💰 DADOS FINANCEIROS</h3>
+                                <div className="space-y-2 text-sm">
+                                    <InfoRow label="Capital Social" value={formatCurrency(company.capital_social)} />
+                                    <InfoRow label="Porte" value={company.porte} />
+                                </div>
+                            </div>
+
+                            {/* Activity */}
+                            <div>
+                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">🏭 ATIVIDADE</h3>
+                                <div className="text-xs text-[var(--color-text-secondary)]">
+                                    {company.cnae_fiscal} - {company.cnae_fiscal_descricao}
+                                </div>
+                            </div>
+
+                            {/* Address */}
+                            <div>
+                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">📍 ENDEREÇO</h3>
+                                <div className="space-y-1 text-xs text-[var(--color-text-secondary)]">
+                                    <div>{company.descricao_tipo_de_logradouro || ''} {company.logradouro}, {company.numero}</div>
+                                    <div>{company.bairro} - {company.municipio}/{company.uf}</div>
+                                    <div>CEP: {company.cep || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Column 2: Editable & Actions */}
+                        <div className="space-y-4">
+                            {/* Contact - Editable */}
+                            <div>
+                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">📞 CONTATO (Editável)</h3>
+                                <div className="space-y-2">
+                                    <input
+                                        type="text"
+                                        value={telefone}
+                                        onChange={(e) => setTelefone(e.target.value)}
+                                        placeholder="(00) 0000-0000"
+                                        className="w-full px-3 py-2 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                                    />
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="email@empresa.com.br"
+                                        className="w-full px-3 py-2 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Notes */}
+                            <div>
+                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">📝 OBSERVAÇÕES</h3>
+                                <textarea
+                                    value={observacoes}
+                                    onChange={(e) => setObservacoes(e.target.value)}
+                                    placeholder="Adicione notas sobre esta empresa..."
+                                    rows={3}
+                                    className="w-full px-3 py-2 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                                />
+                            </div>
+
+                            {/* Save Button */}
+                            <button
+                                onClick={saveChanges}
+                                className="w-full py-2 px-4 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                            >
+                                <Save className="w-4 h-4" />
+                                SALVAR EDIÇÕES
+                            </button>
+
+                            {/* Quick Info */}
+                            <div className="p-3 bg-[var(--color-bg-tertiary)]/50 rounded-lg border border-[var(--color-border)]">
+                                <div className="text-xs text-[var(--color-text-muted)] space-y-1">
+                                    <div>✅ Dados verificados via BrasilAPI</div>
+                                    <div>🔒 Edições salvas localmente</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Financial - Read Only */}
-                    <div>
-                        <h3 className="text-lg font-bold mb-4 text-[var(--color-accent-primary)]">
-                            💰 DADOS FINANCEIROS
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <EditableField
-                                label="CAPITAL SOCIAL INTEGRALIZADO"
-                                value={formatCurrency(company.capital_social)}
-                                readOnly
-                            />
-                            <EditableField
-                                label="PORTE DA EMPRESA"
-                                value={company.porte}
-                                readOnly
-                            />
-                        </div>
+                    {/* Footer Actions - Compact */}
+                    <div className="p-4 border-t border-[var(--color-border)] flex gap-2">
+                        <button
+                            onClick={handleOpenPDF}
+                            className="flex-1 py-2 px-3 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
+                            <Eye className="w-4 h-4" />
+                            ABRIR PDF
+                        </button>
+
+                        <button
+                            onClick={copyToFacebook}
+                            className="flex-1 py-2 px-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
+                            <Share2 className="w-4 h-4" />
+                            COPIAR P/ FB
+                        </button>
+
+                        <button
+                            onClick={validateOnFacebook}
+                            className="flex-1 py-2 px-3 bg-[var(--color-bg-tertiary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--color-bg-card)] transition-all flex items-center justify-center gap-2"
+                        >
+                            <CheckCircle2 className="w-4 h-4" />
+                            VALIDAR FB
+                        </button>
                     </div>
+                </motion.div>
+            </motion.div>
 
-                    {/* Activity - Read Only */}
-                    <div>
-                        <h3 className="text-lg font-bold mb-4 text-[var(--color-accent-primary)]">
-                            🏭 ATIVIDADE ECONÔMICA
-                        </h3>
-                        <EditableField
-                            label="CNAE ATIVIDADE PRINCIPAL"
-                            value={
-                                company.cnae_principal && company.descricao_cnae
-                                    ? `${company.cnae_principal} - ${company.descricao_cnae}`
-                                    : company.cnae_fiscal
-                                        ? `${company.cnae_fiscal} - ${company.cnae_fiscal_descricao}`
-                                        : 'Não informado'
-                            }
-                            readOnly
-                        />
-                    </div>
-
-                    {/* Address - Read Only */}
-                    <div>
-                        <h3 className="text-lg font-bold mb-4 text-[var(--color-accent-primary)]">
-                            📍 ENDEREÇO FISCAL
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <EditableField
-                                label="LOGRADOURO E NÚMERO"
-                                value={
-                                    company.logradouro && company.logradouro !== 'undefined'
-                                        ? `${company.descricao_tipo_de_logradouro || ''} ${company.logradouro}, ${company.numero}`.trim()
-                                        : 'Não informado'
-                                }
-                                readOnly
-                            />
-                            <EditableField
-                                label="BAIRRO / MUNICÍPIO"
-                                value={
-                                    company.bairro && company.bairro !== 'undefined'
-                                        ? `${company.bairro} - ${company.municipio} / ${company.uf}`
-                                        : `${company.municipio} / ${company.uf}`
-                                }
-                                readOnly
-                            />
-                            <EditableField
-                                label="CEP"
-                                value={company.cep || 'Não informado'}
-                                readOnly
-                            />
-                        </div>
-                    </div>
-
-                    {/* Contact - EDITABLE! */}
-                    <div>
-                        <h3 className="text-lg font-bold mb-4 text-[var(--color-accent-primary)]">
-                            📞 CONTATO (EDITÁVEL)
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <EditableField
-                                label="TELEFONE"
-                                value={telefone}
-                                onChange={setTelefone}
-                                editable
-                                placeholder="(00) 0000-0000"
-                            />
-                            <EditableField
-                                label="EMAIL"
-                                value={email}
-                                onChange={setEmail}
-                                editable
-                                placeholder="contato@empresa.com.br"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Notes - EDITABLE! */}
-                    <div>
-                        <h3 className="text-lg font-bold mb-4 text-[var(--color-accent-primary)]">
-                            📝 OBSERVAÇÕES (EDITÁVEL)
-                        </h3>
-                        <EditableField
-                            label="NOTAS E OBSERVAÇÕES"
-                            value={observacoes}
-                            onChange={setObservacoes}
-                            editable
-                            multiline
-                            placeholder="Adicione notas sobre esta empresa..."
-                        />
-                    </div>
-
-                    {/* Save Button */}
-                    <button
-                        onClick={saveChanges}
-                        className="w-full py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all"
+            {/* PDF Viewer Modal */}
+            <AnimatePresence>
+                {showPDFViewer && pdfBlob && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/90 backdrop-blur-lg flex items-center justify-center p-8 z-[60]"
+                        onClick={() => setShowPDFViewer(false)}
                     >
-                        💾 SALVAR EDIÇÕES
-                    </button>
-                </div>
+                        <motion.div
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.9 }}
+                            className="glass-card w-full max-w-4xl h-[90vh] flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* PDF Header */}
+                            <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-bold">Documento Oficial CNPJ</h3>
+                                    <p className="text-xs text-[var(--color-text-muted)]">{formatCNPJ(company.cnpj)}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleDownloadPDF}
+                                        className="p-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                                        title="Download PDF"
+                                    >
+                                        <Download className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPDFViewer(false)}
+                                        className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-lg transition-colors"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
 
-                {/* Footer Actions */}
-                <div className="sticky bottom-0 bg-[var(--color-bg-secondary)] border-t border-[var(--color-border)] p-6 flex flex-wrap gap-3 z-10">
-                    <button
-                        onClick={handleExportPDF}
-                        className="flex-1 min-w-[200px] py-3 px-6 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                        style={{
-                            backgroundColor: '#ef4444',
-                            color: 'white',
-                        }}
-                    >
-                        <FileText className="w-4 h-4" />
-                        EXPORTAR PDF OFICIAL
-                    </button>
+                            {/* PDF Viewer */}
+                            <div className="flex-1 overflow-hidden bg-[var(--color-bg-tertiary)]">
+                                <iframe
+                                    src={URL.createObjectURL(pdfBlob)}
+                                    className="w-full h-full"
+                                    title="PDF Viewer"
+                                />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
+    );
+}
 
-                    <button
-                        onClick={copyToFacebook}
-                        className="flex-1 min-w-[200px] py-3 px-6 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                        style={{
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                        }}
-                    >
-                        <Share2 className="w-4 h-4" />
-                        COPIAR DADOS P/ FACEBOOK
-                    </button>
-
-                    <button
-                        onClick={validateOnFacebook}
-                        className="flex-1 min-w-[200px] py-3 px-6 bg-[var(--color-bg-tertiary)] text-white rounded-lg font-semibold hover:bg-[var(--color-bg-card)] transition-all flex items-center justify-center gap-2"
-                    >
-                        <CheckCircle2 className="w-4 h-4" />
-                        VALIDAR NO FACEBOOK
-                    </button>
-
-                    <button
-                        onClick={onClose}
-                        className="w-full py-3 px-6 bg-transparent border border-[var(--color-border)] text-[var(--color-text-secondary)] rounded-lg font-semibold hover:bg-[var(--color-bg-tertiary)] transition-all"
-                    >
-                        FECHAR
-                    </button>
-                </div>
-            </div>
+// Helper component
+function InfoRow({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="flex justify-between">
+            <span className="text-[var(--color-text-muted)]">{label}:</span>
+            <span className="font-semibold">{value}</span>
         </div>
     );
 }
