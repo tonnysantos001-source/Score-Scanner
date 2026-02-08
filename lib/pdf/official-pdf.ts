@@ -140,7 +140,7 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
 
     // ============ ROW 5: NATUREZA JURÍDICA ============
     const naturezaJuridica = company.codigo_natureza_juridica
-        ? `${company.codigo_natureza_juridica} - ${company.descricao_natureza_juridica || 'Sociedade Empresária Limitada'}`
+        ? `${company.codigo_natureza_juridica} - Sociedade Empresária Limitada`
         : '206-2 - Sociedade Empresária Limitada';
 
     addField('CÓDIGO E DESCRIÇÃO DA NATUREZA JURÍDICA', naturezaJuridica, y, contentWidth, 10);
