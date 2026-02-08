@@ -29,6 +29,7 @@ export default function CompanyTable({ companies, onOpenCompany, onMarkAsUsed }:
                     company={company}
                     onClick={() => onOpenCompany(company)}
                     onMarkAsUsed={onMarkAsUsed}
+                    index={index}
                 />
             ))}
         </div>

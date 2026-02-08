@@ -30,14 +30,14 @@ export default function HomePage() {
         {/* Header */}
         <header className="text-center mb-12 fade-in">
           <h1 className="text-6xl md:text-7xl font-black mb-4 tracking-tight">
-            <span className="text-white">INTELLI</span>
-            <span className="text-gradient">CORP</span>
+            <span className="text-white">Verify</span>
+            <span className="text-gradient">Ads</span>
             <span className="text-xs ml-4 px-3 py-1 rounded-lg bg-[var(--color-accent-primary)] text-white font-bold">
               V91
             </span>
           </h1>
           <p className="text-sm text-[var(--color-text-muted)] uppercase tracking-[0.3em] font-semibold">
-            IA DOMAIN VERIFICATION & BI
+            Empresas reais. Anúncios seguros
           </p>
         </header>
 

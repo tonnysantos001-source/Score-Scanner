@@ -7,14 +7,16 @@ import { calculateTrustScore, getScoreColor, getScoreLabel } from '@/lib/scoring
 import { Building2, MapPin, TrendingUp, FileText, Trash2 } from 'lucide-react';
 import { cnpjCache } from '@/lib/cache/cnpj-cache';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 interface CompanyCardProps {
     company: EnhancedCompanyData;
     onClick: () => void;
     onMarkAsUsed?: (cnpj: string) => void;
+    index?: number;
 }
 
-export default function CompanyCard({ company, onClick, onMarkAsUsed }: CompanyCardProps) {
+export default function CompanyCard({ company, onClick, onMarkAsUsed, index = 0 }: CompanyCardProps) {
     // ✅ REAL TRUST SCORE CALCULATION
     const trustScoreData = calculateTrustScore(company);
     const scoreColor = getScoreColor(trustScoreData.score);
@@ -34,7 +36,24 @@ export default function CompanyCard({ company, onClick, onMarkAsUsed }: CompanyC
     };
 
     return (
-        <div className="glass-card p-6 cursor-pointer hover:scale-[1.02] transition-transform" onClick={onClick}>
+        <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            transition={{
+                duration: 0.5,
+                delay: index * 0.05,
+                ease: [0.22, 1, 0.36, 1]
+            }}
+            whileHover={{
+                scale: 1.03,
+                y: -8,
+                transition: { duration: 0.3 }
+            }}
+            whileTap={{ scale: 0.98 }}
+            className="glass-card p-6 cursor-pointer"
+            onClick={onClick}
+        >
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -45,7 +64,11 @@ export default function CompanyCard({ company, onClick, onMarkAsUsed }: CompanyC
                 </div>
 
                 {/* Trust Score Badge */}
-                <div className="flex flex-col items-end">
+                <motion.div
+                    className="flex flex-col items-end"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                >
                     <div
                         className="text-3xl font-bold"
                         style={{ color: scoreColor }}
@@ -53,7 +76,7 @@ export default function CompanyCard({ company, onClick, onMarkAsUsed }: CompanyC
                         {trustScoreData.score}
                     </div>
                     <div className="text-xs text-[var(--color-text-muted)]">Trust Score</div>
-                </div>
+                </motion.div>
             </div>
 
             {/* Trust Score Level */}
@@ -119,15 +142,17 @@ export default function CompanyCard({ company, onClick, onMarkAsUsed }: CompanyC
                     Clique para ver detalhes
                 </div>
 
-                <button
+                <motion.button
                     onClick={handleMarkAsUsed}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-500/10 hover:text-red-500 text-[var(--color-text-muted)]"
                     title="Marcar como usada"
                 >
                     <Trash2 className="w-3.5 h-3.5" />
                     Marcar como Usada
-                </button>
+                </motion.button>
             </div>
-        </div>
+        </motion.div>
     );
 }

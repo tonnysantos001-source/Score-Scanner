@@ -17,23 +17,10 @@ export default function SearchFilters({ onStartMining, disabled = false }: Searc
     };
 
     return (
-        <div className="glass-card p-8 mb-8">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-                <Sparkles className="w-6 h-6 text-[var(--color-accent-primary)]" />
-                <h2 className="text-2xl font-bold">Filtros de Mineração</h2>
-            </div>
-
-            {/* Info about active filter */}
-            <div className="p-6 bg-[var(--color-accent-primary)]/10 border border-[var(--color-accent-primary)]/30 rounded-xl">
-                <p className="text-lg text-center font-semibold text-[var(--color-accent-primary)]">
-                    ✅ Filtro desativado - Qualquer capital social será aceito
-                </p>
-            </div>
-
-            {/* Target Info */}
-            <div className="mt-6 p-4 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-xl">
-                <p className="text-sm text-center font-semibold">
+        <div className="mb-8 space-y-4">
+            {/* Info Label */}
+            <div className="text-center p-4 bg-[var(--color-bg-tertiary)]/50 border border-[var(--color-border)] rounded-xl">
+                <p className="text-sm font-semibold">
                     🎯 O sistema vai buscar <span className="text-[var(--color-accent-primary)] text-lg">{MINING_QUANTITY} empresas ATIVAS</span>
                 </p>
             </div>
@@ -42,7 +29,7 @@ export default function SearchFilters({ onStartMining, disabled = false }: Searc
             <button
                 onClick={handleStartMining}
                 disabled={disabled}
-                className="btn-primary w-full mt-6 text-xl py-5 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide font-black"
+                className="btn-primary w-full text-xl py-5 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide font-black"
             >
                 {disabled ? (
                     <>
