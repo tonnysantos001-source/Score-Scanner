@@ -16,8 +16,8 @@ export interface CompanyData {
   opcao_pelo_mei: boolean;
   opcao_pelo_simples: boolean;
   capital_social: number;
-  porte:string;
- descricao_tipo_de_logradouro: string;
+  porte: string;
+  descricao_tipo_de_logradouro: string;
   logradouro: string;
   numero: string;
   complemento?: string;
@@ -56,10 +56,20 @@ export interface CompanyData {
 export interface EnhancedCompanyData extends CompanyData {
   trust_score: number;
   trust_score_breakdown: TrustScoreBreakdown;
+
+  // Additional fields from API providers
+  telefone?: string;
+  email?: string;
+  cnae_principal?: string;
+  descricao_cnae?: string;
+  data_abertura?: string;
+
+  // Editable custom fields
   custom_phone?: string;
   custom_email?: string;
   custom_notes?: string;
   custom_tags?: string[];
+
   cached_at: string;
   updated_at: string;
 }

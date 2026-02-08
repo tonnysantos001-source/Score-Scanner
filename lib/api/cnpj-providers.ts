@@ -15,6 +15,22 @@ export interface CNPJData {
     capital_social: number;
     porte: string;
     qsa: any[];
+
+    // Contact info
+    telefone?: string;
+    email?: string;
+
+    // Full address
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cep?: string;
+
+    // Activity
+    cnae_principal?: string;
+    descricao_cnae?: string;
+    data_abertura?: string;
 }
 
 export interface ProviderResponse {
@@ -66,6 +82,22 @@ export async function fetchFromReceitaWS(cnpj: string): Promise<ProviderResponse
                 capital_social: parseFloat(String(data.capital_social || 0).replace(/[^\d,]/g, '').replace(',', '.')) || 0,
                 porte: data.porte || 'NAO_INFORMADO',
                 qsa: data.qsa || [],
+
+                // ✅ Contact (ReceitaWS has these!)
+                telefone: data.telefone || undefined,
+                email: data.email || undefined,
+
+                // ✅ Full address
+                logradouro: data.logradouro || undefined,
+                numero: data.numero || undefined,
+                complemento: data.complemento || undefined,
+                bairro: data.bairro || undefined,
+                cep: data.cep || undefined,
+
+                // ✅ Activity
+                cnae_principal: data.atividade_principal?.[0]?.code || undefined,
+                descricao_cnae: data.atividade_principal?.[0]?.text || undefined,
+                data_abertura: data.abertura || undefined,
             },
         };
     } catch (error) {
@@ -109,6 +141,22 @@ export async function fetchFromBrasilAPI(cnpj: string): Promise<ProviderResponse
                 capital_social: data.capital_social || 0,
                 porte: data.porte || 'NAO_INFORMADO',
                 qsa: data.qsa || [],
+
+                // ✅ Contact (BrasilAPI has phone!)
+                telefone: data.ddd_telefone_1 || data.ddd_telefone_2 || undefined,
+                email: undefined, // BrasilAPI doesn't have email
+
+                // ✅ Full address
+                logradouro: data.descricao_tipo_de_logradouro + ' ' + data.logradouro || undefined,
+                numero: data.numero || undefined,
+                complemento: data.complemento || undefined,
+                bairro: data.bairro || undefined,
+                cep: data.cep || undefined,
+
+                // ✅ Activity
+                cnae_principal: data.cnae_fiscal_principal?.codigo || undefined,
+                descricao_cnae: data.cnae_fiscal_principal?.descricao || undefined,
+                data_abertura: data.data_inicio_atividade || undefined,
             },
         };
     } catch (error) {

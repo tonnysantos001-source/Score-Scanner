@@ -3,7 +3,7 @@
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency } from '@/lib/utils/formatters';
-import { getTrustScoreColor, getTrustScoreLabel } from '@/lib/utils/trust-score';
+import { calculateTrustScore, getScoreColor, getScoreLabel } from '@/lib/scoring/trust-score';
 import { Building2, MapPin, TrendingUp, FileText, Trash2 } from 'lucide-react';
 import { cnpjCache } from '@/lib/cache/cnpj-cache';
 import { toast } from 'sonner';
@@ -15,8 +15,10 @@ interface CompanyCardProps {
 }
 
 export default function CompanyCard({ company, onClick, onMarkAsUsed }: CompanyCardProps) {
-    const scoreColor = getTrustScoreColor(company.trust_score_breakdown.level);
-    const scoreLabel = getTrustScoreLabel(company.trust_score_breakdown.level);
+    // ✅ REAL TRUST SCORE CALCULATION
+    const trustScoreData = calculateTrustScore(company);
+    const scoreColor = getScoreColor(trustScoreData.score);
+    const scoreLabel = getScoreLabel(trustScoreData.score);
 
     const handleMarkAsUsed = (e: React.MouseEvent) => {
         e.stopPropagation(); // Don't trigger card click
@@ -48,7 +50,7 @@ export default function CompanyCard({ company, onClick, onMarkAsUsed }: CompanyC
                         className="text-3xl font-bold"
                         style={{ color: scoreColor }}
                     >
-                        {company.trust_score}
+                        {trustScoreData.score}
                     </div>
                     <div className="text-xs text-[var(--color-text-muted)]">Trust Score</div>
                 </div>
