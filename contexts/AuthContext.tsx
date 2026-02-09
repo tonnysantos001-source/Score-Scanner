@@ -96,7 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [user, INACTIVITY_TIMEOUT, handleLogout]);
 
     const signIn = async (email: string, password: string) => {
-        if (!supabase) throw new Error('Supabase client not initialized');
+        if (!supabase) {
+            throw new Error(
+                'Configuração do Supabase não encontrada. ' +
+                'Verifique se as variáveis de ambiente estão configuradas e recarregue a página.'
+            );
+        }
         const { error } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -106,7 +111,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signUp = async (email: string, password: string, fullName: string) => {
-        if (!supabase) throw new Error('Supabase client not initialized');
+        if (!supabase) {
+            throw new Error(
+                'Configuração do Supabase não encontrada. ' +
+                'Verifique se as variáveis de ambiente estão configuradas e recarregue a página.'
+            );
+        }
         const { error } = await supabase.auth.signUp({
             email,
             password,
@@ -121,7 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signInWithGoogle = async () => {
-        if (!supabase) throw new Error('Supabase client not initialized');
+        if (!supabase) {
+            throw new Error(
+                'Configuração do Supabase não encontrada. ' +
+                'Verifique se as variáveis de ambiente estão configuradas e recarregue a página.'
+            );
+        }
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -133,7 +148,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signOut = async () => {
-        if (!supabase) throw new Error('Supabase client not initialized');
+        if (!supabase) {
+            throw new Error(
+                'Configuração do Supabase não encontrada. ' +
+                'Verifique se as variáveis de ambiente estão configuradas e recarregue a página.'
+            );
+        }
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
     };
