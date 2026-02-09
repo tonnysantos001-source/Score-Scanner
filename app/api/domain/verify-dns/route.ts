@@ -17,11 +17,12 @@ export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
 
+
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
             return NextResponse.json(
-                { success: false, error: 'Unauthorized' },
+                { success: false, error: 'Unauthorized - Please login first' },
                 { status: 401 }
             );
         }

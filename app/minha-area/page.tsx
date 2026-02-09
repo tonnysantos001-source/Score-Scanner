@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { DomainCard } from '@/components/dashboard/DomainCard';
 import { EmptyState } from '@/components/dashboard/EmptyState';
 import { SearchAndFilters } from '@/components/dashboard/SearchAndFilters';
 import { EditDomainModal } from '@/components/dashboard/EditDomainModal';
-import { Globe } from 'lucide-react';
+import { Globe, Loader2, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DomainStats {
     total_domains: number;
@@ -38,6 +40,9 @@ interface Domain {
 }
 
 export default function MinhaAreaPage() {
+    const { user, loading: authLoading, signOut } = useAuth();
+    const router = useRouter();
+
     const [stats, setStats] = useState<DomainStats | null>(null);
     const [domains, setDomains] = useState<Domain[]>([]);
     const [isLoadingStats, setIsLoadingStats] = useState(true);
@@ -52,10 +57,28 @@ export default function MinhaAreaPage() {
     // Modal de edição
     const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
 
+    // Proteção de rota
     useEffect(() => {
-        fetchStats();
-        fetchDomains();
-    }, []);
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, authLoading, router]);
+
+    useEffect(() => {
+        if (user) {
+            fetchStats();
+            fetchDomains();
+        }
+    }, [user]);
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+            router.push('/');
+        } catch (error) {
+            toast.error('Erro ao fazer logout');
+        }
+    };
 
     const fetchStats = async () => {
         try {
@@ -171,6 +194,7 @@ export default function MinhaAreaPage() {
                 body: JSON.stringify({ domain_id: domainId }),
             });
 
+
             const data = await response.json();
             toast.dismiss('revalidate');
 
@@ -192,22 +216,53 @@ export default function MinhaAreaPage() {
         fetchStats();
     };
 
+    // Loading state enquanto verifica autenticação
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-400">Carregando...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Não renderiza nada se não estiver autenticado (será redirecionado)
+    if (!user) {
+        return null;
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)] p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
+                {/* Header com logout */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
                 >
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
-                            <Globe className="w-6 h-6 text-gradient" />
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
+                                <Globe className="w-6 h-6 text-gradient" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold">
+                                    <span className="text-gradient">Minha Área</span>
+                                </h1>
+                                <p className="text-[var(--color-text-muted)] text-sm">
+                                    Olá, {user.user_metadata?.full_name || user.email}!
+                                </p>
+                            </div>
                         </div>
-                        <h1 className="text-3xl font-bold">
-                            <span className="text-gradient">Minha Área</span>
-                        </h1>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 rounded-lg text-red-400 transition"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Sair
+                        </button>
                     </div>
                     <p className="text-[var(--color-text-muted)] ml-13">
                         Gerencie seus domínios verificados e landing pages

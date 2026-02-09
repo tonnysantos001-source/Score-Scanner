@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
         if (authError || !user) {
             return NextResponse.json(
-                { success: false, error: 'Unauthorized' },
+                { success: false, error: 'Unauthorized - Please login first' },
                 { status: 401 }
             );
         }

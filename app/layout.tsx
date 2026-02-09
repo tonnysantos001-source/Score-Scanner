@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from 'sonner';
+import { AuthProvider } from '@/contexts/AuthContext';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,9 +17,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen" suppressHydrationWarning>
-        <div className="fixed inset-0 bg-gradient-radial -z-10" />
-        {children}
-        <Toaster position="top-right" richColors />
+        <AuthProvider>
+          <div className="fixed inset-0 bg-gradient-radial -z-10" />
+          {children}
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
       </body>
     </html>
   );
