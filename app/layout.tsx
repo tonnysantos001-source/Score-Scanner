@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from 'sonner';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { Providers } from './providers';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,11 +17,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen" suppressHydrationWarning>
-        <AuthProvider>
+        <Providers>
           <div className="fixed inset-0 bg-gradient-radial -z-10" />
           {children}
           <Toaster position="top-right" richColors />
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );
