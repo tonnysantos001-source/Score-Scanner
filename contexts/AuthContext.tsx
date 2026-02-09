@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, type SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/browser-client';
 
@@ -19,6 +19,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+
+    // Timeout de inatividade: 15 minutos
+    const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 min em ms
+
+    const handleLogout = useCallback(async () => {
+        if (supabase) {
+            await supabase.auth.signOut();
+            setUser(null);
+        }
+    }, [supabase]);
 
     useEffect(() => {
         // Verificar se variáveis de ambiente existem antes de criar cliente
@@ -50,6 +60,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return () => subscription.unsubscribe();
     }, []);
+
+    // Timer de inatividade
+    useEffect(() => {
+        if (!user) return; // Só ativa timer se usuário estiver logado
+
+        let inactivityTimer: NodeJS.Timeout;
+
+        const resetTimer = () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+
+            inactivityTimer = setTimeout(() => {
+                console.log('Sessão expirada por inatividade');
+                handleLogout();
+            }, INACTIVITY_TIMEOUT);
+        };
+
+        // Eventos que resetam o timer
+        const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+
+        events.forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        // Inicia o timer
+        resetTimer();
+
+        // Cleanup
+        return () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            events.forEach(event => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
+    }, [user, INACTIVITY_TIMEOUT, handleLogout]);
 
     const signIn = async (email: string, password: string) => {
         if (!supabase) throw new Error('Supabase client not initialized');
