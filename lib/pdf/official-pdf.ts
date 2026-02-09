@@ -2,8 +2,22 @@ import jsPDF from 'jspdf';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 
-// High-quality Brasil coat of arms - will be loaded from public folder
-const BRASIL_COAT_BASE64 = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAACXBIWXMAAAsTAAALEwEAmpwYAAAKT2lDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjanVNnVFPpFj333vRCS4iAlEtvUhUIIFJCi4AUkSYqIQkQSogMABKFCMLCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH//2Q==`;
+// Função auxiliar para carregar PNG e converter para base64
+async function loadImageAsBase64(url: string): Promise<string> {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar brasão:', error);
+        return '';
+    }
+}
 
 export async function generateOfficialPDF(company: EnhancedCompanyData): Promise<Blob> {
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -12,12 +26,17 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
     const pageHeight = doc.internal.pageSize.getHeight();
     let y = 15;
 
-    // ============ BRASÃO DA REPÚBLICA ============
+    // ============ BRASÃO DA REPÚBLICA (carregado dinamicamente) ============
     try {
-        // Add Brasil coat of arms (top left)
-        doc.addImage(BRASIL_COAT_BASE64, 'PNG', 15, y, 25, 25);
+        const logoBase64 = await loadImageAsBase64('/brasil-coat-of-arms.png');
+
+        if (logoBase64) {
+            doc.addImage(logoBase64, 'PNG', 15, y, 25, 25);
+        } else {
+            console.warn('⚠️  Brasão não carregado - continuando sem logo');
+        }
     } catch (error) {
-        console.log('Logo error:', error);
+        console.error('❌ Erro ao carregar brasão:', error);
     }
 
     // ============ HEADER - CENTERED ============
