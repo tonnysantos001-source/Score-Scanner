@@ -196,9 +196,12 @@ export async function generateMetadata({ params }: PageProps) {
         };
     }
 
-    const companyName = Array.isArray(landingPage.domain)
-        ? landingPage.domain[0]?.company_name
-        : landingPage.domain?.company_name || 'Empresa';
+    // Type assertion para o Supabase relation
+    const domain = landingPage.domain as { company_name: string } | { company_name: string }[] | null;
+
+    const companyName = Array.isArray(domain)
+        ? domain[0]?.company_name
+        : domain?.company_name || 'Empresa';
 
     const title = landingPage.title_text || companyName;
     const description = landingPage.description_text || `${companyName} - Página Institucional`;
