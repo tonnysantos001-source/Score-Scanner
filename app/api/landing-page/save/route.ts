@@ -5,123 +5,90 @@ export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
 
-        // Verificar autenticação
         const { data: { user }, error: authError } = await supabase.auth.getUser();
+
         if (authError || !user) {
             return NextResponse.json(
-                { error: 'Não autenticado' },
+                { success: false, error: 'Unauthorized' },
                 { status: 401 }
             );
         }
 
-        // Parse do body
         const body = await request.json();
-        const { domain_id, title_text, description_text, use_generic, facebook_pixel_id } = body;
+        const { domain_id, facebook_verification_token, facebook_pixel_id } = body;
 
         if (!domain_id) {
             return NextResponse.json(
-                { error: 'ID do domínio é obrigatório' },
+                { success: false, error: 'domain_id is required' },
                 { status: 400 }
             );
         }
 
-        // Verificar se o domínio pertence ao usuário
+        // Buscar domínio
         const { data: verifiedDomain, error: domainError } = await supabase
             .from('verified_domains')
-            .select('id, domain, company_name')
+            .select('*')
             .eq('id', domain_id)
             .eq('user_id', user.id)
             .single();
 
         if (domainError || !verifiedDomain) {
             return NextResponse.json(
-                { error: 'Domínio não encontrado' },
+                { success: false, error: 'Domain not found' },
                 { status: 404 }
             );
         }
 
-        // Buscar landing page existente
-        const { data: existingLandingPage } = await supabase
-            .from('landing_pages')
-            .select('*')
-            .eq('domain_id', domain_id)
-            .single();
-
-        let landingPageId: string;
-        let slug: string;
-
-        if (existingLandingPage) {
-            // Atualizar landing page existente
-            const { data: updatedLandingPage, error: updateError } = await supabase
-                .from('landing_pages')
-                .update({
-                    title_text,
-                    description_text,
-                    use_generic: use_generic ?? true,
-                    facebook_pixel_id,
-                })
-                .eq('id', existingLandingPage.id)
-                .select()
-                .single();
-
-            if (updateError) {
-                console.error('Erro ao atualizar landing page:', updateError);
-                return NextResponse.json(
-                    { error: 'Erro ao salvar landing page' },
-                    { status: 500 }
-                );
-            }
-
-            landingPageId = updatedLandingPage.id;
-            slug = updatedLandingPage.slug;
-        } else {
+        // Verificar se DNS está ativo
+        if (verifiedDomain.dns_status !== 'active') {
             return NextResponse.json(
-                { error: 'Landing page não encontrada. Crie o token de verificação primeiro.' },
-                { status: 404 }
+                { success: false, error: 'DNS must be configured before publishing' },
+                { status: 400 }
             );
         }
 
-        // Se houver Facebook Pixel, salvar ou atualizar configuração
-        if (facebook_pixel_id) {
-            const { data: existingConfig } = await supabase
-                .from('facebook_configs')
-                .select('id')
-                .eq('landing_page_id', landingPageId)
-                .single();
+        // Atualizar token do Facebook no domínio
+        const { error: updateDomainError } = await supabase
+            .from('verified_domains')
+            .update({
+                facebook_verification_token: facebook_verification_token || null,
+            })
+            .eq('id', domain_id);
 
-            if (existingConfig) {
-                // Atualizar config existente
-                await supabase
-                    .from('facebook_configs')
-                    .update({ pixel_id: facebook_pixel_id })
-                    .eq('id', existingConfig.id);
-            } else {
-                // Criar nova config
-                await supabase
-                    .from('facebook_configs')
-                    .insert({
-                        landing_page_id: landingPageId,
-                        pixel_id: facebook_pixel_id,
-                    });
-            }
+        if (updateDomainError) {
+            console.error('Error updating domain:', updateDomainError);
+            return NextResponse.json(
+                { success: false, error: 'Failed to update domain' },
+                { status: 500 }
+            );
         }
 
-        // Montar URL pública
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-        const publicUrl = `${baseUrl}/l/${slug}`;
+        // Atualizar landing page
+        const { error: updateLandingError } = await supabase
+            .from('landing_pages')
+            .update({
+                facebook_pixel_id: facebook_pixel_id || null,
+                is_active: true, // Ativar landing page
+            })
+            .eq('domain_id', domain_id);
+
+        if (updateLandingError) {
+            console.error('Error updating landing page:', updateLandingError);
+            return NextResponse.json(
+                { success: false, error: 'Failed to update landing page' },
+                { status: 500 }
+            );
+        }
 
         return NextResponse.json({
             success: true,
-            landing_page_id: landingPageId,
-            slug,
-            public_url: publicUrl,
-            message: 'Landing page salva com sucesso! 🎉',
+            message: 'Landing page publicada com sucesso! Acesse seu domínio para testar.',
         });
 
     } catch (error) {
-        console.error('Erro ao salvar landing page:', error);
+        console.error('Error in save landing page endpoint:', error);
         return NextResponse.json(
-            { error: 'Erro interno do servidor' },
+            { success: false, error: 'Internal server error' },
             { status: 500 }
         );
     }
