@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Buscar domínio
-        const { data: verifiedDomain, error: Domain Error } = await supabase
+        const { data: verifiedDomain, error: domainError } = await supabase
             .from('verified_domains')
             .select('*')
             .eq('id', domain_id)
