@@ -6,12 +6,19 @@ const SYSTEM_DOMAINS = [
     'localhost',
     'localhost:3000',
     'score-scanner.vercel.app',
+    'score-scanner-fq2.vercel.app',
     'verifyads.com',
     'www.verifyads.com',
 ];
 
 export function middleware(request: NextRequest) {
     const hostname = request.headers.get('host') || '';
+    const pathname = request.nextUrl.pathname;
+
+    // IMPORTANTE: Não processar rotas de API para evitar loop infinito
+    if (pathname.startsWith('/api')) {
+        return NextResponse.next();
+    }
 
     // Remover porta se existir para comparação
     const hostWithoutPort = hostname.split(':')[0];
@@ -29,9 +36,6 @@ export function middleware(request: NextRequest) {
     // É um domínio customizado do cliente!
     // Reescrever a URL para a rota de landing page
     const url = request.nextUrl.clone();
-
-    // Preservar o pathname original, mas adicionar o domínio como parâmetro
-    // Exemplo: empresa.com.br/qualquer-path -> /landing?domain=empresa.com.br&path=/qualquer-path
     url.pathname = `/api/landing`;
     url.searchParams.set('domain', hostname);
     url.searchParams.set('path', request.nextUrl.pathname);
@@ -41,12 +45,16 @@ export function middleware(request: NextRequest) {
 
 // Configurar quais rotas o middleware deve processar
 export const config = {
-    // Processar todas as requisições exceto:
-    // - API routes do sistema
-    // - Static files (_next/static)
-    // - Images (_next/image)
-    // - Favicon
+    // Processar apenas rotas não-API
     matcher: [
-        '/((?!api/(?!landing)|_next/static|_next/image|favicon.ico).*)',
+        /*
+         * Match all request paths except:
+         * - api (API routes)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - public files (public folder)
+         */
+        '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',
     ],
 };
