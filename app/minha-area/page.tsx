@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { DomainCard } from '@/components/dashboard/DomainCard';
