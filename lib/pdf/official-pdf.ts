@@ -2,11 +2,7 @@ import jsPDF from 'jspdf';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 
-<<<<<<< HEAD
-// Função auxiliar para carregar PNG e converter para base64
-=======
 // Função auxiliar para carregar imagem e converter para base64
->>>>>>> 90b160a2a2968980ce7e7e8989f1941ca4a9833f
 async function loadImageAsBase64(url: string): Promise<string> {
     try {
         const response = await fetch(url);
@@ -18,11 +14,7 @@ async function loadImageAsBase64(url: string): Promise<string> {
             reader.readAsDataURL(blob);
         });
     } catch (error) {
-<<<<<<< HEAD
-        console.error('Erro ao carregar brasão:', error);
-=======
         console.error('Erro ao carregar imagem:', error);
->>>>>>> 90b160a2a2968980ce7e7e8989f1941ca4a9833f
         return '';
     }
 }
@@ -36,29 +28,15 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
 
     // ============ BRASÃO DA REPÚBLICA (carregado dinamicamente) ============
     try {
-<<<<<<< HEAD
         const logoBase64 = await loadImageAsBase64('/brasil-coat-of-arms.png');
 
         if (logoBase64) {
-            doc.addImage(logoBase64, 'PNG', 15, y, 25, 25);
-        } else {
-            console.warn('⚠️  Brasão não carregado - continuando sem logo');
-        }
-    } catch (error) {
-        console.error('❌ Erro ao carregar brasão:', error);
-=======
-        // Carregar imagem do public folder e converter para base64
-        const logoBase64 = await loadImageAsBase64('/brasil-coat-of-arms.png');
-
-        if (logoBase64) {
-            // Adicionar ao PDF
             doc.addImage(logoBase64, 'PNG', 15, y, 25, 25);
         } else {
             console.warn('Logo não carregada - continuando sem brasão');
         }
     } catch (error) {
         console.error('Erro ao adicionar logo ao PDF:', error);
->>>>>>> 90b160a2a2968980ce7e7e8989f1941ca4a9833f
     }
 
     // ============ HEADER - CENTERED ============
@@ -68,6 +46,26 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
 
     doc.setFontSize(12);
     doc.text('CADASTRO NACIONAL DA PESSOA JURÍDICA', pageWidth / 2, y + 15, { align: 'center' });
+
+    y += 30;
+
+    // ============ CONSTANTS ============
+    const leftMargin = 15;
+    const rightMargin = 15;
+    const contentWidth = pageWidth - leftMargin - rightMargin;
+    const labelFontSize = 7;
+    const valueFontSize = 9;
+
+    // Helper: Add a single field with label and value
+    const addField = (
+        label: string,
+        value: string,
+        yPos: number,
+        width: number,
+        height: number = 10,
+        options: { fontSize?: number; bold?: boolean } = {}
+    ) => {
+        doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.2);
         doc.rect(leftMargin, yPos, width, height);
 
@@ -139,13 +137,35 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
     addField('NOME EMPRESARIAL', company.razao_social, y, contentWidth, 10);
     y += 10;
 
-    // ============ ROW 3: NOME FANTASIA ============
+    // ============ ROW 3: NOME FANTASIA + PORTE ============
     const nomeFantasia = company.nome_fantasia || '********';
-    addField('TÍTULO DO ESTABELECIMENTO (NOME DE FANTASIA)', nomeFantasia, y, contentWidth * 0.75, 10);
-
-    // PORTE
+    const nomeFantasiaWidth = contentWidth * 0.75;
     const porteWidth = contentWidth * 0.25;
-    addField('PORTE', company.porte || 'ME', y, porteWidth, 10);
+
+    // Campo Nome Fantasia
+    doc.rect(leftMargin, y, nomeFantasiaWidth, 10);
+    doc.setFontSize(labelFontSize);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(50, 50, 50);
+    doc.text('TÍTULO DO ESTABELECIMENTO (NOME DE FANTASIA)', leftMargin + 1.5, y + 3.5);
+    doc.setFontSize(8); // Reduzido para dar mais espaço
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    const nomeFantasiaLines = doc.splitTextToSize(nomeFantasia, nomeFantasiaWidth - 3);
+    doc.text(nomeFantasiaLines[0], leftMargin + 1.5, y + 7.5);
+
+    // Campo Porte
+    const xPorte = leftMargin + nomeFantasiaWidth;
+    doc.rect(xPorte, y, porteWidth, 10);
+    doc.setFontSize(labelFontSize);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(50, 50, 50);
+    doc.text('PORTE', xPorte + 1.5, y + 3.5);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(company.porte || 'ME', xPorte + 1.5, y + 7.5);
+
     y += 10;
 
     // ============ ROW 4: CNAE ============
@@ -343,15 +363,17 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
     doc.text('********', xDataEsp + 1.5, y + 8);
-    y += 12;
+    y += 10;
 
-    // ============ FOOTER ============
+    // ============ FOOTER - Com espaçamento adequado ============
+    y += 5; // Espaçamento extra antes do footer
+
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(60, 60, 60);
     doc.text('Aprovado pela Instrução Normativa RFB nº 1.863, de 27 de dezembro de 2018.', pageWidth / 2, y, { align: 'center' });
 
-    y += 4;
+    y += 5;
     doc.setFontSize(6.5);
     doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')} via VerifyAds`, pageWidth / 2, y, { align: 'center' });
 
