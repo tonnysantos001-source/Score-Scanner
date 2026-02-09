@@ -2,7 +2,11 @@ import jsPDF from 'jspdf';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 
+<<<<<<< HEAD
 // Função auxiliar para carregar PNG e converter para base64
+=======
+// Função auxiliar para carregar imagem e converter para base64
+>>>>>>> 90b160a2a2968980ce7e7e8989f1941ca4a9833f
 async function loadImageAsBase64(url: string): Promise<string> {
     try {
         const response = await fetch(url);
@@ -14,7 +18,11 @@ async function loadImageAsBase64(url: string): Promise<string> {
             reader.readAsDataURL(blob);
         });
     } catch (error) {
+<<<<<<< HEAD
         console.error('Erro ao carregar brasão:', error);
+=======
+        console.error('Erro ao carregar imagem:', error);
+>>>>>>> 90b160a2a2968980ce7e7e8989f1941ca4a9833f
         return '';
     }
 }
@@ -28,6 +36,7 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
 
     // ============ BRASÃO DA REPÚBLICA (carregado dinamicamente) ============
     try {
+<<<<<<< HEAD
         const logoBase64 = await loadImageAsBase64('/brasil-coat-of-arms.png');
 
         if (logoBase64) {
@@ -37,6 +46,19 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
         }
     } catch (error) {
         console.error('❌ Erro ao carregar brasão:', error);
+=======
+        // Carregar imagem do public folder e converter para base64
+        const logoBase64 = await loadImageAsBase64('/brasil-coat-of-arms.png');
+
+        if (logoBase64) {
+            // Adicionar ao PDF
+            doc.addImage(logoBase64, 'PNG', 15, y, 25, 25);
+        } else {
+            console.warn('Logo não carregada - continuando sem brasão');
+        }
+    } catch (error) {
+        console.error('Erro ao adicionar logo ao PDF:', error);
+>>>>>>> 90b160a2a2968980ce7e7e8989f1941ca4a9833f
     }
 
     // ============ HEADER - CENTERED ============
@@ -46,27 +68,6 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
 
     doc.setFontSize(12);
     doc.text('CADASTRO NACIONAL DA PESSOA JURÍDICA', pageWidth / 2, y + 15, { align: 'center' });
-
-    y += 35;
-
-    // ============ BORDERED FIELDS ============
-    const leftMargin = 15;
-    const rightMargin = pageWidth - 15;
-    const contentWidth = rightMargin - leftMargin;
-    const labelFontSize = 6.5;
-    const valueFontSize = 9;
-
-    // Helper: Single bordered field
-    const addField = (
-        label: string,
-        value: string,
-        yPos: number,
-        width: number,
-        height: number = 10,
-        options: { fontSize?: number, bold?: boolean } = {}
-    ) => {
-        // Border
-        doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.2);
         doc.rect(leftMargin, yPos, width, height);
 
