@@ -18,6 +18,8 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [telefone, setTelefone] = useState(company.telefone || company.ddd_telefone_1 || company.custom_phone || '');
     const [email, setEmail] = useState(company.email || company.custom_email || '');
     const [observacoes, setObservacoes] = useState(company.custom_notes || '');
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
 
     const handleOpenPDF = async () => {
         try {
@@ -74,6 +76,39 @@ ${email ? `📧 ${email}` : ''}
         toast.success('Dados salvos!');
     };
 
+    const handleSaveCompany = async () => {
+        setIsSaving(true);
+        try {
+            // Montar nome do domínio baseado no CNPJ
+            const domainName = `${company.razao_social.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.br`;
+
+            const response = await fetch('/api/domain/save-with-company', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    domain: domainName,
+                    company_cnpj: company.cnpj,
+                    company_name: company.razao_social
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Erro ao salvar empresa');
+            }
+
+            setIsSaved(true);
+            toast.success('Empresa salva com sucesso!', {
+                description: 'CNPJ reservado exclusivamente para você'
+            });
+        } catch (error: unknown) {
+            toast.error((error as Error).message || 'Erro ao salvar empresa');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -105,6 +140,19 @@ ${email ? `📧 ${email}` : ''}
                         className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-lg transition-colors"
                     >
                         <X className="w-5 h-5" />
+                    </button>                
+                    {/* Novo botão: Salvar Empresa */}
+                    <button
+                        onClick={handleSaveCompany}
+                        disabled={isSaving || isSaved}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 ${
+                            isSaved
+                                ? 'bg-green-600/20 border-2 border-green-500 text-green-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400'
+                        }`}
+                    >
+                        <Save className="w-4 h-4" />
+                        {isSaving ? 'SALVANDO...' : isSaved ? '✓ SALVA' : 'SALVAR EMPRESA'}
                     </button>
                 </div>
 
@@ -233,6 +281,19 @@ ${email ? `📧 ${email}` : ''}
                     >
                         <CheckCircle2 className="w-4 h-4" />
                         VALIDAR FB
+                    </button>                
+                    {/* Novo botão: Salvar Empresa */}
+                    <button
+                        onClick={handleSaveCompany}
+                        disabled={isSaving || isSaved}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 ${
+                            isSaved
+                                ? 'bg-green-600/20 border-2 border-green-500 text-green-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400'
+                        }`}
+                    >
+                        <Save className="w-4 h-4" />
+                        {isSaving ? 'SALVANDO...' : isSaved ? '✓ SALVA' : 'SALVAR EMPRESA'}
                     </button>
                 </div>
             </motion.div>

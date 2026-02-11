@@ -4,36 +4,23 @@ import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency } from '@/lib/utils/formatters';
 import { calculateTrustScore, getScoreColor, getScoreLabel } from '@/lib/scoring/trust-score';
-import { Building2, MapPin, TrendingUp, FileText, Trash2 } from 'lucide-react';
-import { cnpjCache } from '@/lib/cache/cnpj-cache';
-import { toast } from 'sonner';
+import { Building2, MapPin, TrendingUp, FileText } from 'lucide-react';
+
 import { motion } from 'framer-motion';
 
 interface CompanyCardProps {
     company: EnhancedCompanyData;
     onClick: () => void;
-    onMarkAsUsed?: (cnpj: string) => void;
     index?: number;
 }
 
-export default function CompanyCard({ company, onClick, onMarkAsUsed, index = 0 }: CompanyCardProps) {
+export default function CompanyCard({ company, onClick, index = 0 }: CompanyCardProps) {
     // ✅ REAL TRUST SCORE CALCULATION
     const trustScoreData = calculateTrustScore(company);
     const scoreColor = getScoreColor(trustScoreData.score);
     const scoreLabel = getScoreLabel(trustScoreData.score);
 
-    const handleMarkAsUsed = (e: React.MouseEvent) => {
-        e.stopPropagation(); // Don't trigger card click
 
-        cnpjCache.markAsUsed(company.cnpj);
-        toast.success(`${company.razao_social} marcada como usada`, {
-            description: 'Esta empresa não aparecerá mais em futuras minerações',
-        });
-
-        if (onMarkAsUsed) {
-            onMarkAsUsed(company.cnpj);
-        }
-    };
 
     return (
         <motion.div
@@ -136,22 +123,11 @@ export default function CompanyCard({ company, onClick, onMarkAsUsed, index = 0 
                 </div>
             </div>
 
-            {/* Actions */}
-            <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
+            {/* Footer */}
+            <div className="mt-4 pt-4 border-t border-[var(--color-border)] text-center">
                 <div className="text-xs text-[var(--color-text-muted)]">
-                    Clique para ver detalhes
+                    Clique para ver detalhes e salvar
                 </div>
-
-                <motion.button
-                    onClick={handleMarkAsUsed}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-500/10 hover:text-red-500 text-[var(--color-text-muted)]"
-                    title="Marcar como usada"
-                >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Marcar como Usada
-                </motion.button>
             </div>
         </motion.div>
     );

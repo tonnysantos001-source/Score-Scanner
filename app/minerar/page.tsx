@@ -38,10 +38,6 @@ export default function MinerarPage() {
         startMining(filters);
     };
 
-    const handleMarkAsUsed = (cnpj: string) => {
-        const updatedCompanies = companies.filter(c => c.cnpj !== cnpj);
-    };
-
     const handleLogout = async () => {
         await signOut();
         router.push('/login');
@@ -163,7 +159,6 @@ export default function MinerarPage() {
                         <CompanyTable
                             companies={companies}
                             onOpenCompany={setSelectedCompany}
-                            onMarkAsUsed={handleMarkAsUsed}
                         />
                     </div>
                 )}
