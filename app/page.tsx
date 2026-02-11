@@ -12,8 +12,8 @@ export default function HomePage() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        // Se autenticado, vai para área do usuário
-        router.push('/minha-area');
+        // Se autenticado, vai para mineração de CNPJs (página principal)
+        router.push('/minerar');
       } else {
         // Se não autenticado, vai para login
         router.push('/login');

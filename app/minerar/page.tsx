@@ -9,11 +9,11 @@ import CompanyTable from '@/components/company/CompanyTable';
 import CompanyModal from '@/components/company/CompanyModal';
 import { EnhancedCompanyData } from '@/types/company';
 import { MiningFilters, MINING_QUANTITY } from '@/types/filters';
-import { Loader2, Zap, ArrowLeft } from 'lucide-react';
+import { Loader2, Zap, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MinerarPage() {
-    const { user, loading } = useAuth();
+    const { user, loading, signOut } = useAuth();
     const router = useRouter();
     const { companies, progress, isMining, error, startMining, stopMining } = useMining();
     const [selectedCompany, setSelectedCompany] = useState<EnhancedCompanyData | null>(null);
@@ -39,23 +39,41 @@ export default function MinerarPage() {
     };
 
     const handleMarkAsUsed = (cnpj: string) => {
-        // Remove from displayed list
         const updatedCompanies = companies.filter(c => c.cnpj !== cnpj);
-        // Note: useMining hook will need to expose setCompanies or similar
-        // For now this creates a local filter, actual removal happens in cache
+    };
+
+    const handleLogout = async () => {
+        await signOut();
+        router.push('/login');
     };
 
     return (
         <main className="min-h-screen px-4 py-8 md:px-8 md:py-12">
             <div className="max-w-7xl mx-auto">
-                {/* Back button */}
-                <Link
-                    href="/minha-area"
-                    className="inline-flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] mb-6 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Voltar para Minha Área
-                </Link>
+                {/* Header de Navegação */}
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold">
+                            <span className="text-white">Verify</span>
+                            <span className="text-gradient">Ads</span>
+                        </h2>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/minha-area"
+                            className="px-4 py-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/50 text-blue-400 font-semibold text-sm transition-all"
+                        >
+                            📊 Minha Área
+                        </Link>
+                        <button
+                            onClick={handleLogout}
+                            className="px-4 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 font-semibold text-sm transition-all flex items-center gap-2"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Sair
+                        </button>
+                    </div>
+                </div>
 
                 {/* Header */}
                 <header className="text-center mb-12 fade-in">
