@@ -101,35 +101,55 @@ export async function POST(request: NextRequest) {
 
         // --- GERAÇÃO AUTOMÁTICA (NOVA EMPRESA) --- //
 
-        // 1. Gerar Slug Único
+        // 1. Gerar Slug Único (Definir variáveis antes do uso)
         const slug = generateSlug(company_name, company_cnpj);
         const internalDomain = `${slug}.verifyads.com.br`;
 
-        // 2. Criar Domínio "Verificado"
-        const { data: newDomain, error: domainError } = await supabase
+        // 2. Verificar ou Criar Domínio "Verificado"
+        let domainId;
+
+        // Tentar buscar domínio já existente (pode ter sobrado de uma tentativa anterior falha ou deletada manualmente)
+        const { data: existingDomain } = await supabase
             .from('verified_domains')
-            .insert({
-                domain: internalDomain,
-                company_name,
-                company_cnpj,
-                user_id: user.id,
-                is_verified: true,
-                dns_status: 'verified',
-                dns_instructions: 'Auto-generated',
-                verification_token: verification_token || null // Salvar token se houver
-            })
             .select('id')
+            .eq('domain', internalDomain)
             .single();
 
-        if (domainError) {
-            console.error('Erro ao criar domínio automático:', domainError);
-            return NextResponse.json({
-                success: false,
-                error: `Erro ao gerar link: ${domainError.message}`
-            }, { status: 500 });
-        }
+        if (existingDomain) {
+            domainId = existingDomain.id;
+            // Atualizar token se necessário
+            if (verification_token) {
+                await supabase
+                    .from('verified_domains')
+                    .update({ verification_token })
+                    .eq('id', domainId);
+            }
+        } else {
+            // Criar novo
+            const { data: newDomain, error: domainError } = await supabase
+                .from('verified_domains')
+                .insert({
+                    domain: internalDomain,
+                    company_name,
+                    company_cnpj,
+                    user_id: user.id,
+                    is_verified: true,
+                    dns_status: 'verified',
+                    dns_instructions: 'Auto-generated',
+                    verification_token: verification_token || null
+                })
+                .select('id')
+                .single();
 
-        const domainId = newDomain.id;
+            if (domainError) {
+                console.error('Erro ao criar domínio automático:', domainError);
+                return NextResponse.json({
+                    success: false,
+                    error: `Erro ao gerar link: ${domainError.message}`
+                }, { status: 500 });
+            }
+            domainId = newDomain.id;
+        }
 
         // 3. Adicionar CNPJ na wordlist
         const { error: wordlistError } = await supabase
