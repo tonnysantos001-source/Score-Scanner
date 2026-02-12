@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import { X, Share2, CheckCircle2, Eye, Save } from 'lucide-react';
+import { X, Share2, CheckCircle2, Eye, Save, Info, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -275,17 +275,44 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                             </div>
 
                             <p className="text-xs text-[var(--color-text-muted)] mt-3">
-                                Este link é exclusivo para esta empresa. Use-o para verificar o domínio no Gerenciador de Negócios do Facebook ou enviar para seu cliente.
+                                Este link é exclusivo para esta empresa e já foi salvo no seu painel.
                             </p>
                         </div>
                     ) : (
-                        <div className="mt-6 p-6 bg-[var(--color-bg-tertiary)]/30 border border-[var(--color-border)] rounded-xl text-center">
-                            <p className="text-sm text-[var(--color-text-muted)] mb-4">
-                                Clique em <span className="text-[var(--color-accent-primary)] font-bold">SALVAR EMPRESA</span> abaixo para gerar automaticamente uma página de verificação exclusiva.
-                            </p>
-                            <p className="text-xs text-[var(--color-text-muted)] opacity-70">
-                                Não é necessário configurar domínio ou DNS. O sistema gera tudo para você.
-                            </p>
+                        <div className="mt-6 flex flex-col gap-4">
+                            {/* Aviso Informativo */}
+                            <div className="flex items-start gap-3 p-4 bg-[var(--color-bg-tertiary)]/50 border border-[var(--color-border)] rounded-xl">
+                                <div className="p-2 bg-purple-500/10 rounded-lg">
+                                    <Info className="w-5 h-5 text-purple-400" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
+                                        Geração Automática de Página
+                                    </h4>
+                                    <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                                        Ao gerar o link, a empresa será <span className="text-white font-medium">salva automaticamente</span> em seu painel &quot;Minha Área&quot;. Esta ação debitará 1 crédito de sua cota de domínios ativos.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Botão de Ação Principal */}
+                            <button
+                                onClick={handleSaveCompany}
+                                disabled={isSaving}
+                                className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white rounded-xl text-base font-bold shadow-lg hover:shadow-purple-500/20 transition-all flex items-center justify-center gap-3 group"
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        GERANDO LINK EXCLUSIVO...
+                                    </>
+                                ) : (
+                                    <>
+                                        <LinkIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                        GERAR LINK & SALVAR
+                                    </>
+                                )}
+                            </button>
                         </div>
                     )}
                 </div>
@@ -314,18 +341,6 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                     >
                         <CheckCircle2 className="w-4 h-4" />
                         VALIDAR FB
-                    </button>
-                    {/* Novo botão: Salvar Empresa */}
-                    <button
-                        onClick={handleSaveCompany}
-                        disabled={isSaving || isSaved}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 ${isSaved
-                            ? 'bg-green-600/20 border-2 border-green-500 text-green-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400'
-                            }`}
-                    >
-                        <Save className="w-4 h-4" />
-                        {isSaving ? 'GERANDO...' : isSaved ? '✓ GERADO' : 'GERAR PÁGINA'}
                     </button>
                 </div>
             </motion.div>

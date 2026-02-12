@@ -9,6 +9,10 @@ interface PageProps {
 
 export default async function LandingPage({ params }: PageProps) {
     const { slug } = await params;
+    const normalizedSlug = slug.toLowerCase();
+
+    console.log('[LandingPage] Slug recebido:', slug, 'Normalizado:', normalizedSlug);
+
     const supabase = await createClient();
 
     // Buscar landing page pelo slug (acesso público)
@@ -23,11 +27,19 @@ export default async function LandingPage({ params }: PageProps) {
                 verification_token
             )
         `)
-        .eq('slug', slug)
+        .eq('slug', normalizedSlug)
         .eq('is_active', true)
         .single();
 
+    if (error) {
+        console.error('[LandingPage] Erro ao buscar landing page:', error);
+    }
+
+    console.log('[LandingPage] Resultado da busca:', landingPage ? 'Encontrado' : 'Não encontrado');
+
     if (error || !landingPage) {
+        // Se não encontrar, logar e retornar 404
+        console.warn(`[LandingPage] 404 - Página não encontrada para o slug: ${slug}`);
         notFound();
     }
 
@@ -176,6 +188,7 @@ export default async function LandingPage({ params }: PageProps) {
 // Gerar metadata dinâmica
 export async function generateMetadata({ params }: PageProps) {
     const { slug } = await params;
+    const normalizedSlug = slug.toLowerCase();
     const supabase = await createClient();
 
     const { data: landingPage } = await supabase
@@ -186,7 +199,7 @@ export async function generateMetadata({ params }: PageProps) {
             use_generic,
             domain:verified_domains(company_name)
         `)
-        .eq('slug', slug)
+        .eq('slug', normalizedSlug)
         .eq('is_active', true)
         .single();
 
