@@ -21,7 +21,7 @@ export default function LoginPage() {
 
         try {
             await signIn(email, password);
-            router.push('/minha-area');
+            router.push('/minerar');
         } catch (err: any) {
             setError(err.message || 'Erro ao fazer login');
         } finally {

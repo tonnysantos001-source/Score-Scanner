@@ -2,16 +2,16 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { DomainCard } from '@/components/dashboard/DomainCard';
 import { EmptyState } from '@/components/dashboard/EmptyState';
 import { SearchAndFilters } from '@/components/dashboard/SearchAndFilters';
 import { EditDomainModal } from '@/components/dashboard/EditDomainModal';
-import { Globe, Loader2, LogOut } from 'lucide-react';
+import { Globe, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import UserMenu from '@/components/layout/UserMenu';
 
 interface DomainStats {
     total_domains: number;
@@ -41,7 +41,7 @@ interface Domain {
 }
 
 export default function MinhaAreaPage() {
-    const { user, loading: authLoading, signOut } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
 
     const [stats, setStats] = useState<DomainStats | null>(null);
@@ -71,15 +71,6 @@ export default function MinhaAreaPage() {
             fetchDomains();
         }
     }, [user]);
-
-    const handleLogout = async () => {
-        try {
-            await signOut();
-            router.push('/');
-        } catch (error) {
-            toast.error('Erro ao fazer logout');
-        }
-    };
 
     const fetchStats = async () => {
         try {
@@ -237,7 +228,7 @@ export default function MinhaAreaPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)] p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
-                {/* Header com logout */}
+                {/* Header com menu dropdown */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -257,13 +248,7 @@ export default function MinhaAreaPage() {
                                 </p>
                             </div>
                         </div>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 rounded-lg text-red-400 transition"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            Sair
-                        </button>
+                        <UserMenu />
                     </div>
                     <p className="text-[var(--color-text-muted)] ml-13">
                         Gerencie seus domínios verificados e landing pages
