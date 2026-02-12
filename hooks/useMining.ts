@@ -79,6 +79,23 @@ export function useMining(): UseMiningReturn {
         }
     };
 
+    const checkCnpjUsage = async (cnpj: string): Promise<boolean> => {
+        try {
+            const response = await fetch(`/api/cnpj/check-usage?cnpj=${encodeURIComponent(cnpj)}`, {
+                signal: abortControllerRef.current?.signal,
+            });
+            if (response.ok) {
+                const data = await response.json();
+                return data.used === true;
+            }
+            return false;
+        } catch {
+            // Em caso de erro na verificação (ex: abort), assume não usado para não travar
+            // O backend ainda bloqueará no momento de salvar se estiver usado
+            return false;
+        }
+    };
+
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const startMining = useCallback(async (filters: MiningFilters) => {
@@ -191,6 +208,21 @@ export function useMining(): UseMiningReturn {
                             reason: 'NOT_FOUND',
                         });
                     } else if (matchesFilters(company, filters)) {
+                        // Verificar se já está na wordlist (usado por outro cliente)
+                        const isUsed = await checkCnpjUsage(cnpj);
+
+                        if (isUsed) {
+                            console.log(`🚫 CNPJ ${cnpj} já está em uso (wordlist)`);
+
+                            // Adicionar à blacklist como filtrado/usado
+                            cnpjCache.processMiningResult(cnpj, {
+                                found: true,
+                                active: false,
+                                reason: 'USED',
+                            });
+                            continue;
+                        }
+
                         foundCompanies.push(company);
 
                         console.log(`✅ ENCONTRADO! ${company.razao_social} - Total: ${foundCompanies.length}/${MINING_QUANTITY}`);
