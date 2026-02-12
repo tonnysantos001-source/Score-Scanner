@@ -55,17 +55,11 @@ export default function Hero({ companyName, description, cnpj }: HeroProps) {
                     className="flex flex-col sm:flex-row gap-4 justify-center"
                 >
                     <a
-                        href="#contato"
-                        className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-blue-600 rounded-lg hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
-                    >
-                        Entrar em Contato
-                        <ArrowRight className="ml-2 w-5 h-5" />
-                    </a>
-                    <a
                         href="#dados"
-                        className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-slate-700 transition-all duration-200 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-200"
+                        className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-slate-900 rounded-full hover:bg-slate-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900"
                     >
                         Ver Dados Oficiais
+                        <ArrowRight className="ml-2 w-5 h-5" />
                     </a>
                 </motion.div>
             </div>

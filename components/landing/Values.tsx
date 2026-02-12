@@ -7,18 +7,18 @@ export default function Values() {
     const values = [
         {
             icon: <Award className="w-8 h-8 text-blue-600" />,
-            title: 'Excelência e Qualidade',
-            description: 'Nosso compromisso principal é entregar produtos e serviços que superem as expectativas, mantendo o mais alto padrão de qualidade.',
+            title: 'Empresa Verificada',
+            description: 'Esta organização passou por processos de validação de dados cadastrais, garantindo sua existência e regularidade.',
         },
         {
             icon: <Users className="w-8 h-8 text-blue-600" />,
-            title: 'Atendimento Personalizado',
-            description: 'Valorizamos cada cliente e oferecemos um atendimento dedicado, focado em entender e resolver suas necessidades específicas.',
+            title: 'Transparência Total',
+            description: 'Operamos com clareza e honestidade. Todos os nossos dados fiscais e de contato estão disponíveis para consulta pública.',
         },
         {
             icon: <TrendingUp className="w-8 h-8 text-blue-600" />,
-            title: 'Inovação Constante',
-            description: 'Buscamos continuamente novas soluções e tecnologias para garantir que nossos clientes tenham sempre o melhor do mercado.',
+            title: 'Conformidade Legal',
+            description: 'Atuamos em estrita observância às leis vigentes e normas regulatórias, assegurando segurança jurídica em nossas relações.',
         },
     ];
 

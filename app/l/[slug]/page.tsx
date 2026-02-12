@@ -101,10 +101,35 @@ export default async function LandingPage({ params }: PageProps) {
     const pixelId = landingPage.facebook_pixel_id || fbConfig?.pixel_id;
     const verificationToken = domainData.verification_token;
 
-    // Gerar endereço formatado para o Footer
-    const fullAddress = companyFullData
-        ? `${companyFullData.descricao_tipo_de_logradouro || ''} ${companyFullData.logradouro || ''}, ${companyFullData.numero || ''} ${companyFullData.complemento || ''} - ${companyFullData.bairro || ''}, ${companyFullData.municipio || ''} - ${companyFullData.uf || ''}`
-        : 'Endereço Verificado na Receita Federal';
+    // Função auxiliar para montar endereço sem vírgulas soltas e com fallback
+    const formatAddress = (data: any) => {
+        if (!data) return 'Endereço Verificado na Receita Federal';
+
+        // Tentar montar endereço completo se os campos existirem
+        const streetPart = [
+            data.descricao_tipo_de_logradouro,
+            data.logradouro,
+            data.numero,
+            data.complemento
+        ].filter(Boolean).join(' ');
+
+        const districtPart = [
+            data.bairro,
+            data.municipio,
+            data.uf
+        ].filter(Boolean).join(' - ');
+
+        const cepPart = data.cep ? `CEP: ${data.cep}` : '';
+
+        const fullAddr = [streetPart, districtPart, cepPart].filter(Boolean).join(', ');
+
+        // Se o resultado for muito curto ou vazio (ex: API retornou objeto mas campos vazios), usar fallback
+        if (fullAddr.length < 10) return 'Endereço Verificado na Receita Federal';
+
+        return fullAddr;
+    };
+
+    const fullAddress = formatAddress(companyFullData);
 
     return (
         <html lang="pt-BR" className="scroll-smooth">
