@@ -17,6 +17,8 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [telefone, setTelefone] = useState(company.telefone || company.ddd_telefone_1 || company.custom_phone || '');
     const [email, setEmail] = useState(company.email || company.custom_email || '');
     const [observacoes, setObservacoes] = useState(company.custom_notes || '');
+    const [verificationToken, setVerificationToken] = useState('');
+    const [pixelId, setPixelId] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
@@ -43,51 +45,56 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
         window.open('https://developers.facebook.com/tools/debug/', '_blank');
     };
 
-    const saveChanges = () => {
-        const savedData = {
-            cnpj: company.cnpj,
-            custom_phone: telefone,
-            custom_email: email,
-            custom_notes: observacoes,
-            updated_at: new Date().toISOString(),
-        };
-
-        const existing = JSON.parse(localStorage.getItem('company_edits') || '{}');
-        existing[company.cnpj] = savedData;
-        localStorage.setItem('company_edits', JSON.stringify(existing));
-
-        toast.success('Dados salvos!');
-    };
+    // Função saveChanges removida pois agora é tudo salvo ao gerar o link
 
     const handleSaveCompany = async () => {
         setIsSaving(true);
         try {
-            // Montar nome do domínio baseado no CNPJ
-            const domainName = `${company.razao_social.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.br`;
-
             const response = await fetch('/api/domain/save-with-company', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    domain: domainName,
                     company_cnpj: company.cnpj,
-                    company_name: company.razao_social
+                    company_name: company.razao_social,
+                    // Dados editáveis
+                    custom_phone: telefone,
+                    custom_email: email,
+                    custom_notes: observacoes,
+                    // Dados do Facebook
+                    verification_token: verificationToken,
+                    pixel_id: pixelId
                 })
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Erro ao salvar empresa');
+                console.error('Erro API:', data);
+                throw new Error(data.error || 'Erro desconhecido ao gerar link');
             }
+
+            // Salvar edições locais também para persistência imediata na visualização (opcional)
+            const savedData = {
+                cnpj: company.cnpj,
+                custom_phone: telefone,
+                custom_email: email,
+                custom_notes: observacoes,
+                updated_at: new Date().toISOString(),
+            };
+            const existing = JSON.parse(localStorage.getItem('company_edits') || '{}');
+            existing[company.cnpj] = savedData;
+            localStorage.setItem('company_edits', JSON.stringify(existing));
 
             setIsSaved(true);
             setGeneratedUrl(data.url);
-            toast.success('Página gerada com sucesso!', {
-                description: 'Seu link exclusivo está pronto.'
+            toast.success('Página gerada e dados salvos!', {
+                description: 'Seu link exclusivo está pronto e verificado.'
             });
         } catch (error: unknown) {
-            toast.error((error as Error).message || 'Erro ao salvar empresa');
+            console.error('Erro handleSaveCompany:', error);
+            toast.error('Falha ao gerar link', {
+                description: (error as Error).message || 'Verifique sua conexão e tente novamente.'
+            });
         } finally {
             setIsSaving(false);
         }
@@ -217,14 +224,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                 />
                             </div>
 
-                            {/* Save Button */}
-                            <button
-                                onClick={saveChanges}
-                                className="w-full py-2 px-4 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                            >
-                                <Save className="w-4 h-4" />
-                                SALVAR EDIÇÕES
-                            </button>
+                            {/* Save Button Removido - Agora salva tudo ao gerar o link */}
 
                             {/* Quick Info */}
                             <div className="p-3 bg-[var(--color-bg-tertiary)]/50 rounded-lg border border-[var(--color-border)]">
@@ -235,6 +235,54 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                             </div>
                         </div>
                     </div>
+
+                    {/* Meta-tag e Pixel Section */}
+                    {!isSaved && (
+                        <div className="mb-6 p-5 border border-[var(--color-border)] rounded-xl bg-[var(--color-bg-tertiary)]/30">
+                            <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-4 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4" />
+                                CONFIGURAÇÃO DO FACEBOOK (Opcional)
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-semibold text-[var(--color-text-secondary)] mb-1 block">
+                                        Token de Verificação de Domínio (Meta-tag)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Ex: <meta name='facebook-domain-verification' content='...' />"
+                                        className="w-full px-3 py-2 text-sm bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)] font-mono"
+                                        value={verificationToken}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            // Tenta extrair o content se for uma tag completa
+                                            const match = val.match(/content=["']([^"']+)["']/);
+                                            const token = match ? match[1] : val;
+                                            setVerificationToken(token);
+                                        }}
+                                        id="verificationTokenInput"
+                                    />
+                                    <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                                        Cole o código completo da meta-tag ou apenas o token.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-[var(--color-text-secondary)] mb-1 block">
+                                        ID do Pixel do Facebook
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Ex: 1234567890"
+                                        className="w-full px-3 py-2 text-sm bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)] font-mono"
+                                        value={pixelId}
+                                        onChange={(e) => setPixelId(e.target.value.replace(/[^0-9]/g, ''))}
+                                        id="pixelIdInput"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
 
                     {/* Área de Link Gerado (Substitui Verificação de Domínio) */}
                     {isSaved && generatedUrl ? (
@@ -326,21 +374,13 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                         <Eye className="w-4 h-4" />
                         ABRIR PDF
                     </button>
-                    {/*
-                    <button
-                        onClick={copyToFacebook}
-                        className="flex-1 py-2 px-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                    >
-                        <Share2 className="w-4 h-4" />
-                        COPIAR P/ FB
-                    </button>
-*/}
+                    {/* Botão Validar FB removido pois o fluxo agora é validar via link gerado */}
                     <button
                         onClick={validateOnFacebook}
                         className="flex-1 py-2 px-3 bg-[var(--color-bg-tertiary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--color-bg-card)] transition-all flex items-center justify-center gap-2"
                     >
                         <CheckCircle2 className="w-4 h-4" />
-                        VALIDAR FB
+                        VALIDAR FB NO LINK
                     </button>
                 </div>
             </motion.div>

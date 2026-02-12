@@ -17,7 +17,10 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const {
             company_cnpj,
-            company_name
+            company_name,
+            custom_notes,
+            verification_token,
+            pixel_id
         } = body;
 
         if (!company_cnpj || !company_name) {
@@ -55,8 +58,30 @@ export async function POST(request: NextRequest) {
                 }, { status: 409 });
             }
 
-            // Se já é do usuário, retornar os dados existentes
-            // Buscar o slug da landing page associada
+            // Se já é do usuário, ATUALIZAR dados e retornar
+            console.log('Atualizando dados da empresa existente:', verification_token ? 'Com Token' : 'Sem Token');
+
+            // 1. Atualizar verificação (Token)
+            if (verification_token) {
+                await supabase
+                    .from('verified_domains')
+                    .update({ verification_token })
+                    .eq('id', existingCompany.domain_id);
+            }
+
+            // 2. Atualizar Landing Page (Pixel, Notas)
+            const updateData: any = {};
+            if (pixel_id) updateData.facebook_pixel_id = pixel_id;
+            if (custom_notes) updateData.description_text = custom_notes;
+
+            if (Object.keys(updateData).length > 0) {
+                await supabase
+                    .from('landing_pages')
+                    .update(updateData)
+                    .eq('domain_id', existingCompany.domain_id);
+            }
+
+            // Buscar o slug
             const { data: lp } = await supabase
                 .from('landing_pages')
                 .select('slug')
@@ -68,19 +93,19 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
                 success: true,
-                message: 'Empresa já estava salva',
+                message: 'Dados atualizados com sucesso',
                 url: fullUrl,
                 slug: lp?.slug
             });
         }
 
-        // --- GERAÇÃO AUTOMÁTICA --- //
+        // --- GERAÇÃO AUTOMÁTICA (NOVA EMPRESA) --- //
 
         // 1. Gerar Slug Único
         const slug = generateSlug(company_name, company_cnpj);
-        const internalDomain = `${slug}.verifyads.com.br`; // Domínio interno para registro
+        const internalDomain = `${slug}.verifyads.com.br`;
 
-        // 2. Criar Domínio "Verificado" (Internal)
+        // 2. Criar Domínio "Verificado"
         const { data: newDomain, error: domainError } = await supabase
             .from('verified_domains')
             .insert({
@@ -88,9 +113,10 @@ export async function POST(request: NextRequest) {
                 company_name,
                 company_cnpj,
                 user_id: user.id,
-                is_verified: true, // Auto-verificado pois é nosso
+                is_verified: true,
                 dns_status: 'verified',
-                dns_instructions: 'Auto-generated'
+                dns_instructions: 'Auto-generated',
+                verification_token: verification_token || null // Salvar token se houver
             })
             .select('id')
             .single();
@@ -105,7 +131,7 @@ export async function POST(request: NextRequest) {
 
         const domainId = newDomain.id;
 
-        // 3. Adicionar CNPJ na wordlist (empresas_usadas)
+        // 3. Adicionar CNPJ na wordlist
         const { error: wordlistError } = await supabase
             .from('empresas_usadas')
             .insert({
@@ -117,7 +143,6 @@ export async function POST(request: NextRequest) {
 
         if (wordlistError) {
             console.error('Erro ao adicionar na wordlist:', wordlistError);
-            // Idealmente faria rollback, mas vamos seguir
         }
 
         // 4. Criar Landing Page ATIVA
@@ -127,9 +152,10 @@ export async function POST(request: NextRequest) {
                 domain_id: domainId,
                 slug: slug,
                 use_generic: true,
-                is_active: true, // Já nasce ativa!
+                is_active: true,
                 title_text: company_name,
-                description_text: `Conheça a ${company_name}, referência em qualidade e atendimento.Confira nossos dados verificados.`
+                description_text: custom_notes || `Conheça a ${company_name}, referência em qualidade e atendimento.Confira nossos dados verificados.`,
+                facebook_pixel_id: pixel_id || null // Salvar Pixel
             });
 
         if (lpError) {
