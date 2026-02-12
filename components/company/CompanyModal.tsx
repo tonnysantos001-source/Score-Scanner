@@ -7,7 +7,6 @@ import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 import { X, Share2, CheckCircle2, Eye, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { DomainVerificationSection } from '@/components/domain/DomainVerificationSection';
 
 interface CompanyModalProps {
     company: EnhancedCompanyData;
@@ -20,6 +19,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [observacoes, setObservacoes] = useState(company.custom_notes || '');
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+    const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 
     const handleOpenPDF = async () => {
         try {
@@ -37,23 +37,6 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
             console.error('Error generating PDF:', error);
             toast.error('Erro ao gerar PDF');
         }
-    };
-
-    const copyToFacebook = () => {
-        const text = `
-🏢 ${company.razao_social}
-
-📋 CNPJ: ${formatCNPJ(company.cnpj)}
-📅 Abertura: ${formatDate(company.data_inicio_atividade)}
-✅ Situação: ${company.tipo_situacao_cadastral}
-💰 Capital Social: ${formatCurrency(company.capital_social)}
-📍 ${company.municipio} - ${company.uf}
-${telefone ? `📞 ${telefone}` : ''}
-${email ? `📧 ${email}` : ''}
-    `.trim();
-
-        navigator.clipboard.writeText(text);
-        toast.success('Dados copiados!');
     };
 
     const validateOnFacebook = () => {
@@ -99,8 +82,9 @@ ${email ? `📧 ${email}` : ''}
             }
 
             setIsSaved(true);
-            toast.success('Empresa salva com sucesso!', {
-                description: 'CNPJ reservado exclusivamente para você'
+            setGeneratedUrl(data.url);
+            toast.success('Página gerada com sucesso!', {
+                description: 'Seu link exclusivo está pronto.'
             });
         } catch (error: unknown) {
             toast.error((error as Error).message || 'Erro ao salvar empresa');
@@ -140,16 +124,15 @@ ${email ? `📧 ${email}` : ''}
                         className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-lg transition-colors"
                     >
                         <X className="w-5 h-5" />
-                    </button>                
+                    </button>
                     {/* Novo botão: Salvar Empresa */}
                     <button
                         onClick={handleSaveCompany}
                         disabled={isSaving || isSaved}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 ${
-                            isSaved
-                                ? 'bg-green-600/20 border-2 border-green-500 text-green-400 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400'
-                        }`}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 ${isSaved
+                            ? 'bg-green-600/20 border-2 border-green-500 text-green-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400'
+                            }`}
                     >
                         <Save className="w-4 h-4" />
                         {isSaving ? 'SALVANDO...' : isSaved ? '✓ SALVA' : 'SALVAR EMPRESA'}
@@ -253,8 +236,58 @@ ${email ? `📧 ${email}` : ''}
                         </div>
                     </div>
 
-                    {/* Domain Verification Section - Full Width */}
-                    <DomainVerificationSection company={company} />
+                    {/* Área de Link Gerado (Substitui Verificação de Domínio) */}
+                    {isSaved && generatedUrl ? (
+                        <div className="mt-6 p-6 bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/20 rounded-xl">
+                            <h3 className="text-lg font-bold text-green-400 mb-4 flex items-center gap-2">
+                                <CheckCircle2 className="w-6 h-6" />
+                                Página Verificada Gerada com Sucesso!
+                            </h3>
+
+                            <div className="flex flex-col md:flex-row gap-3 items-center">
+                                <div className="flex-1 w-full relative">
+                                    <input
+                                        readOnly
+                                        value={generatedUrl}
+                                        className="w-full pl-4 pr-12 py-3 bg-[var(--color-bg-primary)] border border-green-500/30 rounded-lg text-sm text-[var(--color-text-primary)] font-mono"
+                                    />
+                                </div>
+
+                                <div className="flex gap-2 w-full md:w-auto">
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(generatedUrl);
+                                            toast.success('Link copiado!');
+                                        }}
+                                        className="flex-1 md:flex-none px-4 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Share2 className="w-4 h-4" />
+                                        Copiar
+                                    </button>
+                                    <button
+                                        onClick={() => window.open(generatedUrl, '_blank')}
+                                        className="flex-1 md:flex-none px-4 py-3 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                        Abrir
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-[var(--color-text-muted)] mt-3">
+                                Este link é exclusivo para esta empresa. Use-o para verificar o domínio no Gerenciador de Negócios do Facebook ou enviar para seu cliente.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="mt-6 p-6 bg-[var(--color-bg-tertiary)]/30 border border-[var(--color-border)] rounded-xl text-center">
+                            <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                                Clique em <span className="text-[var(--color-accent-primary)] font-bold">SALVAR EMPRESA</span> abaixo para gerar automaticamente uma página de verificação exclusiva.
+                            </p>
+                            <p className="text-xs text-[var(--color-text-muted)] opacity-70">
+                                Não é necessário configurar domínio ou DNS. O sistema gera tudo para você.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer Actions */}
@@ -266,7 +299,7 @@ ${email ? `📧 ${email}` : ''}
                         <Eye className="w-4 h-4" />
                         ABRIR PDF
                     </button>
-
+                    {/*
                     <button
                         onClick={copyToFacebook}
                         className="flex-1 py-2 px-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
@@ -274,26 +307,25 @@ ${email ? `📧 ${email}` : ''}
                         <Share2 className="w-4 h-4" />
                         COPIAR P/ FB
                     </button>
-
+*/}
                     <button
                         onClick={validateOnFacebook}
                         className="flex-1 py-2 px-3 bg-[var(--color-bg-tertiary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--color-bg-card)] transition-all flex items-center justify-center gap-2"
                     >
                         <CheckCircle2 className="w-4 h-4" />
                         VALIDAR FB
-                    </button>                
+                    </button>
                     {/* Novo botão: Salvar Empresa */}
                     <button
                         onClick={handleSaveCompany}
                         disabled={isSaving || isSaved}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 ${
-                            isSaved
-                                ? 'bg-green-600/20 border-2 border-green-500 text-green-400 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400'
-                        }`}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 ${isSaved
+                            ? 'bg-green-600/20 border-2 border-green-500 text-green-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400'
+                            }`}
                     >
                         <Save className="w-4 h-4" />
-                        {isSaving ? 'SALVANDO...' : isSaved ? '✓ SALVA' : 'SALVAR EMPRESA'}
+                        {isSaving ? 'GERANDO...' : isSaved ? '✓ GERADO' : 'GERAR PÁGINA'}
                     </button>
                 </div>
             </motion.div>
