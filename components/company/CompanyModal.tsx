@@ -132,18 +132,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                     >
                         <X className="w-5 h-5" />
                     </button>
-                    {/* Novo botão: Salvar Empresa */}
-                    <button
-                        onClick={handleSaveCompany}
-                        disabled={isSaving || isSaved}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 ${isSaved
-                            ? 'bg-green-600/20 border-2 border-green-500 text-green-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400'
-                            }`}
-                    >
-                        <Save className="w-4 h-4" />
-                        {isSaving ? 'SALVANDO...' : isSaved ? '✓ SALVA' : 'SALVAR EMPRESA'}
-                    </button>
+
                 </div>
 
                 {/* Content - Responsive Grid */}

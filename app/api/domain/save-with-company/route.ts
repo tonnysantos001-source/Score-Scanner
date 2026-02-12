@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
             console.error('Erro ao criar domínio automático:', domainError);
             return NextResponse.json({
                 success: false,
-                error: 'Erro ao gerar link da empresa'
+                error: `Erro ao gerar link: ${domainError.message}`
             }, { status: 500 });
         }
 
