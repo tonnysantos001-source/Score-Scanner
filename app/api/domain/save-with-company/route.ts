@@ -165,18 +165,41 @@ export async function POST(request: NextRequest) {
             console.error('Erro ao adicionar na wordlist:', wordlistError);
         }
 
-        // 4. Criar Landing Page ATIVA
-        const { error: lpError } = await supabase
+        // 4. Criar ou Atualizar Landing Page ATIVA
+        // Verificar se já existe LP para este domínio
+        const { data: existingLP } = await supabase
             .from('landing_pages')
-            .insert({
-                domain_id: domainId,
-                slug: slug,
-                use_generic: true,
-                is_active: true,
-                title_text: company_name,
-                description_text: custom_notes || `Conheça a ${company_name}, referência em qualidade e atendimento.Confira nossos dados verificados.`,
-                facebook_pixel_id: pixel_id || null // Salvar Pixel
-            });
+            .select('id')
+            .eq('domain_id', domainId)
+            .single();
+
+        let lpError;
+
+        if (existingLP) {
+            // Atualizar
+            const { error: updateError } = await supabase
+                .from('landing_pages')
+                .update({
+                    description_text: custom_notes || `Conheça a ${company_name}, referência em qualidade e atendimento.Confira nossos dados verificados.`,
+                    facebook_pixel_id: pixel_id || null
+                })
+                .eq('id', existingLP.id);
+            lpError = updateError;
+        } else {
+            // Criar nova
+            const { error: insertError } = await supabase
+                .from('landing_pages')
+                .insert({
+                    domain_id: domainId,
+                    slug: slug,
+                    use_generic: true,
+                    is_active: true,
+                    title_text: company_name,
+                    description_text: custom_notes || `Conheça a ${company_name}, referência em qualidade e atendimento.Confira nossos dados verificados.`,
+                    facebook_pixel_id: pixel_id || null
+                });
+            lpError = insertError;
+        }
 
         if (lpError) {
             console.error('Erro ao criar landing page:', lpError);
