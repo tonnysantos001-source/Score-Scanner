@@ -28,6 +28,7 @@ interface Domain {
     company_cnpj: string;
     is_verified: boolean;
     verified_at: string | null;
+    verification_token?: string;
     created_at: string;
     landing_pages?: Array<{
         id: string;
