@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, X, Building2 } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,8 +26,9 @@ export default function Header({ companyName }: HeaderProps) {
                 <div className="flex justify-between items-center h-16 sm:h-20">
                     {/* Logo */}
                     <div className="flex-shrink-0 flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-                            <Building2 className="w-5 h-5" />
+                        <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
                         </div>
                         <span className="text-xl sm:text-2xl font-bold text-slate-900 truncate max-w-[200px] sm:max-w-md tracking-tight">
                             {companyName}

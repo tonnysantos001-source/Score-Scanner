@@ -74,11 +74,11 @@ export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCar
                                 : 'bg-orange-600/10 text-orange-600'
                                 }`}
                         >
-                            {domain.is_verified ? 'Verificado' : 'Pendente'}
+                            {domain.is_verified ? 'Dados Verificados' : 'Validação Pendente'}
                         </span>
                     </div>
 
-                    <h3 className="font-bold text-lg text-[var(--color-text-primary)] break-all leading-tight">
+                    <h3 className="font-bold text-lg text-[var(--color-text-primary)] break-all leading-tight w-full">
                         {domain.domain}
                     </h3>
                     <p className="text-xs text-[var(--color-text-muted)] truncate">

@@ -86,7 +86,7 @@ export function StatsCards({
                         <div
                             className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stat.bgGradient} flex items-center justify-center mb-3`}
                         >
-                            <Icon className={`w-6 h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`} />
+                            <Icon className={`w-6 h-6 ${stat.gradient.split(' ')[0].replace('from-', 'text-')}`} />
                         </div>
 
                         {/* Label */}

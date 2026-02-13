@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import { X, Share2, CheckCircle2, Eye, Save, Info, Link as LinkIcon } from 'lucide-react';
+import { X, Share2, CheckCircle2, Eye, Info, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -137,90 +137,76 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
 
                 {/* Content - Responsive Grid */}
                 <div className="p-5 overflow-y-auto custom-scrollbar">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        {/* Column 1: Company Info */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                        {/* Column 1: Informações da Empresa (Compactado) */}
                         <div className="space-y-4">
-                            {/* Basic */}
-                            <div>
-                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">📋 DADOS CADASTRAIS</h3>
-                                <div className="space-y-2 text-sm">
+                            {/* Bloco Unificado: Cadastrais e Financeiros */}
+                            <div className="p-4 border border-[var(--color-border)] rounded-xl bg-[var(--color-bg-tertiary)]/20">
+                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-3 flex items-center gap-2">
+                                    📋 DADOS DA EMPRESA
+                                </h3>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                     <InfoRow label="CNPJ" value={formatCNPJ(company.cnpj)} />
                                     <InfoRow label="Abertura" value={formatDate(company.data_inicio_atividade)} />
                                     <InfoRow label="Situação" value={company.tipo_situacao_cadastral} />
-                                </div>
-                            </div>
-
-                            {/* Financial */}
-                            <div>
-                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">💰 DADOS FINANCEIROS</h3>
-                                <div className="space-y-2 text-sm">
-                                    <InfoRow label="Capital Social" value={formatCurrency(company.capital_social)} />
+                                    <InfoRow label="Capital" value={formatCurrency(company.capital_social)} />
                                     <InfoRow label="Porte" value={company.porte} />
                                 </div>
-                            </div>
-
-                            {/* Activity */}
-                            <div>
-                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">🏭 ATIVIDADE</h3>
-                                <div className="text-xs text-[var(--color-text-secondary)]">
-                                    {company.cnae_fiscal} - {company.cnae_fiscal_descricao}
+                                <div className="mt-3 pt-3 border-t border-[var(--color-border)]/50">
+                                    <div className="text-xs text-[var(--color-text-secondary)]">
+                                        <span className="font-semibold text-[var(--color-text-muted)]">Atividade: </span>
+                                        {company.cnae_fiscal} - {company.cnae_fiscal_descricao}
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Address */}
-                            <div>
+                            {/* Bloco Endereço */}
+                            <div className="p-3 border border-[var(--color-border)] rounded-xl bg-[var(--color-bg-tertiary)]/20">
                                 <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">📍 ENDEREÇO</h3>
-                                <div className="space-y-1 text-xs text-[var(--color-text-secondary)]">
-                                    <div>{company.descricao_tipo_de_logradouro || ''} {company.logradouro}, {company.numero}</div>
-                                    <div>{company.bairro} - {company.municipio}/{company.uf}</div>
-                                    <div>CEP: {company.cep || 'N/A'}</div>
+                                <div className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                                    {company.descricao_tipo_de_logradouro} {company.logradouro}, {company.numero}
+                                    <br />
+                                    {company.bairro} - {company.municipio}/{company.uf} • CEP: {company.cep}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Column 2: Editable */}
+                        {/* Column 2: Editáveis (Compactado) */}
                         <div className="space-y-4">
-                            {/* Contact */}
-                            <div>
-                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">📞 CONTATO (Editável)</h3>
-                                <div className="space-y-2">
-                                    <input
-                                        type="text"
-                                        value={telefone}
-                                        onChange={(e) => setTelefone(e.target.value)}
-                                        placeholder="(00) 0000-0000"
-                                        className="w-full px-3 py-2 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
-                                    />
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="email@empresa.com.br"
-                                        className="w-full px-3 py-2 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                            {/* Contact e Notas */}
+                            <div className="p-4 border border-[var(--color-border)] rounded-xl bg-[var(--color-bg-tertiary)]/20">
+                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-3">✏️ EDITAR INFORMAÇÕES</h3>
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <input
+                                            type="text"
+                                            value={telefone}
+                                            onChange={(e) => setTelefone(e.target.value)}
+                                            placeholder="Telefone"
+                                            className="w-full px-3 py-2 text-sm bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                                        />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="Email"
+                                            className="w-full px-3 py-2 text-sm bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                                        />
+                                    </div>
+                                    <textarea
+                                        value={observacoes}
+                                        onChange={(e) => setObservacoes(e.target.value)}
+                                        placeholder="Observações internas..."
+                                        rows={2}
+                                        className="w-full px-3 py-2 text-sm bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
                                     />
                                 </div>
                             </div>
 
-                            {/* Notes */}
-                            <div>
-                                <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-2">📝 OBSERVAÇÕES</h3>
-                                <textarea
-                                    value={observacoes}
-                                    onChange={(e) => setObservacoes(e.target.value)}
-                                    placeholder="Adicione notas sobre esta empresa..."
-                                    rows={3}
-                                    className="w-full px-3 py-2 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
-                                />
-                            </div>
-
-                            {/* Save Button Removido - Agora salva tudo ao gerar o link */}
-
-                            {/* Quick Info */}
-                            <div className="p-3 bg-[var(--color-bg-tertiary)]/50 rounded-lg border border-[var(--color-border)]">
-                                <div className="text-xs text-[var(--color-text-muted)] space-y-1">
-                                    <div>✅ Dados verificados via BrasilAPI</div>
-                                    <div>🔒 Edições salvas localmente</div>
-                                </div>
+                            {/* Quick Info Compacto */}
+                            <div className="flex items-center gap-4 text-xs text-[var(--color-text-muted)] px-2">
+                                <span className="flex items-center gap-1">✅ BrasilAPI</span>
+                                <span className="flex items-center gap-1">🔒 Salvo localmente</span>
                             </div>
                         </div>
                     </div>
@@ -362,14 +348,6 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                     >
                         <Eye className="w-4 h-4" />
                         ABRIR PDF
-                    </button>
-                    {/* Botão Validar FB removido pois o fluxo agora é validar via link gerado */}
-                    <button
-                        onClick={validateOnFacebook}
-                        className="flex-1 py-2 px-3 bg-[var(--color-bg-tertiary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--color-bg-card)] transition-all flex items-center justify-center gap-2"
-                    >
-                        <CheckCircle2 className="w-4 h-4" />
-                        VALIDAR FB NO LINK
                     </button>
                 </div>
             </motion.div>

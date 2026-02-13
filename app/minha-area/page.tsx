@@ -237,8 +237,9 @@ export default function MinhaAreaPage() {
                 >
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
-                                <Globe className="w-6 h-6 text-gradient" />
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center p-2">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src="/icon.png" alt="Logo" className="w-full h-full object-contain" />
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold">
