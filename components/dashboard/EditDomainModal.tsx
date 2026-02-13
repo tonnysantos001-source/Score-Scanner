@@ -13,6 +13,8 @@ interface EditDomainModalProps {
         pixel_id?: string;
         is_active?: boolean;
         use_generic?: boolean;
+        slug?: string;
+        verification_token?: string;
     };
     companyData: {
         razao_social?: string;
@@ -32,6 +34,8 @@ export function EditDomainModal({
     const [titleText, setTitleText] = useState(initialData.title || '');
     const [descriptionText, setDescriptionText] = useState(initialData.description || '');
     const [pixelId, setPixelId] = useState(initialData.pixel_id || '');
+    const [slug, setSlug] = useState(initialData.slug || '');
+    const [verificationToken, setVerificationToken] = useState(initialData.verification_token || '');
     const [isActive, setIsActive] = useState(initialData.is_active !== false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -53,6 +57,8 @@ export function EditDomainModal({
                     description_text: descriptionText || genericDescription,
                     facebook_pixel_id: pixelId || null,
                     is_active: isActive,
+                    slug: slug,
+                    verification_token: verificationToken
                 }),
             });
 
@@ -160,10 +166,50 @@ export function EditDomainModal({
                             )}
                         </div>
 
+                        {/* Slug Field (Link) */}
+                        <div>
+                            <label className="block text-sm font-semibold mb-2">
+                                🔗 Link Personalizado (Slug)
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-[var(--color-text-muted)] bg-[var(--color-bg-tertiary)] px-2 py-2 rounded-l-lg border border-r-0 border-[var(--color-border)]">
+                                    verifyads.com.br/l/
+                                </span>
+                                <input
+                                    type="text"
+                                    value={slug}
+                                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                                    placeholder="nome-da-empresa"
+                                    className="flex-1 px-4 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-sm font-mono"
+                                />
+                            </div>
+                            <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                                Cuidado ao alterar: O link antigo deixará de funcionar.
+                            </p>
+                        </div>
+
+                        {/* Facebook Domain Verification */}
+                        <div>
+                            <label className="block text-sm font-semibold mb-2">
+                                🛡️ Token de Verificação de Domínio (Meta-tag)
+                            </label>
+                            <input
+                                type="text"
+                                value={verificationToken}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const match = val.match(/content=["']([^"']+)["']/);
+                                    setVerificationToken(match ? match[1] : val);
+                                }}
+                                placeholder="Colar meta-tag inteira ou apenas o token"
+                                className="w-full px-4 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-sm font-mono"
+                            />
+                        </div>
+
                         {/* Facebook Pixel */}
                         <div>
                             <label className="block text-sm font-semibold mb-2">
-                                📊 Facebook Pixel ID (Opcional)
+                                📊 Facebook Pixel ID
                             </label>
                             <input
                                 type="text"
@@ -172,9 +218,6 @@ export function EditDomainModal({
                                 placeholder="123456789012345"
                                 className="w-full px-4 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-sm"
                             />
-                            <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                                Adicione para rastrear visitantes com Facebook Pixel
-                            </p>
                         </div>
 
                         {/* Preview */}

@@ -354,6 +354,8 @@ export default function MinhaAreaPage() {
                             pixel_id: editingDomain.landing_pages?.[0]?.facebook_pixel_id,
                             is_active: editingDomain.landing_pages?.[0]?.is_active,
                             use_generic: editingDomain.landing_pages?.[0]?.use_generic,
+                            slug: editingDomain.landing_pages?.[0]?.slug,
+                            verification_token: editingDomain.verification_token || undefined,
                         }}
                         companyData={{
                             razao_social: editingDomain.company_name,

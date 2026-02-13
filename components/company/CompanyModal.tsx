@@ -230,7 +230,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                         <div className="mb-6 p-5 border border-[var(--color-border)] rounded-xl bg-[var(--color-bg-tertiary)]/30">
                             <h3 className="text-sm font-bold text-[var(--color-accent-primary)] mb-4 flex items-center gap-2">
                                 <CheckCircle2 className="w-4 h-4" />
-                                CONFIGURAÇÃO DO FACEBOOK (Opcional)
+                                VERIFICAÇÃO DE DOMÍNIO (FACEBOOK BUSINESS)
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>

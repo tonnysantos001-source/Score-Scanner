@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
                 is_verified,
                 verified_at,
                 created_at,
+                verification_token,
                 landing_pages (
                     id,
                     slug,
@@ -52,6 +53,7 @@ export async function GET(request: NextRequest) {
             cnpj: domain.company_cnpj,
             is_verified: domain.is_verified,
             verified_at: domain.verified_at,
+            verification_token: domain.verification_token,
             created_at: domain.created_at,
             landing_page_url: domain.landing_pages && domain.landing_pages.length > 0
                 ? `${baseUrl}/l/${domain.landing_pages[0].slug}`

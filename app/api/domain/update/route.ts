@@ -15,7 +15,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { domain_id, title_text, description_text, facebook_pixel_id, is_active } = body;
+        const { domain_id, title_text, description_text, facebook_pixel_id, is_active, slug, verification_token } = body;
 
         if (!domain_id) {
             return NextResponse.json(
@@ -34,27 +34,46 @@ export async function PUT(request: NextRequest) {
 
         if (domainError || !domain) {
             return NextResponse.json(
-                { success: false, error: 'Domain not found or access denied' },
+                { success: false, error: 'Domínio não encontrado ou acesso negado' },
                 { status: 404 }
             );
         }
 
-        // Atualizar landing page
+        // 1. Atualizar verificação (Token) se fornecido
+        if (typeof verification_token !== 'undefined') {
+            await supabase
+                .from('verified_domains')
+                .update({ verification_token: verification_token || null })
+                .eq('id', domain_id);
+        }
+
+        // 2. Atualizar Landing Page
+        // Preparar objeto de update
+        const updateData: any = {
+            title_text,
+            description_text,
+            is_active: is_active !== undefined ? is_active : true,
+            facebook_pixel_id,
+            updated_at: new Date().toISOString(),
+        };
+
+        if (slug) updateData.slug = slug;
+
         const { error: updateError } = await supabase
             .from('landing_pages')
-            .update({
-                title_text,
-                description_text,
-                is_active: is_active !== undefined ? is_active : true,
-                facebook_pixel_id,
-                updated_at: new Date().toISOString(),
-            })
+            .update(updateData)
             .eq('domain_id', domain_id);
 
         if (updateError) {
             console.error('Error updating landing page:', updateError);
+            if (updateError.code === '23505') { // Unique violation
+                return NextResponse.json(
+                    { success: false, error: 'Este link personalizado (slug) já está em uso.' },
+                    { status: 409 }
+                );
+            }
             return NextResponse.json(
-                { success: false, error: 'Failed to update landing page' },
+                { success: false, error: 'Falha ao atualizar landing page' },
                 { status: 500 }
             );
         }
