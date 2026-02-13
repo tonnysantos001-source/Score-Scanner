@@ -181,7 +181,8 @@ export async function POST(request: NextRequest) {
                 .from('landing_pages')
                 .update({
                     description_text: custom_notes || `Conheça a ${company_name}, referência em qualidade e atendimento.Confira nossos dados verificados.`,
-                    facebook_pixel_id: pixel_id || null
+                    facebook_pixel_id: pixel_id || null,
+                    is_active: true // Garantir que reativa se estiver inativa
                 })
                 .eq('id', existingLP.id);
             lpError = updateError;

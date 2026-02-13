@@ -78,7 +78,7 @@ export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCar
                         </span>
                     </div>
 
-                    <h3 className="font-bold text-lg text-[var(--color-text-primary)] truncate">
+                    <h3 className="font-bold text-lg text-[var(--color-text-primary)] break-all leading-tight">
                         {domain.domain}
                     </h3>
                     <p className="text-xs text-[var(--color-text-muted)] truncate">
@@ -96,7 +96,7 @@ export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCar
                     </span>
                 </div>
                 {publicUrl && landingPage?.is_active && (
-                    <div className="text-xs text-[var(--color-text-muted)] truncate">
+                    <div className="text-xs text-[var(--color-text-muted)] break-all mt-1">
                         {publicUrl}
                     </div>
                 )}
