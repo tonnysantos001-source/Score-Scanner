@@ -128,10 +128,39 @@ export function EditDomainModal({
                             </label>
                         </div>
 
+                        {/* Link da Landing Page (Visualização) */}
+                        <div className="p-3 bg-blue-600/10 border border-blue-600/20 rounded-lg">
+                            <label className="block text-xs font-bold text-blue-600 mb-1">
+                                🔗 LINK DA SUA PÁGINA
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <code className="flex-1 text-sm bg-white/50 px-2 py-1.5 rounded border border-blue-600/10 text-[var(--color-text-primary)]">
+                                    {window.location.origin.replace('verifyads.com.br', 'verifyads.online')}/l/{slug || '...'}
+                                </code>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`https://verifyads.online/l/${slug}`);
+                                        toast.success('Link copiado!');
+                                    }}
+                                    className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                                    title="Copiar Link"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+                                </button>
+                                <button
+                                    onClick={() => window.open(`https://verifyads.online/l/${slug}`, '_blank')}
+                                    className="p-1.5 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] rounded hover:bg-[var(--color-bg-card)] border border-[var(--color-border)] transition"
+                                    title="Abrir Página"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Title Field */}
                         <div>
                             <label className="block text-sm font-semibold mb-2">
-                                📝 Título
+                                📝 Título da Página
                             </label>
                             <input
                                 type="text"
@@ -142,7 +171,7 @@ export function EditDomainModal({
                             />
                             {!titleText && (
                                 <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                                    💡 Deixe em branco para usar: &quot;{genericTitle}&quot;
+                                    💡 Usando título padrão: &quot;{genericTitle}&quot;
                                 </p>
                             )}
                         </div>
@@ -150,20 +179,15 @@ export function EditDomainModal({
                         {/* Description Field */}
                         <div>
                             <label className="block text-sm font-semibold mb-2">
-                                📄 Descrição
+                                📄 Descrição (SEO e Compartilhamento)
                             </label>
                             <textarea
                                 value={descriptionText}
                                 onChange={(e) => setDescriptionText(e.target.value)}
                                 placeholder={genericDescription}
-                                rows={4}
+                                rows={3}
                                 className="w-full px-4 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-sm resize-none"
                             />
-                            {!descriptionText && (
-                                <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                                    💡 Deixe em branco para usar texto genérico
-                                </p>
-                            )}
                         </div>
 
                         {/* Slug Field (Link) */}
@@ -173,7 +197,7 @@ export function EditDomainModal({
                             </label>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-[var(--color-text-muted)] bg-[var(--color-bg-tertiary)] px-2 py-2 rounded-l-lg border border-r-0 border-[var(--color-border)]">
-                                    verifyads.com.br/l/
+                                    verifyads.online/l/
                                 </span>
                                 <input
                                     type="text"

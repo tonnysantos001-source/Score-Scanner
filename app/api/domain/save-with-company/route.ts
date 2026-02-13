@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
                 .eq('domain_id', existingCompany.domain_id)
                 .single();
 
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifyads.com.br';
-            const fullUrl = lp ? `${baseUrl}/l/${lp.slug}` : null;
+            const lpBaseUrl = 'https://verifyads.online';
+            const fullUrl = lp ? `${lpBaseUrl}/l/${lp.slug}` : null;
 
             return NextResponse.json({
                 success: true,
@@ -211,8 +211,8 @@ export async function POST(request: NextRequest) {
         }
 
         // 5. Retornar Sucesso e URL
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifyads.com.br';
-        const fullUrl = `${baseUrl}/l/${slug}`;
+        const lpBaseUrl = 'https://verifyads.online';
+        const fullUrl = `${lpBaseUrl}/l/${slug}`;
 
         return NextResponse.json({
             success: true,

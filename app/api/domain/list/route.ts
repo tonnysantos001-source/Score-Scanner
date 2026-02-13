@@ -55,8 +55,16 @@ export async function GET(request: NextRequest) {
             verified_at: domain.verified_at,
             verification_token: domain.verification_token,
             created_at: domain.created_at,
+            landing_pages: domain.landing_pages?.map((lp: any) => ({
+                id: lp.id,
+                slug: lp.slug,
+                is_active: lp.is_active,
+                title_text: lp.title_text,
+                description_text: lp.description_text,
+                facebook_pixel_id: lp.facebook_pixel_id
+            })) || [],
             landing_page_url: domain.landing_pages && domain.landing_pages.length > 0
-                ? `${baseUrl}/l/${domain.landing_pages[0].slug}`
+                ? `https://verifyads.online/l/${domain.landing_pages[0].slug}`
                 : null,
             landing_page_active: domain.landing_pages && domain.landing_pages.length > 0
                 ? domain.landing_pages[0].is_active
