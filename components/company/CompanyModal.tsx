@@ -332,7 +332,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                 ) : (
                                     <>
                                         <LinkIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                        GERAR LINK & SALVAR
+                                        {verificationToken || pixelId ? 'SALVAR & INJETAR CÓDIGO' : 'GERAR LINK & SALVAR'}
                                     </>
                                 )}
                             </button>
