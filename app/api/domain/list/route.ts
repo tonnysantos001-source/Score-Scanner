@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
                 facebook_pixel_id: lp.facebook_pixel_id
             })) || [],
             landing_page_url: domain.landing_pages && domain.landing_pages.length > 0
-                ? `https://verifyads.online/l/${domain.landing_pages[0].slug}`
+                ? `${baseUrl}/l/${domain.landing_pages[0].slug}`
                 : null,
             landing_page_active: domain.landing_pages && domain.landing_pages.length > 0
                 ? domain.landing_pages[0].is_active

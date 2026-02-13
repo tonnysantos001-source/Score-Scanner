@@ -135,11 +135,11 @@ export function EditDomainModal({
                             </label>
                             <div className="flex items-center gap-2">
                                 <code className="flex-1 text-sm bg-white/50 px-2 py-1.5 rounded border border-blue-600/10 text-[var(--color-text-primary)]">
-                                    {window.location.origin.replace('verifyads.com.br', 'verifyads.online')}/l/{slug || '...'}
+                                    {window.location.origin}/l/{slug || '...'}
                                 </code>
                                 <button
                                     onClick={() => {
-                                        navigator.clipboard.writeText(`https://verifyads.online/l/${slug}`);
+                                        navigator.clipboard.writeText(`${window.location.origin}/l/${slug}`);
                                         toast.success('Link copiado!');
                                     }}
                                     className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -148,7 +148,7 @@ export function EditDomainModal({
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
                                 </button>
                                 <button
-                                    onClick={() => window.open(`https://verifyads.online/l/${slug}`, '_blank')}
+                                    onClick={() => window.open(`/l/${slug}`, '_blank')}
                                     className="p-1.5 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] rounded hover:bg-[var(--color-bg-card)] border border-[var(--color-border)] transition"
                                     title="Abrir Página"
                                 >
@@ -197,7 +197,7 @@ export function EditDomainModal({
                             </label>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-[var(--color-text-muted)] bg-[var(--color-bg-tertiary)] px-2 py-2 rounded-l-lg border border-r-0 border-[var(--color-border)]">
-                                    verifyads.online/l/
+                                    verifyads.com.br/l/
                                 </span>
                                 <input
                                     type="text"

@@ -36,7 +36,7 @@ interface DomainCardProps {
 export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCardProps) {
     const landingPage = domain.landing_pages?.[0];
     const publicUrl = landingPage
-        ? `https://verifyads.online/l/${landingPage.slug}`
+        ? `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/l/${landingPage.slug}`
         : null;
 
     const copyUrl = () => {
