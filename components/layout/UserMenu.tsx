@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function UserMenu() {
     const [isOpen, setIsOpen] = useState(false);
-    const { user, signOut } = useAuth();
+    const { user, signOut, isAdmin } = useAuth();
     const router = useRouter();
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -107,6 +107,17 @@ export default function UserMenu() {
                                 <BookOpen className="w-4 h-4 text-yellow-400" />
                                 Manual / Ajuda
                             </Link>
+
+                            {isAdmin && (
+                                <Link
+                                    href="/admin"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-500/10 transition-colors border-t border-[var(--color-border)] mt-1 pt-2"
+                                >
+                                    <LayoutDashboard className="w-4 h-4" />
+                                    Painel Admin
+                                </Link>
+                            )}
                         </div>
 
                         {/* Sair */}
