@@ -26,8 +26,14 @@ export default function UserMenu() {
 
     const handleLogout = async () => {
         setIsOpen(false);
-        await signOut();
-        router.push('/login');
+        try {
+            await signOut();
+        } catch (err) {
+            console.error('Erro ao sair:', err);
+        } finally {
+            router.refresh(); // Limpa cache do Next.js
+            router.push('/login');
+        }
     };
 
     if (!user) return null;
