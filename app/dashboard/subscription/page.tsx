@@ -106,7 +106,10 @@ export default function SubscriptionPage() {
 
     return (
         <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] font-sans selection:bg-blue-500/30">
-            <Navigation />
+            <Navigation
+                title="Assinatura"
+                description="Escolha o melhor plano para o seu negócio"
+            />
 
             <div className="max-w-7xl mx-auto px-6 py-12">
                 <div className="mb-12 text-center">
