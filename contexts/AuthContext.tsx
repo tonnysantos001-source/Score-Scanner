@@ -26,14 +26,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 min em ms
 
     const checkUserRole = useCallback(async (userId: string) => {
-        const client = createClient();
-        const { data: profile } = await client
-            .from('profiles')
-            .select('role')
-            .eq('id', userId)
-            .single();
+        try {
+            const client = createClient();
+            const { data: profile, error } = await client
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .single();
 
-        setIsAdmin(profile?.role === 'admin');
+            if (error) {
+                console.warn('Erro ao buscar role:', error.message);
+                // Não falha, apenas assume user comum se der erro
+                setIsAdmin(false);
+                return;
+            }
+
+            setIsAdmin(profile?.role === 'admin');
+        } catch (err) {
+            console.error('Check role error:', err);
+            setIsAdmin(false);
+        }
     }, []);
 
     const handleLogout = useCallback(async () => {
@@ -45,12 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [supabase]);
 
     useEffect(() => {
-        // Verificar se variáveis de ambiente existem antes de criar cliente
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
         if (!supabaseUrl || !supabaseAnonKey) {
-            console.warn('Supabase env vars not configured, auth will not work');
+            console.warn('Supabase env vars not configured');
             setLoading(false);
             return;
         }
@@ -58,29 +69,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const client = createClient();
         setSupabase(client);
 
-        // Verificar sessão atual
-        client.auth.getSession().then(async ({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                await checkUserRole(session.user.id);
-            }
-            setLoading(false);
-        });
+        // Safety Timeout: Força o fim do loading após 5s
+        const safetyTimeout = setTimeout(() => {
+            setLoading((prev) => {
+                if (prev) {
+                    console.warn('Loading timeout reached - Forcing release');
+                    return false;
+                }
+                return prev;
+            });
+        }, 5000);
 
-        // Escutar mudanças de autenticação
+        const initAuth = async () => {
+            try {
+                const { data: { session }, error } = await client.auth.getSession();
+
+                if (error) {
+                    throw error;
+                }
+
+                setUser(session?.user ?? null);
+
+                if (session?.user) {
+                    await checkUserRole(session.user.id);
+                }
+            } catch (err) {
+                console.error('Init session error:', err);
+                // Se der erro na sessão inicial, limpa tudo para não travar
+                await client.auth.signOut();
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initAuth();
+
         const {
             data: { subscription },
-        } = client.auth.onAuthStateChange(async (_event, session) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                await checkUserRole(session.user.id);
-            } else {
-                setIsAdmin(false);
+        } = client.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth state change:', event);
+            try {
+                if (event === 'SIGNED_OUT') {
+                    setUser(null);
+                    setIsAdmin(false);
+                    setLoading(false);
+                } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+                    setUser(session?.user ?? null);
+                    if (session?.user) {
+                        await checkUserRole(session.user.id);
+                    }
+                    setLoading(false);
+                }
+            } catch (err) {
+                console.error('Auth change error:', err);
+                setLoading(false);
             }
-            setLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            subscription.unsubscribe();
+            clearTimeout(safetyTimeout);
+        };
     }, [checkUserRole]);
 
     // Timer de inatividade
