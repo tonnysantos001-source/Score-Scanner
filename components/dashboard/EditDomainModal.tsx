@@ -244,18 +244,16 @@ export function EditDomainModal({
                             />
                         </div>
 
-                        {/* Preview */}
-                        <div className="p-4 bg-gradient-to-br from-blue-600/5 to-purple-600/5 border border-[var(--color-border)] rounded-lg">
-                            <p className="text-xs font-semibold text-[var(--color-text-muted)] mb-2">
-                                👁️ PREVIEW
-                            </p>
-                            <h3 className="text-lg font-bold mb-2">
-                                {titleText || genericTitle}
-                            </h3>
-                            <p className="text-sm text-[var(--color-text-secondary)]">
-                                {descriptionText || genericDescription}
+                        {/* Info Box sobre Injeção */}
+                        <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
+                            <div className="p-1 bg-blue-500/20 rounded">
+                                <span className="text-blue-400">ℹ️</span>
+                            </div>
+                            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                                <span className="font-semibold text-blue-300">Injeção Automática:</span> Ao clicar em <strong className="text-white">"Salvar & Injetar Código"</strong>, nosso sistema atualiza sua Landing Page instantaneamente com as novas Meta-tags e Pixels. Não é necessário gerar um novo link.
                             </p>
                         </div>
+
                     </div>
 
                     {/* Footer */}
@@ -279,7 +277,7 @@ export function EditDomainModal({
                             ) : (
                                 <>
                                     <Save className="w-4 h-4" />
-                                    Salvar Alterações
+                                    {verificationToken || pixelId ? 'Salvar & Injetar Código' : 'Salvar Alterações'}
                                 </>
                             )}
                         </button>
