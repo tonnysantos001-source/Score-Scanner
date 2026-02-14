@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser-client';
-import { Link } from 'next-view-transitions'; // Using view-transitions if avail, else next/link
+import Link from 'next/link';
 import {
     LayoutDashboard,
     Users,
@@ -14,8 +14,6 @@ import {
     Settings,
     Shield
 } from 'lucide-react';
-// Fallback to next/link if next-view-transitions not installed/configured properly
-import NextLink from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminLayout({
@@ -86,7 +84,7 @@ export default function AdminLayout({
                     {navItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
-                            <NextLink
+                            <Link
                                 key={item.href}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${isActive
@@ -96,7 +94,7 @@ export default function AdminLayout({
                             >
                                 <item.icon className={`w-5 h-5 ${isActive ? 'text-red-500' : 'text-[var(--color-text-muted)]'}`} />
                                 {item.label}
-                            </NextLink>
+                            </Link>
                         );
                     })}
                 </nav>
