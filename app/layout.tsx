@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "Score Scanner - Plataforma de Inteligência CNPJ",
   description: "Busque, analise e avalie empresas brasileiras com inteligência artificial. Trust Score, dossiês profissionais e muito mais.",
   keywords: ["CNPJ", "consulta CNPJ", "Score empresarial", "análise de empresas", "BrasilAPI"],
+  icons: {
+    icon: '/logo.png', // Usando logo.png como favicon
+  },
 };
 
 export default function RootLayout({

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, X, User, LayoutDashboard, Pickaxe, LogOut } from 'lucide-react';
+import { Menu, X, User, LayoutDashboard, Pickaxe, LogOut, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function UserMenu() {
@@ -95,9 +95,14 @@ export default function UserMenu() {
                                 onClick={() => setIsOpen(false)}
                                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-white transition-colors"
                             >
-                                <User className="w-4 h-4 text-green-400" />
-                                Minha Conta
-                            </Link>
+                                <Link
+                                    href="/dashboard/docs"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-white transition-colors"
+                                >
+                                    <BookOpen className="w-4 h-4 text-yellow-400" />
+                                    Manual / Ajuda
+                                </Link>
                         </div>
 
                         {/* Sair */}

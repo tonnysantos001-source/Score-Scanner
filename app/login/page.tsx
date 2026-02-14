@@ -34,10 +34,21 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
+                <div className="flex justify-center mb-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center p-4 shadow-xl shadow-blue-900/50">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/logo.png" alt="Score Scanner Logo" className="w-full h-full object-contain filter drop-shadow-md" />
+                    </div>
+                </div>
+
                 <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-white mb-2">Bem-vindo de volta!</h1>
-                        <p className="text-gray-400">Faça login para continuar</p>
+                        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-2">
+                            Score Scanner
+                        </h1>
+                        <p className="text-gray-400 text-sm">
+                            Acesse sua conta para gerenciar mineração e verificações
+                        </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
