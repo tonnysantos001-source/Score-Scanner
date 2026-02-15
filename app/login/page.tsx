@@ -12,7 +12,13 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { signIn } = useAuth();
+    const { signIn, user } = useAuth();
+
+    useEffect(() => {
+        if (user) {
+            router.push('/minerar');
+        }
+    }, [user, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
