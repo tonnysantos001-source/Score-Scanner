@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,13 +12,18 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { signIn, user } = useAuth();
+    const { signIn, user, isAdmin } = useAuth(); // isAdmin disponível no contexto
 
     useEffect(() => {
         if (user) {
-            router.push('/minerar');
+            // Se for admin, manda para /admin, senão para /minerar
+            if (isAdmin) {
+                router.push('/admin');
+            } else {
+                router.push('/minerar');
+            }
         }
-    }, [user, router]);
+    }, [user, isAdmin, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
