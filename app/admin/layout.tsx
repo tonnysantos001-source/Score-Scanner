@@ -21,45 +21,31 @@ export default function AdminLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { user, loading: authLoading, signOut } = useAuth();
-    const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+    const { user, loading: authLoading, isAdmin } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
-    const supabase = createClient();
 
     useEffect(() => {
-        const checkAdmin = async () => {
-            if (!user) return;
-
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
-
-            if (profile?.role === 'admin') {
-                setIsAdmin(true);
-            } else {
-                router.push('/'); // Redirect unauthorized
-            }
-        };
-
         if (!authLoading) {
             if (!user) {
                 router.push('/login');
-            } else {
-                checkAdmin();
+            } else if (!isAdmin) {
+                router.push('/'); // Redireciona se logado mas não for admin
             }
         }
-    }, [user, authLoading, router, supabase]);
+    }, [user, authLoading, isAdmin, router]);
 
-    if (authLoading || isAdmin === null) {
+    if (authLoading) {
         return (
             <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
         );
     }
+
+    // Se passou do loading e não é admin, retorna null (o useEffect vai redirecionar)
+    // Isso evita "piscada" de conteúdo proibido
+    if (!isAdmin) return null;
 
     const navItems = [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -88,8 +74,8 @@ export default function AdminLayout({
                                 key={item.href}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${isActive
-                                        ? 'bg-red-500/10 text-red-500'
-                                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]'
+                                    ? 'bg-red-500/10 text-red-500'
+                                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]'
                                     }`}
                             >
                                 <item.icon className={`w-5 h-5 ${isActive ? 'text-red-500' : 'text-[var(--color-text-muted)]'}`} />

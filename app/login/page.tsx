@@ -11,11 +11,11 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
-    const { signIn, user, isAdmin } = useAuth(); // isAdmin disponível no contexto
+    const { signIn, user, isAdmin, loading } = useAuth(); // isAdmin disponível no contexto
 
     useEffect(() => {
-        if (user) {
+        // Só redireciona quando o carregamento terminar para garantir que isAdmin esteja correto
+        if (!loading && user) {
             // Se for admin, manda para /admin, senão para /minerar
             if (isAdmin) {
                 router.push('/admin');
@@ -23,7 +23,7 @@ export default function LoginPage() {
                 router.push('/minerar');
             }
         }
-    }, [user, isAdmin, router]);
+    }, [user, isAdmin, loading, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
