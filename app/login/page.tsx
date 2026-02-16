@@ -12,6 +12,7 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { signIn, user, isAdmin, loading: authLoading } = useAuth(); // isAdmin disponível no contexto
+    const router = useRouter();
 
     useEffect(() => {
         // Só redireciona quando o carregamento terminar para garantir que isAdmin esteja correto
