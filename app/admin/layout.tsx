@@ -10,6 +10,7 @@ import {
     Settings
 } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
+import { AdminHeader } from '@/components/AdminHeader';
 
 export default async function AdminLayout({
     children,
@@ -72,8 +73,11 @@ export default async function AdminLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 ml-64 p-8">
-                {children}
+            <main className="flex-1 ml-64">
+                <AdminHeader />
+                <div className="pt-20 p-8">
+                    {children}
+                </div>
             </main>
 
         </div>

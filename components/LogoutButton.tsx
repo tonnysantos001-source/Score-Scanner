@@ -1,7 +1,7 @@
 'use client';
 
 // components/LogoutButton.tsx
-// Client-side logout button component
+// Client-side logout button with complete session cleanup
 
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
@@ -14,13 +14,26 @@ export function LogoutButton() {
     const handleLogout = async () => {
         setLoading(true);
         try {
+            // Clear all storage
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Clear all cookies
+            document.cookie.split(";").forEach((c) => {
+                document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+
+            // Call logout API
             await fetch('/api/auth/logout', { method: 'POST' });
-            router.push('/login');
-            router.refresh();
+
+            // Force reload to clear client-side state
+            window.location.href = '/login';
         } catch (error) {
             console.error('Logout error:', error);
-        } finally {
-            setLoading(false);
+            // Force redirect even on error
+            window.location.href = '/login';
         }
     };
 
