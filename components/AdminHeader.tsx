@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 export function AdminHeader() {
     const [loading, setLoading] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(2); // 2 minutes for testing (change to 30 for production)
+    const [timeLeft, setTimeLeft] = useState(30); // 30 minutes - production
 
     const handleLogout = useCallback(async () => {
         setLoading(true);
