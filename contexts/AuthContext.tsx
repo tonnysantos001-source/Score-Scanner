@@ -35,7 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 .single();
 
             if (error) {
-                console.warn('Erro ao buscar role:', error.message);
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn('Erro ao buscar role:', error.message);
+                }
                 // Não falha, apenas assume user comum se der erro
                 setIsAdmin(false);
                 return;
@@ -43,7 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             setIsAdmin(profile?.role === 'admin');
         } catch (err) {
-            console.error('Check role error:', err);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Check role error:', err);
+            }
             setIsAdmin(false);
         }
     }, []);

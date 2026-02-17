@@ -1,8 +1,5 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { createClient } from '@/lib/supabase/browser-client';
+import { requireAdmin } from '@/lib/auth/server';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import {
     LayoutDashboard,
@@ -10,42 +7,27 @@ import {
     Zap,
     LogOut,
     CreditCard,
-    Loader2,
-    Settings,
     Shield
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 
-export default function AdminLayout({
+export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const { user, loading: authLoading, isAdmin } = useAuth();
-    const router = useRouter();
-    const pathname = usePathname();
-
-    useEffect(() => {
-        if (!authLoading) {
-            if (!user) {
-                router.push('/login');
-            } else if (!isAdmin) {
-                router.push('/'); // Redireciona se logado mas não for admin
-            }
+    // ✅ Server-side role check (not client-side)
+    try {
+        await requireAdmin();
+    } catch (error) {
+        const err = error as Error;
+        if (err.message === 'UNAUTHORIZED') {
+            redirect('/login?redirect=/admin');
         }
-    }, [user, authLoading, isAdmin, router]);
-
-    if (authLoading) {
-        return (
-            <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            </div>
-        );
+        if (err.message === 'FORBIDDEN') {
+            redirect('/');
+        }
+        redirect('/login');
     }
-
-    // Se passou do loading e não é admin, retorna null (o useEffect vai redirecionar)
-    // Isso evita "piscada" de conteúdo proibido
-    if (!isAdmin) return null;
 
     const navItems = [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -67,32 +49,26 @@ export default function AdminLayout({
                 </div>
 
                 <nav className="flex-1 p-4 space-y-1">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${isActive
-                                    ? 'bg-red-500/10 text-red-500'
-                                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]'
-                                    }`}
-                            >
-                                <item.icon className={`w-5 h-5 ${isActive ? 'text-red-500' : 'text-[var(--color-text-muted)]'}`} />
-                                {item.label}
-                            </Link>
-                        );
-                    })}
+                    {navItems.map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+                        >
+                            <item.icon className="w-5 h-5 text-[var(--color-text-muted)]" />
+                            {item.label}
+                        </Link>
+                    ))}
                 </nav>
 
                 <div className="p-4 border-t border-[var(--color-border)]">
-                    <button
-                        onClick={() => router.push('/')}
+                    <Link
+                        href="/"
                         className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-all mb-2"
                     >
                         <LogOut className="w-5 h-5" />
                         Voltar ao Site
-                    </button>
+                    </Link>
                     <div className="px-4 py-2 text-xs text-[var(--color-text-muted)] text-center">
                         v1.0.0 Alpha
                     </div>
