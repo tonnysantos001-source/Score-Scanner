@@ -59,9 +59,18 @@ export async function middleware(request: NextRequest) {
 
     const isProtectedRoute = isAdminRoute || isUserRoute;
 
+    // Check if user is admin from JWT metadata
+    const userRole = session?.user?.user_metadata?.role || 'user';
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+
     // Redirect authenticated users away from auth pages
     if (isAuthRoute && session) {
-        return NextResponse.redirect(new URL('/admin', request.url));
+        // Redirect based on role
+        if (isAdmin) {
+            return NextResponse.redirect(new URL('/admin', request.url));
+        } else {
+            return NextResponse.redirect(new URL('/minerar', request.url));
+        }
     }
 
     // Redirect unauthenticated users to login
@@ -71,10 +80,15 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
     }
 
+    // Block non-admin users from accessing admin routes
+    if (isAdminRoute && session && !isAdmin) {
+        return NextResponse.redirect(new URL('/minerar', request.url));
+    }
+
     // ⚠️ IMPORTANT: ROLE CHECK HAPPENS IN SERVER COMPONENTS/API
-    // We do NOT check admin role here (would require DB query in Edge)
-    // Admin check is done in:
-    // - app/admin/layout.tsx (Server Component)
+    // We do a basic JWT check above for routing
+    // More detailed admin check is done in:
+    // - app/admin/layout.tsx (Server Component with DB query)
     // - API routes using requireAdmin()
 
     return response;

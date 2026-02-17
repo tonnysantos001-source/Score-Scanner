@@ -14,17 +14,9 @@ export default function LoginPage() {
     const { signIn, user, isAdmin, loading: authLoading } = useAuth(); // isAdmin disponível no contexto
     const router = useRouter();
 
-    useEffect(() => {
-        // Só redireciona quando o carregamento terminar para garantir que isAdmin esteja correto
-        if (!authLoading && user) {
-            // Se for admin, manda para /admin, senão para /minerar
-            if (isAdmin) {
-                router.push('/admin');
-            } else {
-                router.push('/minerar');
-            }
-        }
-    }, [user, isAdmin, authLoading, router]);
+    // ⚠️ DON'T REDIRECT HERE - Let middleware handle routing!
+    // Middleware will redirect authenticated users to /admin (if admin) or /minerar (if user)
+    // This prevents the flash of /minerar page for admins
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +25,8 @@ export default function LoginPage() {
 
         try {
             await signIn(email, password);
-            // Don't redirect here - let useEffect handle role-based routing
+            // Middleware will handle redirect based on role
+            // Just wait for it to happen
         } catch (err: any) {
             setError(err.message || 'Erro ao fazer login');
         } finally {

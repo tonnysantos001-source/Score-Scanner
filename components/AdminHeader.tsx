@@ -4,29 +4,13 @@
 // Fixed header with logout button for admin panel
 
 import { LogOut, Clock } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function AdminHeader() {
     const [loading, setLoading] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(30); // minutes
+    const [timeLeft, setTimeLeft] = useState(2); // 2 minutes for testing (change to 30 for production)
 
-    useEffect(() => {
-        // Countdown timer
-        const interval = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    // Auto logout quando expirar
-                    handleLogout();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 60000); // Every minute
-
-        return () => clearInterval(interval);
-    }, []);
-
-    const handleLogout = async () => {
+    const handleLogout = useCallback(async () => {
         setLoading(true);
         try {
             // Clear all storage
@@ -49,14 +33,30 @@ export function AdminHeader() {
             console.error('Logout error:', error);
             window.location.href = '/login';
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // Countdown timer
+        const interval = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    // Auto logout quando expirar
+                    handleLogout();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 60000); // Every minute
+
+        return () => clearInterval(interval);
+    }, [handleLogout]);
 
     return (
         <div className="fixed top-0 right-0 left-64 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] px-8 py-4 flex items-center justify-between z-50">
             <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <span className="text-sm text-[var(--color-text-secondary)]">
-                    Sessão expira em: <span className="font-medium text-[var(--color-text-primary)]">{timeLeft} min</span>
+                    Sessão expira em: <span className={`font-medium ${timeLeft <= 1 ? 'text-red-500' : 'text-[var(--color-text-primary)]'}`}>{timeLeft} min</span>
                 </span>
             </div>
 
