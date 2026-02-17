@@ -44,16 +44,19 @@ export async function POST(request: Request) {
             .single();
 
         // Get gateway settings
-        const { data: settings } = await supabase
+        const { data: settings, error: settingsError } = await supabase
             .rpc('get_gateway_settings')
             .single();
 
-        if (!settings) {
+        if (!settings || settingsError) {
             return NextResponse.json(
                 { error: 'Gateway not configured' },
                 { status: 500 }
             );
         }
+
+        // TypeScript types for RPC response
+        const gatewaySettings = settings as { api_key: string; api_secret: string };
 
         // Create subscription record (pending payment)
         const { data: subscription, error: subError } = await supabase
@@ -69,10 +72,12 @@ export async function POST(request: Request) {
             .select()
             .single();
 
-        if (subError) throw subError;
+        if (subError || !subscription) {
+            throw new Error('Failed to create subscription');
+        }
 
         // Initialize ZentriPay client
-        const zentripay = new ZentripayClient(settings.api_key);
+        const zentripay = new ZentripayClient(gatewaySettings.api_key);
 
         // Create PIX payment
         const payment = await zentripay.createPixTransaction({
