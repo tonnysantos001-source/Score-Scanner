@@ -33,7 +33,7 @@ export default function LoginPage() {
 
         try {
             await signIn(email, password);
-            router.push('/minerar');
+            // Don't redirect here - let useEffect handle role-based routing
         } catch (err: any) {
             setError(err.message || 'Erro ao fazer login');
         } finally {

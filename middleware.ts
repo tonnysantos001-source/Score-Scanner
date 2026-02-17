@@ -51,14 +51,17 @@ export async function middleware(request: NextRequest) {
         request.nextUrl.pathname.startsWith(path)
     );
 
-    const isProtectedRoute =
-        request.nextUrl.pathname.startsWith('/admin') ||
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
+
+    const isUserRoute =
         request.nextUrl.pathname.startsWith('/minerar') ||
         request.nextUrl.pathname.startsWith('/minha-area');
 
+    const isProtectedRoute = isAdminRoute || isUserRoute;
+
     // Redirect authenticated users away from auth pages
     if (isAuthRoute && session) {
-        return NextResponse.redirect(new URL('/minerar', request.url));
+        return NextResponse.redirect(new URL('/admin', request.url));
     }
 
     // Redirect unauthenticated users to login

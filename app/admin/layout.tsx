@@ -5,9 +5,9 @@ import {
     LayoutDashboard,
     Users,
     Zap,
-    LogOut,
     CreditCard,
-    Shield
+    Shield,
+    Settings
 } from 'lucide-react';
 
 export default async function AdminLayout({
@@ -34,6 +34,7 @@ export default async function AdminLayout({
         { href: '/admin/users', label: 'Clientes', icon: Users },
         { href: '/admin/subscriptions', label: 'Assinaturas', icon: CreditCard },
         { href: '/admin/plans', label: 'Planos', icon: Zap },
+        { href: '/admin/settings', label: 'Configurações', icon: Settings },
     ];
 
     return (
@@ -62,15 +63,8 @@ export default async function AdminLayout({
                 </nav>
 
                 <div className="p-4 border-t border-[var(--color-border)]">
-                    <Link
-                        href="/"
-                        className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-all mb-2"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        Voltar ao Site
-                    </Link>
                     <div className="px-4 py-2 text-xs text-[var(--color-text-muted)] text-center">
-                        v1.0.0 Alpha
+                        Admin Panel v1.0.0
                     </div>
                 </div>
             </aside>
