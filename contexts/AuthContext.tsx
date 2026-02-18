@@ -85,25 +85,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }, 5000);
 
         const initAuth = async () => {
+            console.log('[AuthContext] Initializing auth...');
             try {
                 const { data: { session }, error } = await client.auth.getSession();
 
                 if (error) {
-                    throw error;
+                    console.error('[AuthContext] Error fetching session:', error);
+                    // Não dar throw aqui para não cair no catch que fazia logout
+                    // Apenas assume sem sessão por enquanto
                 }
 
+                console.log('[AuthContext] Session found:', session?.user?.email);
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
+                    console.log('[AuthContext] Checking role for:', session.user.id);
                     await checkUserRole(session.user.id);
+                } else {
+                    console.log('[AuthContext] No user in session');
                 }
             } catch (err) {
-                console.error('Init session error:', err);
-                // Se der erro na sessão inicial, limpa tudo para não travar
-                await client.auth.signOut();
-                setUser(null);
+                console.error('[AuthContext] Unexpected init error:', err);
+                // REMOVED aggressive signOut here to prevent loop
             } finally {
                 setLoading(false);
+                console.log('[AuthContext] Loading finished');
             }
         };
 
@@ -112,22 +118,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const {
             data: { subscription },
         } = client.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state change:', event);
+            console.log('[AuthContext] Auth state change:', event, session?.user?.email);
+
+            // Gerenciar loading baseado no evento
+            if (event === 'INITIAL_SESSION') {
+                // Já tratado pelo initAuth, mas serve de backup
+            }
+
             try {
                 if (event === 'SIGNED_OUT') {
                     setUser(null);
                     setIsAdmin(false);
-                    setLoading(false);
-                } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+                    // Não seta loading false aqui pois pode ser mudança de rota
+                } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                     setUser(session?.user ?? null);
                     if (session?.user) {
                         await checkUserRole(session.user.id);
                     }
-                    setLoading(false);
                 }
             } catch (err) {
-                console.error('Auth change error:', err);
-                setLoading(false);
+                console.error('[AuthContext] Auth change error:', err);
             }
         });
 
