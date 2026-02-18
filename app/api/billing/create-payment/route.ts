@@ -4,6 +4,7 @@
 import { requireAuth } from '@/lib/auth/server';
 import { createClient } from '@/lib/supabase/server';
 import { ZentripayClient } from '@/lib/zentripay/client';
+import { generateCPF, generatePhone, generateName } from '@/lib/utils/random-generator';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -37,11 +38,18 @@ export async function POST(request: Request) {
         }
 
         // Get user profile
-        const { data: profile } = await supabase
+        const { data: profileData } = await supabase
             .from('profiles')
-            .select('full_name, email')
+            .select('full_name, email, document, phone')
             .eq('id', user.id)
             .single();
+
+        const profile = profileData as {
+            full_name: string;
+            email: string;
+            document?: string;
+            phone?: string;
+        };
 
         // Get gateway settings
         const { data: settings, error: settingsError } = await supabase
@@ -84,10 +92,10 @@ export async function POST(request: Request) {
             amount: Number(plan.price),
             paymentType: 'PIX',
             customer: {
-                name: profile?.full_name || 'Cliente',
+                name: profile?.full_name || generateName(),
                 email: profile?.email || user.email,
-                document: '00000000000', // TODO: Get from user profile
-                phone: '11999999999', // TODO: Get from user profile
+                document: profile?.document || generateCPF(),
+                phone: profile?.phone || generatePhone(),
             },
             external_reference: subscription.id,
         });

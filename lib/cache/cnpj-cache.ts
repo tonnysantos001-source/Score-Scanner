@@ -127,8 +127,14 @@ export class CNPJCache {
 
             LocalStorage.addToWhitelist(entry);
 
+            // Sanitize CNPJ
+            const sanitizedCnpj = entry.cnpj.replace(/\D/g, '');
+
             // Sync to Supabase (async, don't wait)
-            SupabaseCache.upsertWhitelist(entry).catch(err =>
+            SupabaseCache.upsertWhitelist({
+                ...entry,
+                cnpj: sanitizedCnpj
+            }).catch(err =>
                 console.error('Supabase whitelist sync error:', err)
             );
 
@@ -152,8 +158,14 @@ export class CNPJCache {
 
             LocalStorage.addToBlacklist(cnpj, reason);
 
+            // Sanitize CNPJ
+            const sanitizedCnpj = cnpj.replace(/\D/g, '');
+
             // Sync to Supabase (async, don't wait)
-            SupabaseCache.insertBlacklist(entry).catch(err =>
+            SupabaseCache.insertBlacklist({
+                ...entry,
+                cnpj: sanitizedCnpj
+            }).catch(err =>
                 console.error('Supabase blacklist sync error:', err)
             );
         }

@@ -30,6 +30,9 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
+        // Sanitize CNPJ (remove formatting)
+        const cleanCnpj = company_cnpj.replace(/\D/g, '');
+
         const supabase = await createClient();
 
         // Verificar autenticação
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
         const { data: existingCompany } = await supabase
             .from('empresas_usadas')
             .select('id, user_id, domain_id')
-            .eq('cnpj', company_cnpj)
+            .eq('cnpj', cleanCnpj)
             .single();
 
         if (existingCompany) {
@@ -102,7 +105,7 @@ export async function POST(request: NextRequest) {
         // --- GERAÇÃO AUTOMÁTICA (NOVA EMPRESA) --- //
 
         // 1. Gerar Slug Único (Definir variáveis antes do uso)
-        const slug = generateSlug(company_name, company_cnpj);
+        const slug = generateSlug(company_name, cleanCnpj);
         const internalDomain = `${slug}.verifyads.com.br`;
 
         // 2. Verificar ou Criar Domínio "Verificado"
@@ -131,7 +134,7 @@ export async function POST(request: NextRequest) {
                 .insert({
                     domain: internalDomain,
                     company_name,
-                    company_cnpj,
+                    company_cnpj: cleanCnpj,
                     user_id: user.id,
                     is_verified: true,
                     dns_status: 'verified',
@@ -155,7 +158,7 @@ export async function POST(request: NextRequest) {
         const { error: wordlistError } = await supabase
             .from('empresas_usadas')
             .insert({
-                cnpj: company_cnpj,
+                cnpj: cleanCnpj,
                 user_id: user.id,
                 domain_id: domainId,
                 company_name
