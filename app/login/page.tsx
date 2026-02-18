@@ -52,25 +52,19 @@ export default function LoginPage() {
 
 
 
+    import Logo from '@/components/Logo';
+
+    // ...
+
     return (
         <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0a0a] to-black flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                <div className="flex justify-center mb-8">
-                    <div className="w-80 flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src="/logo.png"
-                            alt="VerifyAds Logo"
-                            className="w-full h-auto object-contain mix-blend-screen [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]"
-                        />
-                    </div>
+                <div className="flex justify-center mb-6">
+                    <Logo size="large" />
                 </div>
 
-                <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-2xl p-8 shadow-2xl">
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-white mb-2">
-                            VerifyAds
-                        </h1>
+                <div className="bg-gray-800/40 backdrop-blur-md border border-gray-700/50 rounded-2xl p-8 shadow-2xl">
+                    <div className="text-center mb-6">
                         <p className="text-gray-400 text-sm">
                             Acesse sua conta para gerenciar mineração e verificações
                         </p>
