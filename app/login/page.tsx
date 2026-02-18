@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -11,8 +10,7 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { signIn, user, isAdmin, loading: authLoading } = useAuth(); // isAdmin disponível no contexto
-    const router = useRouter();
+    const { signIn } = useAuth();
 
     // ⚠️ DON'T REDIRECT HERE - Let middleware handle routing!
     // Middleware will redirect authenticated users to /admin (if admin) or /minerar (if user)
@@ -43,9 +41,10 @@ export default function LoginPage() {
                 // Fallback
                 window.location.href = '/minerar';
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error('[Login] Error:', err);
-            setError(err.message || 'Erro ao fazer login');
+            const message = err instanceof Error ? err.message : 'Erro ao fazer login';
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -54,18 +53,18 @@ export default function LoginPage() {
 
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0a0a] to-black flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="flex justify-center mb-8">
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center p-4 shadow-xl shadow-blue-900/50">
+                    <div className="w-32 h-32 flex items-center justify-center p-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/logo.png" alt="Score Scanner Logo" className="w-full h-full object-contain filter drop-shadow-md" />
+                        <img src="/logo.png" alt="Score Scanner Logo" className="w-full h-full object-contain filter drop-shadow-2xl" />
                     </div>
                 </div>
 
                 <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-2">
+                        <h1 className="text-3xl font-bold text-white mb-2">
                             Score Scanner
                         </h1>
                         <p className="text-gray-400 text-sm">
