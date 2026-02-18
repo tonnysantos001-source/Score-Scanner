@@ -1,9 +1,10 @@
 'use client';
 
+import { createClient } from '@/lib/supabase/client'; // Import client
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+// import { useAuth } from '@/contexts/AuthContext'; // Removed to use direct client for detailed response
 import { Loader2 } from 'lucide-react';
 
 export default function CadastroPage() {
@@ -12,9 +13,10 @@ export default function CadastroPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { signUp } = useAuth();
+    const supabase = createClient();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,10 +35,33 @@ export default function CadastroPage() {
         setLoading(true);
 
         try {
-            await signUp(email, password, fullName);
-            router.push('/minha-area');
-        } catch (err: any) {
-            setError(err.message || 'Erro ao criar conta');
+            const { data, error: signUpError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/callback`,
+                    data: {
+                        full_name: fullName,
+                        role: 'user',
+                    },
+                },
+            });
+
+            if (signUpError) throw signUpError;
+
+            // Lógica de Auto-Login / Redirecionamento
+            if (data.session) {
+                // Se já tem sessão (confirmação desligada), redireciona
+                console.log('Sessão criada automaticamente. Redirecionando...');
+                router.push('/minha-area'); // Ou /minerar
+            } else if (data.user) {
+                // Se criou user mas não tem sessão, precisa confirmar email
+                setSuccess(true);
+            }
+
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Erro ao criar conta';
+            setError(message);
         } finally {
             setLoading(false);
         }
