@@ -63,6 +63,17 @@ export async function middleware(request: NextRequest) {
     const userRole = session?.user?.user_metadata?.role || 'user';
     const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
+    // DEBUG: Log authentication details
+    if (session) {
+        console.log('[Middleware] Auth Check:', {
+            email: session.user.email,
+            role: userRole,
+            isAdmin,
+            metadata: session.user.user_metadata,
+            path: request.nextUrl.pathname
+        });
+    }
+
     // Redirect authenticated users away from auth pages
     if (isAuthRoute && session) {
         // Redirect based on role
