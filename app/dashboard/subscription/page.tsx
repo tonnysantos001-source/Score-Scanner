@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client'; // Corrigido
 import { motion } from 'framer-motion';
 import { Check, Loader2, Zap, Shield, Crown, Copy } from 'lucide-react';
