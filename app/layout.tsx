@@ -4,7 +4,7 @@ import { Providers } from './providers';
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Score Scanner - Plataforma de Inteligência CNPJ",
+  title: "VerifyAds - Plataforma de Inteligência CNPJ",
   description: "Busque, analise e avalie empresas brasileiras com inteligência artificial. Trust Score, dossiês profissionais e muito mais.",
   keywords: ["CNPJ", "consulta CNPJ", "Score empresarial", "análise de empresas", "BrasilAPI"],
 };
