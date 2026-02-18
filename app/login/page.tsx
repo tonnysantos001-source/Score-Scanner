@@ -25,9 +25,26 @@ export default function LoginPage() {
 
         try {
             await signIn(email, password);
-            // Middleware will handle redirect based on role
-            // Just wait for it to happen
+
+            // FASE 5: RBAC CORRETO (Client-side redirect)
+            // Aguarda um momento para o AuthContext atualizar
+            const { data: { session } } = await import('@/lib/supabase/client').then(m => m.supabase.auth.getSession());
+
+            if (session) {
+                const role = session.user?.user_metadata?.role;
+                console.log('[Login] Login success. Role:', role);
+
+                if (role === 'admin' || role === 'superadmin') {
+                    window.location.href = '/admin'; // Force full navigation
+                } else {
+                    window.location.href = '/minerar';
+                }
+            } else {
+                // Fallback
+                window.location.href = '/minerar';
+            }
         } catch (err: any) {
+            console.error('[Login] Error:', err);
             setError(err.message || 'Erro ao fazer login');
         } finally {
             setLoading(false);

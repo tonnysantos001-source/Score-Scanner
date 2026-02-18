@@ -43,6 +43,11 @@ export async function middleware(request: NextRequest) {
     // (No DB queries - Edge compatible)
     // ============================================
 
+    // ============================================
+    // AUTHENTICATION CHECK ONLY
+    // (No DB queries - Edge compatible)
+    // ============================================
+
     const {
         data: { session },
     } = await supabase.auth.getSession();
@@ -64,39 +69,32 @@ export async function middleware(request: NextRequest) {
     const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
     // DEBUG: Log authentication details
-    if (session) {
-        console.log('[Middleware] Auth Check:', {
-            email: session.user.email,
+    if (session || isProtectedRoute) {
+        console.log('[Middleware] Routing:', {
+            path: request.nextUrl.pathname,
+            email: session?.user?.email || 'visitor',
             role: userRole,
-            isAdmin,
-            metadata: session.user.user_metadata,
-            path: request.nextUrl.pathname
+            isAdmin
         });
     }
 
-    // Redirect authenticated users away from auth pages
-    if (isAuthRoute && session) {
-        // Redirect based on role
-        if (isAdmin) {
-            return NextResponse.redirect(new URL('/admin', request.url));
-        } else {
-            return NextResponse.redirect(new URL('/minerar', request.url));
-        }
-    }
-
-    // Redirect unauthenticated users to login
+    // 1. PROTECTION: Block unauthenticated users from protected routes
     if (isProtectedRoute && !session) {
         const redirectUrl = new URL('/login', request.url);
         redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
         return NextResponse.redirect(redirectUrl);
     }
 
-    // Block non-admin users from accessing admin routes
+    // 2. RBAC: Block non-admin users from accessing admin routes
     if (isAdminRoute && session && !isAdmin) {
+        console.log('[Middleware] Blocking non-admin from admin route');
         return NextResponse.redirect(new URL('/minerar', request.url));
     }
 
-    // ⚠️ IMPORTANT: ROLE CHECK HAPPENS IN SERVER COMPONENTS/API
+    // 3. CONVENIENCE REDIRECTS REMOVED to prevent loops.
+    // Client-side will handle redirection after login.
+
+    return response;
     // We do a basic JWT check above for routing
     // More detailed admin check is done in:
     // - app/admin/layout.tsx (Server Component with DB query)
