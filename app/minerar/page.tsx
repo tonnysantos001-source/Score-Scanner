@@ -13,16 +13,21 @@ import { Loader2, Zap } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
 
 export default function MinerarPage() {
-    const { user, loading } = useAuth();
+    const { user, loading, isAdmin } = useAuth(); // isAdmin disponível no contexto
     const router = useRouter();
     const { companies, progress, isMining, error, startMining, stopMining } = useMining();
     const [selectedCompany, setSelectedCompany] = useState<EnhancedCompanyData | null>(null);
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
+        if (!loading) {
+            if (!user) {
+                router.push('/login');
+            } else if (isAdmin) {
+                // FAILOVER: Se admin cair aqui, manda para o painel correto
+                router.push('/admin');
+            }
         }
-    }, [user, loading, router]);
+    }, [user, loading, isAdmin, router]);
 
     if (loading) {
         return (
