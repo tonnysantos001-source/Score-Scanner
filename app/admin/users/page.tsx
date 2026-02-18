@@ -1,62 +1,63 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/browser-client';
+import { useEffect, useState, useCallback } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
-import { Search, MoreVertical, Shield, User, Crown, Zap, AlertCircle } from 'lucide-react';
+import { Search, MoreVertical, Shield, User, Crown } from 'lucide-react';
 
-interface UserProfile {
+interface UserData {
     id: string;
     email: string;
-    full_name: string | null;
-    role: 'user' | 'admin';
+    full_name: string;
+    role: string;
     created_at: string;
+    last_sign_in_at: string | null;
     subscription?: {
-        status: string;
         plan?: {
             name: string;
         };
+        status?: string;
     };
 }
 
 export default function AdminUsersPage() {
-    const [users, setUsers] = useState<UserProfile[]>([]);
+    const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const supabase = createClient();
+    // const [filterRole, setFilterRole] = useState('all'); // Unused for now
+
+    const fetchUsers = useCallback(async () => {
+        try {
+            const response = await fetch('/api/admin/users');
+            if (response.ok) {
+                const data = await response.json();
+                setUsers(data);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar usuários:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [fetchUsers]);
 
-    const fetchUsers = async () => {
+    const handleUpdateRole = async (userId: string, newRole: string) => {
         try {
-            // Fetch profiles
-            const { data: profiles, error } = await supabase
-                .from('profiles')
-                .select(`
-                    *,
-                    subscription:subscriptions(
-                        status,
-                        plan:plans(name)
-                    )
-                `)
-                .order('created_at', { ascending: false });
+            const response = await fetch('/api/admin/users', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, role: newRole }),
+            });
 
-            if (error) throw error;
-
-            // Transform data to match interface (handle array return from join)
-            const formattedUsers = profiles?.map((p: any) => ({
-                ...p,
-                // Supabase returns array for 1:Many relation, take first active or just first
-                subscription: Array.isArray(p.subscription) ? p.subscription[0] : p.subscription
-            }));
-
-            setUsers(formattedUsers || []);
-        } catch (error) {
-            console.error('Error fetching users:', error);
-        } finally {
-            setLoading(false);
+            if (response.ok) {
+                fetchUsers();
+            }
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            console.error('Erro ao atualizar role:', message);
         }
     };
 
@@ -172,7 +173,11 @@ export default function AdminUsersPage() {
                                         )}
                                     </td>
                                     <td className="p-4 text-right">
-                                        <button className="p-2 hover:bg-[var(--color-bg-card)] rounded-lg transition-colors text-[var(--color-text-secondary)]">
+                                        <button
+                                            onClick={() => handleUpdateRole(user.id, user.role === 'admin' ? 'user' : 'admin')}
+                                            className="p-2 hover:bg-[var(--color-bg-card)] rounded-lg transition-colors text-[var(--color-text-secondary)]"
+                                            title={user.role === 'admin' ? "Remover Admin" : "Tornar Admin"}
+                                        >
                                             <MoreVertical className="w-4 h-4" />
                                         </button>
                                     </td>

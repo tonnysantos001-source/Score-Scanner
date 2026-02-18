@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/browser-client'; // Corrigido
+import { createClient } from '@/lib/supabase/client'; // Corrigido
 import { motion } from 'framer-motion';
 import { Check, Loader2, Zap, Shield, Crown, Copy } from 'lucide-react';
 import Navigation from '@/components/dashboard/Navigation';
@@ -25,7 +25,6 @@ export default function SubscriptionPage() {
     const [loading, setLoading] = useState(true);
     const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
     const [pixData, setPixData] = useState<{ code: string; qr_image: string } | null>(null);
-    const [currentSubId, setCurrentSubId] = useState<string | null>(null);
     const [showPixModal, setShowPixModal] = useState(false);
 
     const supabase = createClient();
@@ -143,10 +142,15 @@ export default function SubscriptionPage() {
                                     )}
 
                                     <div className="mb-6">
-                                        <div className="w-12 h-12 rounded-lg bg-[var(--color-bg-tertiary)] flex items-center justify-center mb-4">
-                                            {getPlanIcon(plan.name)}
-                                        </div>
-                                        <h3 className="text-xl font-bold">{plan.name}</h3>
+                                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center p-2">
+                                            <Image
+                                                src="/logo.png"
+                                                alt="Logo"
+                                                width={48}
+                                                height={48}
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>        <h3 className="text-xl font-bold">{plan.name}</h3>
                                         <p className="text-[var(--color-text-secondary)] text-sm mt-2 min-h-[40px]">
                                             {plan.description}
                                         </p>
