@@ -4,9 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
+    // ... (rest of component unchanged)
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -51,8 +53,6 @@ export default function LoginPage() {
     };
 
 
-
-    import Logo from '@/components/Logo';
 
     // ...
 
