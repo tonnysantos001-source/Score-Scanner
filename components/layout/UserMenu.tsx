@@ -27,12 +27,25 @@ export default function UserMenu() {
     const handleLogout = async () => {
         setIsOpen(false);
         try {
-            await signOut();
+            // Clear all storage
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Clear all cookies
+            document.cookie.split(";").forEach((c) => {
+                document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+
+            // Call logout API
+            await fetch('/api/auth/logout', { method: 'POST' });
+
+            // Force reload to clear state
+            window.location.href = '/login';
         } catch (err) {
             console.error('Erro ao sair:', err);
-        } finally {
-            router.refresh(); // Limpa cache do Next.js
-            router.push('/login');
+            window.location.href = '/login';
         }
     };
 
