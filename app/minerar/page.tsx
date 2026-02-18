@@ -13,31 +13,40 @@ import { Loader2, Zap } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
 
 export default function MinerarPage() {
-    const { user, loading, isAdmin } = useAuth(); // isAdmin disponível no contexto
+    const { user, loading, isAdmin } = useAuth();
     const router = useRouter();
     const { companies, progress, isMining, error, startMining, stopMining } = useMining();
     const [selectedCompany, setSelectedCompany] = useState<EnhancedCompanyData | null>(null);
 
+    // DEBUG: Log status
+    useEffect(() => {
+        console.log('[MinerarPage] Auth State:', { loading, user: user?.email, isAdmin });
+    }, [loading, user, isAdmin]);
+
     useEffect(() => {
         if (!loading) {
             if (!user) {
+                console.log('[MinerarPage] No user, redirecting to login');
                 router.push('/login');
             } else if (isAdmin) {
                 // FAILOVER: Se admin cair aqui, manda para o painel correto
+                console.log('[MinerarPage] User is ADMIN, redirecting to /admin');
                 router.push('/admin');
             }
         }
     }, [user, loading, isAdmin, router]);
 
-    if (loading) {
+    // Se estiver carregando OU se for admin (enquanto redireciona), não renderiza a UI complexa
+    if (loading || isAdmin) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white flex-col gap-4">
                 <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+                {isAdmin && <p className="text-lg animate-pulse">Redirecionando para Painel Admin...</p>}
             </div>
         );
     }
 
-    if (!user) return null;
+    if (!user) return null; // Wait for redirect
 
     const handleStartMining = (filters: MiningFilters) => {
         startMining(filters);
