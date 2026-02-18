@@ -56,9 +56,13 @@ export default function LoginPage() {
         <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0a0a] to-black flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="flex justify-center mb-8">
-                    <div className="w-32 h-32 flex items-center justify-center p-2">
+                    <div className="w-72 flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/logo.png" alt="Score Scanner Logo" className="w-full h-full object-contain filter drop-shadow-2xl" />
+                        <img
+                            src="/logo.png"
+                            alt="Score Scanner Logo"
+                            className="w-full h-auto object-contain mix-blend-screen"
+                        />
                     </div>
                 </div>
 
