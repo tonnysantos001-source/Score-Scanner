@@ -116,20 +116,36 @@ export default function CadastroPage() {
                             </div>
                         )}
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Criando conta...
-                                </>
-                            ) : (
-                                'Criar Conta'
-                            )}
-                        </button>
+                        {success ? (
+                            <div className="bg-green-500/10 border border-green-500/50 rounded-lg p-6 text-center">
+                                <h3 className="text-xl font-bold text-green-400 mb-2">Conta criada com sucesso!</h3>
+                                <p className="text-gray-300 mb-4">
+                                    Sua conta foi criada. Se a confirmação de e-mail estiver ativa, verifique sua caixa de entrada.
+                                    Caso contrário, você será redirecionado em instantes.
+                                </p>
+                                <Link
+                                    href="/login"
+                                    className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition"
+                                >
+                                    Ir para Login
+                                </Link>
+                            </div>
+                        ) : (
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Criando conta...
+                                    </>
+                                ) : (
+                                    'Criar Conta'
+                                )}
+                            </button>
+                        )}
                     </form>
 
 
