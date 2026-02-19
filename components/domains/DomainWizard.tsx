@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Globe, Check, AlertCircle, RefreshCw, Copy, ArrowRight, Server, ShieldCheck } from 'lucide-react';
+import { Globe, Check, AlertCircle, RefreshCw, Copy, ArrowRight, Server, ShieldCheck, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
