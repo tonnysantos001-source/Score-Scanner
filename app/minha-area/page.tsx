@@ -281,7 +281,7 @@ export default function MinhaAreaPage() {
                                     }`}
                             >
                                 <Layout className="w-4 h-4" />
-                                Minhas Páginas
+                                Minhas Empresas Ativas
                                 {activeTab === 'pages' && (
                                     <motion.div
                                         layoutId="activeTabBg"
@@ -349,7 +349,7 @@ export default function MinhaAreaPage() {
                             >
                                 <div className="flex items-center justify-between mb-6">
                                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                        <span className="text-2xl">📋</span> Meus LPs e Domínios Minerados
+                                        <span className="text-2xl">📋</span> Minhas Empresas Ativas
                                     </h2>
                                 </div>
 
