@@ -47,7 +47,43 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
 
     // Função saveChanges removida pois agora é tudo salvo ao gerar o link
 
+    const [selectedDomainId, setSelectedDomainId] = useState('');
+    const [userDomains, setUserDomains] = useState<any[]>([]);
+    const [isLoadingDomains, setIsLoadingDomains] = useState(true);
+
+    // Fetch domains on mount
+    useState(() => {
+        const fetchDomains = async () => {
+            try {
+                const { createClient } = await import('@/lib/supabase/client');
+                const supabase = createClient();
+                const { data } = await supabase
+                    .from('verified_domains')
+                    .select('id, domain')
+                    .eq('domain_type', 'external')
+                    .order('created_at', { ascending: false });
+
+                if (data) {
+                    setUserDomains(data);
+                    if (data.length > 0) {
+                        setSelectedDomainId(data[0].id);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching domains:', err);
+            } finally {
+                setIsLoadingDomains(false);
+            }
+        };
+        fetchDomains();
+    });
+
     const handleSaveCompany = async () => {
+        if (!selectedDomainId) {
+            toast.error('Selecione um domínio para continuar.');
+            return;
+        }
+
         setIsSaving(true);
         try {
             const response = await fetch('/api/domain/save-with-company', {
@@ -62,7 +98,9 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                     custom_notes: observacoes,
                     // Dados do Facebook
                     verification_token: verificationToken,
-                    pixel_id: pixelId
+                    pixel_id: pixelId,
+                    // WHITE LABEL
+                    domain_id: selectedDomainId
                 })
             });
 
@@ -73,27 +111,15 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                 throw new Error(data.error || 'Erro desconhecido ao gerar link');
             }
 
-            // Salvar edições locais também para persistência imediata na visualização (opcional)
-            const savedData = {
-                cnpj: company.cnpj,
-                custom_phone: telefone,
-                custom_email: email,
-                custom_notes: observacoes,
-                updated_at: new Date().toISOString(),
-            };
-            const existing = JSON.parse(localStorage.getItem('company_edits') || '{}');
-            existing[company.cnpj] = savedData;
-            localStorage.setItem('company_edits', JSON.stringify(existing));
-
             setIsSaved(true);
             setGeneratedUrl(data.url);
             toast.success('Página gerada e dados salvos!', {
                 description: 'Seu link exclusivo está pronto e verificado.'
             });
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('Erro handleSaveCompany:', error);
             toast.error('Falha ao gerar link', {
-                description: (error as Error).message || 'Verifique sua conexão e tente novamente.'
+                description: error.message || 'Verifique sua conexão e tente novamente.'
             });
         } finally {
             setIsSaving(false);
@@ -310,24 +336,62 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
-                                        Geração Automática de Página
+                                        Geração de Página Verificada (White Label)
                                     </h4>
                                     <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                                        Ao gerar o link, a empresa será <span className="text-white font-medium">salva automaticamente</span> em seu painel &quot;Minha Área&quot;. Esta ação debitará 1 crédito de sua cota de domínios ativos.
+                                        Selecione um de seus domínios verificados para hospedar esta página. Isso garante conformidade total com o Facebook Ads.
                                     </p>
                                 </div>
                             </div>
 
+                            {/* SELEÇÃO DE DOMÍNIO */}
+                            {!isLoadingDomains && userDomains.length === 0 ? (
+                                <div className="p-4 border border-yellow-500/30 bg-yellow-500/10 rounded-xl text-center">
+                                    <h4 className="text-yellow-400 font-bold mb-2">⚠️ Nenhum Domínio Conectado</h4>
+                                    <p className="text-sm text-yellow-200/80 mb-4">
+                                        Para gerar páginas verificadas, você precisa conectar seu próprio domínio primeiro.
+                                    </p>
+                                    <a
+                                        href="/minha-area?tab=domains"
+                                        className="inline-block px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm font-bold transition-colors"
+                                    >
+                                        Conectar Domínio Agora
+                                    </a>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-[var(--color-text-secondary)] uppercase">
+                                        Selecione o Domínio
+                                    </label>
+                                    <select
+                                        value={selectedDomainId}
+                                        onChange={(e) => setSelectedDomainId(e.target.value)}
+                                        className="w-full px-4 py-3 bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                                        disabled={isLoadingDomains || isSaving}
+                                    >
+                                        {isLoadingDomains && <option>Carregando domínios...</option>}
+                                        {!isLoadingDomains && userDomains.map(d => (
+                                            <option key={d.id} value={d.id}>
+                                                {d.domain}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                             {/* Botão de Ação Principal */}
                             <button
                                 onClick={handleSaveCompany}
-                                disabled={isSaving}
-                                className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white rounded-xl text-base font-bold shadow-lg hover:shadow-purple-500/20 transition-all flex items-center justify-center gap-3 group"
+                                disabled={isSaving || userDomains.length === 0}
+                                className={`w-full py-4 rounded-xl text-base font-bold shadow-lg transition-all flex items-center justify-center gap-3 group ${userDomains.length === 0
+                                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white hover:shadow-purple-500/20'
+                                    }`}
                             >
                                 {isSaving ? (
                                     <>
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        GERANDO LINK EXCLUSIVO...
+                                        VINCULANDO DOMÍNIO...
                                     </>
                                 ) : (
                                     <>

@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
             company_name,
             custom_notes,
             verification_token,
-            pixel_id
+            pixel_id,
+            domain_id // NEW: Required for White Label
         } = body;
 
         if (!company_cnpj || !company_name) {
@@ -30,9 +31,8 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
-        // Sanitize CNPJ (remove formatting)
+        // Sanitize CNPJ
         const cleanCnpj = company_cnpj.replace(/\D/g, '');
-
         const supabase = await createClient();
 
         // Verificar autenticação
@@ -45,191 +45,104 @@ export async function POST(request: NextRequest) {
             }, { status: 401 });
         }
 
-        // Verificar se CNPJ já está em uso (Wordlist)
+        // --- VALIDATION: STRICT CUSTOM DOMAIN ---
+        if (!domain_id) {
+            return NextResponse.json({
+                success: false,
+                error: 'É necessário selecionar um domínio próprio verificado.'
+            }, { status: 400 });
+        }
+
+        // Confirm domain belongs to user and is external
+        const { data: targetDomain, error: domainCheckError } = await supabase
+            .from('verified_domains')
+            .select('id, domain, domain_type')
+            .eq('id', domain_id)
+            .eq('user_id', user.id)
+            .eq('domain_type', 'external')
+            .single();
+
+        if (domainCheckError || !targetDomain) {
+            return NextResponse.json({
+                success: false,
+                error: 'Domínio inválido ou não encontrado.'
+            }, { status: 403 });
+        }
+
+        // Remove old internal slug generation logic. 
+        // We now MAP this company to the selected External Domain.
+
+        // Check if CNPJ is already used
         const { data: existingCompany } = await supabase
             .from('empresas_usadas')
             .select('id, user_id, domain_id')
             .eq('cnpj', cleanCnpj)
             .single();
 
+        // Logic for existing company...
         if (existingCompany) {
-            // Se já existe e não é do usuário atual
             if (existingCompany.user_id !== user.id) {
-                return NextResponse.json({
-                    success: false,
-                    error: 'Esta empresa já está sendo utilizada por outro cliente'
-                }, { status: 409 });
+                return NextResponse.json({ success: false, error: 'Empresa já utilizada por outro cliente' }, { status: 409 });
             }
+            // Update mapping if changed? 
+            // Ideally we just update the content linked to the domain_id they passed 
+            // OR if they are changing the domain for this company? 
+            // Use case: User selects domain A. Then selects domain B.
+            // We should update 'empresas_usadas' to point to domain B?
+            // AND update Landing Page content on domain B?
 
-            // Se já é do usuário, ATUALIZAR dados e retornar
-            console.log('Atualizando dados da empresa existente:', verification_token ? 'Com Token' : 'Sem Token');
-
-            // 1. Atualizar verificação (Token)
-            if (verification_token) {
-                await supabase
-                    .from('verified_domains')
-                    .update({ verification_token })
-                    .eq('id', existingCompany.domain_id);
-            }
-
-            // 2. Atualizar Landing Page (Pixel, Notas)
-            const updateData: any = {};
-            if (pixel_id) updateData.facebook_pixel_id = pixel_id;
-            if (custom_notes) updateData.description_text = custom_notes;
-
-            if (Object.keys(updateData).length > 0) {
-                await supabase
-                    .from('landing_pages')
-                    .update(updateData)
-                    .eq('domain_id', existingCompany.domain_id);
-            }
-
-            // Buscar o slug
-            const { data: lp } = await supabase
-                .from('landing_pages')
-                .select('slug')
-                .eq('domain_id', existingCompany.domain_id)
-                .single();
-
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifyads.com.br';
-            const fullUrl = lp ? `${baseUrl}/l/${lp.slug}` : null;
-
-            return NextResponse.json({
-                success: true,
-                message: 'Dados atualizados com sucesso',
-                url: fullUrl,
-                slug: lp?.slug
-            });
-        }
-
-        // --- GERAÇÃO AUTOMÁTICA (NOVA EMPRESA) --- //
-
-        // 1. Gerar Slug Único (Definir variáveis antes do uso)
-        const slug = generateSlug(company_name, cleanCnpj);
-        const internalDomain = `${slug}.verifyads.com.br`;
-
-        // 2. Verificar ou Criar Domínio "Verificado"
-        let domainId;
-
-        // Tentar buscar domínio já existente (pode ter sobrado de uma tentativa anterior falha ou deletada manualmente)
-        const { data: existingDomain } = await supabase
-            .from('verified_domains')
-            .select('id')
-            .eq('domain', internalDomain)
-            .single();
-
-        if (existingDomain) {
-            domainId = existingDomain.id;
-            // Atualizar token se necessário
-            if (verification_token) {
-                await supabase
-                    .from('verified_domains')
-                    .update({ verification_token })
-                    .eq('id', domainId);
-            }
+            // For now, let's assume simple update of content on the target domain
         } else {
-            // Criar novo
-            const { data: newDomain, error: domainError } = await supabase
-                .from('verified_domains')
-                .insert({
-                    domain: internalDomain,
-                    company_name,
-                    company_cnpj: cleanCnpj,
-                    user_id: user.id,
-                    is_verified: true,
-                    dns_status: 'verified',
-                    dns_instructions: 'Auto-generated',
-                    verification_token: verification_token || null
-                })
-                .select('id')
-                .single();
-
-            if (domainError) {
-                console.error('Erro ao criar domínio automático:', domainError);
-                return NextResponse.json({
-                    success: false,
-                    error: `Erro ao gerar link: ${domainError.message}`
-                }, { status: 500 });
-            }
-            domainId = newDomain.id;
-        }
-
-        // 3. Adicionar CNPJ na wordlist
-        const { error: wordlistError } = await supabase
-            .from('empresas_usadas')
-            .insert({
+            // Create usage record
+            await supabase.from('empresas_usadas').insert({
                 cnpj: cleanCnpj,
                 user_id: user.id,
-                domain_id: domainId,
+                domain_id: targetDomain.id,
                 company_name
             });
-
-        if (wordlistError) {
-            console.error('Erro ao adicionar na wordlist:', wordlistError);
         }
 
-        // 4. Criar ou Atualizar Landing Page ATIVA
-        // Verificar se já existe LP para este domínio
+        // UPSERT Landing Page for this Domain
+        // A custom domain typically has ONE main landing page (root).
+        // Check if LP exists for this domain
         const { data: existingLP } = await supabase
             .from('landing_pages')
             .select('id')
-            .eq('domain_id', domainId)
+            .eq('domain_id', targetDomain.id)
             .single();
 
-        let lpError;
+        const lpData = {
+            domain_id: targetDomain.id,
+            slug: 'home', // Virtual slug for root
+            title_text: company_name,
+            description_text: custom_notes || `Conheça a ${company_name}. Dados verificados.`,
+            facebook_pixel_id: pixel_id || null,
+            is_active: true,
+            use_generic: true
+        };
 
         if (existingLP) {
-            // Atualizar
-            const { error: updateError } = await supabase
-                .from('landing_pages')
-                .update({
-                    description_text: custom_notes || `Conheça a ${company_name}, referência em qualidade e atendimento.Confira nossos dados verificados.`,
-                    facebook_pixel_id: pixel_id || null,
-                    is_active: true // Garantir que reativa se estiver inativa
-                })
-                .eq('id', existingLP.id);
-            lpError = updateError;
+            await supabase.from('landing_pages').update(lpData).eq('id', existingLP.id);
         } else {
-            // Criar nova
-            const { error: insertError } = await supabase
-                .from('landing_pages')
-                .insert({
-                    domain_id: domainId,
-                    slug: slug,
-                    use_generic: true,
-                    is_active: true,
-                    title_text: company_name,
-                    description_text: custom_notes || `Conheça a ${company_name}, referência em qualidade e atendimento.Confira nossos dados verificados.`,
-                    facebook_pixel_id: pixel_id || null
-                });
-            lpError = insertError;
+            await supabase.from('landing_pages').insert(lpData);
         }
 
-        if (lpError) {
-            console.error('Erro ao criar landing page:', lpError);
-            return NextResponse.json({
-                success: false,
-                error: 'Erro ao publicar página'
-            }, { status: 500 });
+        // Update Domain Verification Token if provided
+        if (verification_token) {
+            await supabase
+                .from('verified_domains')
+                .update({ verification_token })
+                .eq('id', targetDomain.id);
         }
-
-        // 5. Retornar Sucesso e URL
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifyads.com.br';
-        const fullUrl = `${baseUrl}/l/${slug}`;
 
         return NextResponse.json({
             success: true,
-            message: 'Página gerada com sucesso!',
-            domain_id: domainId,
-            slug: slug,
-            url: fullUrl
+            message: 'Página vinculada com sucesso!',
+            url: `https://${targetDomain.domain}` // Root URL
         });
 
     } catch (error) {
-        console.error('Erro na API save-with-company:', error);
-        return NextResponse.json({
-            success: false,
-            error: 'Erro interno do servidor'
-        }, { status: 500 });
+        console.error('Erro API:', error);
+        return NextResponse.json({ success: false, error: 'Erro interno' }, { status: 500 });
     }
 }
