@@ -303,6 +303,7 @@ export function useMining(): UseMiningReturn {
             }
         } finally {
             setIsMining(false);
+            isMiningRef.current = false; // FIX: Reset ref so we can start again
             abortControllerRef.current = null;
         }
     }, []);
@@ -312,6 +313,7 @@ export function useMining(): UseMiningReturn {
             abortControllerRef.current.abort();
         }
         setIsMining(false);
+        isMiningRef.current = false; // FIX: Reset ref on manual stop
     }, []);
 
     const clearResults = useCallback(() => {

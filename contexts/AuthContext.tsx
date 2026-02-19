@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const client = createClient();
         setSupabase(client);
 
-        // Safety Timeout: Força o fim do loading após 5s
+        // Safety Timeout: Força o fim do loading após 15s
         const safetyTimeout = setTimeout(() => {
             setLoading((prev) => {
                 if (prev) {
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
                 return prev;
             });
-        }, 5000);
+        }, 15000);
 
         const initAuth = async () => {
             console.log('[AuthContext] Initializing auth...');
