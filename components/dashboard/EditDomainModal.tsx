@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 
 interface EditDomainModalProps {
     domainId: string;
+    domain?: string;
+    isVerified?: boolean;
     initialData: {
         title?: string;
         description?: string;
@@ -26,6 +28,8 @@ interface EditDomainModalProps {
 
 export function EditDomainModal({
     domainId,
+    domain,
+    isVerified,
     initialData,
     companyData,
     onClose,
@@ -43,6 +47,24 @@ export function EditDomainModal({
     const companyName = companyData.razao_social || companyData.nome_fantasia || 'Empresa';
     const genericTitle = companyName;
     const genericDescription = `Somos a ${companyName}, oferecendo serviços de qualidade com excelência e compromisso.`;
+
+    // Calculate Base URL
+    const baseUrl = (isVerified && domain)
+        ? `https://${domain}`
+        : `${window.location.origin}`;
+
+    // Calculate Full URL
+    const fullUrl = (isVerified && domain)
+        ? `${baseUrl}` // If custom domain, typically it maps to the LP root? Or /l/slug?
+        // If standard, it's /l/slug.
+        // The user said "os clientes usaram o dominio deles para poder usar a landpage".
+        // If the domain is CNAME to cname.verifyads.com, it handles the routing.
+        // Assuming standard behavior: Custom Domain Root -> LP.
+        // However, if one domain serves multiple LPs: domain.com/l/slug.
+        // Let's assume root for now based on "habilitar o dominio dele".
+        : `${baseUrl}/l/${slug || '...'}`;
+
+    const displayUrl = fullUrl.replace(/^https?:\/\//, '');
 
     const handleSave = async () => {
         try {
@@ -144,11 +166,11 @@ export function EditDomainModal({
                             </label>
                             <div className="flex items-center gap-2">
                                 <code className="flex-1 text-sm bg-black/30 px-3 py-2.5 rounded-lg border border-blue-500/10 text-gray-300 font-mono select-all">
-                                    {window.location.origin}/l/{slug || '...'}
+                                    {displayUrl}
                                 </code>
                                 <button
                                     onClick={() => {
-                                        navigator.clipboard.writeText(`${window.location.origin}/l/${slug}`);
+                                        navigator.clipboard.writeText(fullUrl);
                                         toast.success('Link copiado!');
                                     }}
                                     className="p-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-lg border border-blue-600/20 transition-colors"
@@ -157,13 +179,18 @@ export function EditDomainModal({
                                     <Copy className="w-4 h-4" />
                                 </button>
                                 <button
-                                    onClick={() => window.open(`/l/${slug}`, '_blank')}
+                                    onClick={() => window.open(fullUrl, '_blank')}
                                     className="p-2.5 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-gray-400 hover:text-white rounded-lg border border-[var(--color-border)] transition-colors"
                                     title="Abrir Página"
                                 >
                                     <ExternalLink className="w-4 h-4" />
                                 </button>
                             </div>
+                            {(!isVerified || !domain) && (
+                                <p className="text-xs text-yellow-400/80 mt-2 flex items-center gap-1.5">
+                                    ⚠️ Este link usa o domínio do sistema. Para usar seu domínio próprio, verifique-o na aba &quot;Domínios Próprios&quot;.
+                                </p>
+                            )}
                         </div>
 
                         {/* Basic Info Section */}

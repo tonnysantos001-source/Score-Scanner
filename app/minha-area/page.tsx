@@ -353,6 +353,7 @@ export default function MinhaAreaPage() {
                                     </h2>
                                 </div>
 
+
                                 {/* Search and Filters */}
                                 {!isLoadingDomains && domains.length > 0 && (
                                     <SearchAndFilters
@@ -432,7 +433,10 @@ export default function MinhaAreaPage() {
                 {/* Edit Modal */}
                 {editingDomain && (
                     <EditDomainModal
+                        key={editingDomain.id}
                         domainId={editingDomain.id}
+                        domain={editingDomain.domain}
+                        isVerified={editingDomain.is_verified}
                         initialData={{
                             title: editingDomain.landing_pages?.[0]?.title_text,
                             description: editingDomain.landing_pages?.[0]?.description_text,
@@ -453,4 +457,3 @@ export default function MinhaAreaPage() {
         </div>
     );
 }
-

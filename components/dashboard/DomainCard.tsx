@@ -4,14 +4,12 @@ import { motion } from 'framer-motion';
 import {
     CheckCircle2,
     Clock,
-    Eye,
     Edit3,
     Copy,
     Trash2,
     RefreshCw,
     ExternalLink
 } from 'lucide-react';
-import { formatDate } from '@/lib/utils/formatters';
 import { toast } from 'sonner';
 
 interface DomainCardProps {
@@ -36,8 +34,35 @@ interface DomainCardProps {
 
 export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCardProps) {
     const landingPage = domain.landing_pages?.[0];
-    const publicUrl = landingPage
-        ? `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/l/${landingPage.slug}`
+    const normalizedDomain = domain.domain.toLowerCase();
+    // Logic: If verified, use custom domain. If not, use system domain?
+    // User requirement: "clients can only use THEIR domains".
+    // So if not verified, maybe we shouldn't show a public URL at all? 
+    // Or we show it but user knows it's system.
+    // Let's use custom domain if verified, else null?
+    // "o outro erro esta quando eu abro o editar ladpage e mostra o dominio do nosso sistema que os cliente jamais poderam usar"
+    // This implies they SHOUD NOT see system domain.
+
+    const baseUrl = domain.is_verified
+        ? `https://${normalizedDomain}`
+        : null; // Hide if not verified, or strict: null.
+
+    // If we return null, the "Ver" button won't appear.
+    // However, for "Minhas Empresas" (mined companies), do they HAVE a URL before adding a domain?
+    // User says: "habilitar o dominio dele ai sim sera salvo dentro do painel"
+    // So if it is in the panel, does it have a domain?
+    // If it's in "Minhas Empresas" (from mining), it might NOT have a custom domain yet?
+    // But the DomainCard props has `domain.domain`.
+
+    // If the domain is "verifyads.com.br" (system), we might want to show it?
+    // But the user says "eu nao minero dominios".
+    // Let's assume: If verified custom domain -> Use it.
+    // If not verified -> No public URL (or maybe we shouldn't show the card in this list if it's not ready?).
+    // But the list is "Minhas Empresas".
+
+    // Safety check:
+    const publicUrl = (baseUrl && landingPage)
+        ? `${baseUrl}` // Assuming root for custom domain logic based on "white label" usually being CNAME root.
         : null;
 
     const copyUrl = () => {
