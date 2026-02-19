@@ -186,29 +186,29 @@ export default function MinhaAreaPage() {
     };
 
     const handleRevalidate = async (domainId: string) => {
-        try {
-            toast.loading('Validando domínio...', { id: 'revalidate' });
+        const domain = domains.find((d) => d.id === domainId);
+        if (!domain) return;
 
-            const response = await fetch('/api/domain/revalidate', {
+        const toastId = toast.loading('Verificando registro CNAME...');
+        try {
+            const response = await fetch('/api/domain/verify-dns', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domain_id: domainId }),
+                body: JSON.stringify({ domain: domain.domain, domainId }),
             });
 
-
             const data = await response.json();
-            toast.dismiss('revalidate');
 
-            if (data.success && data.isValid) {
-                toast.success('Domínio verificado com sucesso! 🎉');
+            if (data.verification?.verified) {
+                toast.success('✅ Domínio verificado e ativo!', { id: toastId });
                 fetchDomains();
                 fetchStats();
             } else {
-                toast.error(data.error || 'Meta tag não encontrada no domínio');
+                const errMsg = data.verification?.error || 'CNAME ainda não propagou';
+                toast.error(`⏳ ${errMsg}. Tente novamente em alguns minutos.`, { id: toastId, duration: 6000 });
             }
         } catch {
-            toast.dismiss('revalidate');
-            toast.error('Erro ao conectar com o servidor');
+            toast.error('Erro ao verificar DNS. Tente novamente.', { id: toastId });
         }
     };
 

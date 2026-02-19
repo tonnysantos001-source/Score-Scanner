@@ -164,32 +164,40 @@ export function EditDomainModal({
                                 <LinkIcon className="w-3 h-3" />
                                 Link da Página
                             </label>
-                            <div className="flex items-center gap-2">
-                                <code className="flex-1 text-sm bg-black/30 px-3 py-2.5 rounded-lg border border-blue-500/10 text-gray-300 font-mono select-all">
-                                    {displayUrl}
-                                </code>
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(fullUrl);
-                                        toast.success('Link copiado!');
-                                    }}
-                                    className="p-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-lg border border-blue-600/20 transition-colors"
-                                    title="Copiar Link"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => window.open(fullUrl, '_blank')}
-                                    className="p-2.5 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-gray-400 hover:text-white rounded-lg border border-[var(--color-border)] transition-colors"
-                                    title="Abrir Página"
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                </button>
-                            </div>
-                            {(!isVerified || !domain) && (
-                                <p className="text-xs text-yellow-400/80 mt-2 flex items-center gap-1.5">
-                                    ⚠️ Este link usa o domínio do sistema. Para usar seu domínio próprio, verifique-o na aba &quot;Domínios Próprios&quot;.
-                                </p>
+
+                            {isVerified && domain ? (
+                                <div className="flex items-center gap-2">
+                                    <code className="flex-1 text-sm bg-black/30 px-3 py-2.5 rounded-lg border border-blue-500/10 text-gray-300 font-mono select-all">
+                                        {displayUrl}
+                                    </code>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(fullUrl);
+                                            toast.success('Link copiado!');
+                                        }}
+                                        className="p-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-lg border border-blue-600/20 transition-colors"
+                                        title="Copiar Link"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => window.open(fullUrl, '_blank')}
+                                        className="p-2.5 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-gray-400 hover:text-white rounded-lg border border-[var(--color-border)] transition-colors"
+                                        title="Abrir Página"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                                    <p className="text-xs text-yellow-200/80 flex items-start gap-2">
+                                        <span className="text-base">⚠️</span>
+                                        <span>
+                                            Você precisa conectar e verificar um domínio próprio para usar esta página.
+                                            Vá para a aba <b>"Domínios Próprios"</b> para configurar.
+                                        </span>
+                                    </p>
+                                </div>
                             )}
                         </div>
 
