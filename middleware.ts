@@ -42,8 +42,19 @@ export async function middleware(request: NextRequest) {
     // CUSTOM DOMAIN ROUTING (White Label)
     // ============================================
     const hostname = request.headers.get('host') || '';
-    const mainDomain = process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, '') || 'verifyads.com';
-    const isMainDomain = hostname === mainDomain || hostname.endsWith(`.${mainDomain}`) || hostname === 'localhost:3000';
+    
+    // Configurable main domains + localhost
+    const allowedDomains = [
+        'verifyads.com', 
+        'verifyads.com.br', 
+        'localhost:3000', 
+        'localhost',
+        process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, '')
+    ].filter(Boolean);
+
+    const isMainDomain = allowedDomains.some(domain => 
+        hostname === domain || hostname.endsWith(`.${domain}`)
+    );
 
     if (!isMainDomain) {
         // It's a custom domain!
