@@ -13,6 +13,7 @@ interface DomainWizardProps {
 export default function DomainWizard({ onSuccess }: DomainWizardProps) {
     const [step, setStep] = useState<1 | 2>(1);
     const [domain, setDomain] = useState('');
+    const [domainId, setDomainId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [verificationResult, setVerificationResult] = useState<any>(null);
 
@@ -55,6 +56,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
             if (error) throw error;
 
             setDomain(cleanDomain);
+            setDomainId(data.id);
             setStep(2);
             toast.success('Domínio pré-cadastrado! Agora configure o DNS.');
 
@@ -76,7 +78,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
             const response = await fetch('/api/domain/verify-dns', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domain })
+                body: JSON.stringify({ domain, domainId })
             });
 
             const data = await response.json();
@@ -99,8 +101,24 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
         }
     };
 
+    // Determine Host instruction
+    const getHostInstruction = (domainName: string) => {
+        const parts = domainName.split('.');
+        if (parts.length === 2) {
+            return '@ (ou deixe vazio)';
+        }
+        if (parts.length > 2) {
+            // Handle cases like domain.com.br (3 parts, but root)
+            // Simple heuristic: if the last part is 2 chars (br, uk, etc) and 2nd last is 3 chars (com, net, etc)?
+            // It's hard to be perfect.
+            // Safer to say: "A parte antes do domínio"
+            return parts[0];
+        }
+        return '@';
+    };
+
     return (
-        <div className="glass-card p-8 h-full relative overflow-hidden">
+        <div className="glass-card p-8 h-full relative overflow-hidden flex flex-col">
             {/* Background Decor */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
@@ -111,7 +129,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
-                        className="relative z-10"
+                        className="relative z-10 flex-1 flex flex-col"
                     >
                         <div className="mb-6">
                             <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 border border-blue-500/20">
@@ -123,7 +141,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                             </p>
                         </div>
 
-                        <form onSubmit={handleAddDomain} className="space-y-6">
+                        <form onSubmit={handleAddDomain} className="space-y-6 flex-1 flex flex-col">
                             <div className="space-y-2">
                                 <label className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                                     Seu Subdomínio
@@ -144,7 +162,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group"
+                                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group mt-auto"
                             >
                                 {loading ? (
                                     <RefreshCw className="w-5 h-5 animate-spin" />
@@ -165,7 +183,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="relative z-10"
+                        className="relative z-10 flex-1 flex flex-col"
                     >
                         <div className="mb-6">
                             <div className="flex items-center gap-3 mb-4">
@@ -179,7 +197,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                             </p>
                         </div>
 
-                        <div className="space-y-4 mb-8">
+                        <div className="space-y-4 mb-4">
                             <div className="p-4 bg-[var(--color-bg-tertiary)] rounded-xl border border-[var(--color-border)]">
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <div>
@@ -188,8 +206,8 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                                     </div>
                                     <div>
                                         <div className="text-[10px] uppercase text-gray-500 font-bold mb-1">Nome (Host)</div>
-                                        <div className="font-mono text-white text-sm truncate" title={domain.split('.')[0]}>
-                                            {domain.split('.')[0]}
+                                        <div className="font-mono text-white text-sm truncate" title={getHostInstruction(domain)}>
+                                            {getHostInstruction(domain)}
                                         </div>
                                     </div>
                                 </div>
@@ -210,6 +228,21 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                             </div>
                         </div>
 
+                        {/* Propagation Warning */}
+                        <div className="p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-xl mb-6">
+                            <div className="flex gap-3">
+                                <Clock className="w-5 h-5 text-yellow-500/50 shrink-0" />
+                                <div>
+                                    <p className="text-xs text-yellow-200/80 leading-relaxed font-medium">
+                                        Importante: A propagação do DNS pode levar de alguns minutos até 48 horas.
+                                    </p>
+                                    <p className="text-xs text-yellow-200/50 mt-1">
+                                        Se der erro, aguarde alguns instantes e tente novamente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {verificationResult?.success ? (
                             <motion.div
                                 initial={{ scale: 0.9, opacity: 0 }}
@@ -225,19 +258,20 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                                 </div>
                             </motion.div>
                         ) : (
-                            <div className="flex gap-3 mb-6">
-                                <button
-                                    onClick={() => setStep(1)}
-                                    className="px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                                >
-                                    Voltar
-                                </button>
+                            <div className="flex flex-col gap-3 mb-2">
                                 <button
                                     onClick={verifyDNS}
                                     disabled={loading}
-                                    className="flex-1 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-white/5"
+                                    className="w-full py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-white/5"
                                 >
                                     {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Verificar Conexão'}
+                                </button>
+
+                                <button
+                                    onClick={onSuccess}
+                                    className="w-full py-3 bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-white rounded-xl font-medium transition-colors border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)]"
+                                >
+                                    Salvar e Verificar Depois
                                 </button>
                             </div>
                         )}
@@ -246,7 +280,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-center"
+                                className="text-center mt-4"
                             >
                                 <p className="text-xs text-red-400 bg-red-500/10 py-2 px-3 rounded-lg inline-flex items-center gap-2">
                                     <AlertCircle className="w-3 h-3" />

@@ -176,15 +176,21 @@ export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCar
                     </button>
                 )}
 
-                {/* Re-validar */}
+                {/* Re-validar - Show full button if pending */}
                 {!domain.is_verified && onRevalidate && (
-                    <button
-                        onClick={() => onRevalidate(domain.id)}
-                        className="p-2.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-xl border border-orange-500/20 transition-colors"
-                        title="Re-validar"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
+                    <div className="flex flex-col gap-2 w-full mt-4">
+                        <div className="text-[10px] text-yellow-500/80 bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20 text-center">
+                            ⏳ Propagação de DNS: até 48h
+                        </div>
+                        <button
+                            onClick={() => onRevalidate(domain.id)}
+                            className="w-full py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-orange-900/20 hover:shadow-orange-900/40 transition-all flex items-center justify-center gap-2"
+                            title="Verificar se o domínio já está ativo"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            Verificar Conexão
+                        </button>
+                    </div>
                 )}
             </div>
         </motion.div>
