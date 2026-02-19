@@ -13,6 +13,9 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/dashboard/Navigation';
 
+import DomainWizard from '@/components/domains/DomainWizard';
+import DomainList from '@/components/domains/DomainList';
+
 interface DomainStats {
     total_domains: number;
     verified_domains: number;
@@ -50,6 +53,10 @@ export default function MinhaAreaPage() {
     const [isLoadingStats, setIsLoadingStats] = useState(true);
     const [isLoadingDomains, setIsLoadingDomains] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Tab State
+    const [activeTab, setActiveTab] = useState<'pages' | 'domains'>('pages');
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Filtros e busca
     const [searchTerm, setSearchTerm] = useState('');
@@ -267,62 +274,122 @@ export default function MinhaAreaPage() {
                     />
                 )}
 
-                {/* Domains Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                >
-                    <h2 className="text-xl font-bold mb-4">
-                        📋 Meus Domínios
-                    </h2>
+                {/* Tab Navigation */}
+                <div className="flex gap-4 mb-6 border-b border-gray-700">
+                    <button
+                        onClick={() => setActiveTab('pages')}
+                        className={`pb-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'pages'
+                            ? 'text-blue-400'
+                            : 'text-gray-400 hover:text-gray-300'
+                            }`}
+                    >
+                        Minhas Páginas
+                        {activeTab === 'pages' && (
+                            <motion.div
+                                layoutId="activeTab"
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"
+                            />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('domains')}
+                        className={`pb-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'domains'
+                            ? 'text-blue-400'
+                            : 'text-gray-400 hover:text-gray-300'
+                            }`}
+                    >
+                        Domínios Próprios (White Label)
+                        {activeTab === 'domains' && (
+                            <motion.div
+                                layoutId="activeTab"
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"
+                            />
+                        )}
+                    </button>
+                </div>
 
-                    {/* Loading State */}
-                    {isLoadingDomains && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="glass-card p-5 animate-pulse">
-                                    <div className="h-6 bg-[var(--color-bg-tertiary)] rounded mb-2" />
-                                    <div className="h-4 bg-[var(--color-bg-tertiary)] rounded w-3/4 mb-4" />
-                                    <div className="h-12 bg-[var(--color-bg-tertiary)] rounded mb-3" />
-                                    <div className="flex gap-2">
-                                        <div className="h-8 bg-[var(--color-bg-tertiary)] rounded flex-1" />
-                                        <div className="h-8 bg-[var(--color-bg-tertiary)] rounded flex-1" />
+                {/* DOMAINS TAB */}
+                {activeTab === 'domains' && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Left Column: Wizard */}
+                            <div className="lg:col-span-1">
+                                <DomainWizard onSuccess={() => setRefreshKey(prev => prev + 1)} />
+                            </div>
+
+                            {/* Right Column: List */}
+                            <div className="lg:col-span-2">
+                                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                    <Globe className="w-5 h-5 text-blue-400" />
+                                    Domínios Conectados
+                                </h3>
+                                <DomainList keyTrigger={refreshKey} />
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* PAGES TAB */}
+                {activeTab === 'pages' && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <h2 className="text-xl font-bold mb-4">
+                            📋 Meus LPs e Domínios Minerados
+                        </h2>
+
+                        {/* Loading State */}
+                        {isLoadingDomains && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="glass-card p-5 animate-pulse">
+                                        <div className="h-6 bg-[var(--color-bg-tertiary)] rounded mb-2" />
+                                        <div className="h-4 bg-[var(--color-bg-tertiary)] rounded w-3/4 mb-4" />
+                                        <div className="h-12 bg-[var(--color-bg-tertiary)] rounded mb-3" />
+                                        <div className="flex gap-2">
+                                            <div className="h-8 bg-[var(--color-bg-tertiary)] rounded flex-1" />
+                                            <div className="h-8 bg-[var(--color-bg-tertiary)] rounded flex-1" />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )}
 
-                    {/* Empty State */}
-                    {!isLoadingDomains && filteredAndSortedDomains.length === 0 && domains.length === 0 && (
-                        <EmptyState />
-                    )}
+                        {/* Empty State */}
+                        {!isLoadingDomains && filteredAndSortedDomains.length === 0 && domains.length === 0 && (
+                            <EmptyState />
+                        )}
 
-                    {/* No Results State */}
-                    {!isLoadingDomains && filteredAndSortedDomains.length === 0 && domains.length > 0 && (
-                        <div className="glass-card p-8 text-center">
-                            <p className="text-[var(--color-text-muted)]">
-                                🔍 Nenhum domínio encontrado com os filtros aplicados
-                            </p>
-                        </div>
-                    )}
+                        {/* No Results State */}
+                        {!isLoadingDomains && filteredAndSortedDomains.length === 0 && domains.length > 0 && (
+                            <div className="glass-card p-8 text-center">
+                                <p className="text-[var(--color-text-muted)]">
+                                    🔍 Nenhum domínio encontrado com os filtros aplicados
+                                </p>
+                            </div>
+                        )}
 
-                    {/* Domains Grid */}
-                    {!isLoadingDomains && filteredAndSortedDomains.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredAndSortedDomains.map((domain) => (
-                                <DomainCard
-                                    key={domain.id}
-                                    domain={domain}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDelete}
-                                    onRevalidate={handleRevalidate}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </motion.div>
+                        {/* Domains Grid */}
+                        {!isLoadingDomains && filteredAndSortedDomains.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {filteredAndSortedDomains.map((domain) => (
+                                    <DomainCard
+                                        key={domain.id}
+                                        domain={domain}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDelete}
+                                        onRevalidate={handleRevalidate}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
 
                 {/* Edit Modal */}
                 {editingDomain && (

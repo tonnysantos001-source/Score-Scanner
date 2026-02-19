@@ -39,9 +39,22 @@ export async function middleware(request: NextRequest) {
     );
 
     // ============================================
-    // AUTHENTICATION CHECK ONLY
-    // (No DB queries - Edge compatible)
+    // CUSTOM DOMAIN ROUTING (White Label)
     // ============================================
+    const hostname = request.headers.get('host') || '';
+    const mainDomain = process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, '') || 'verifyads.com';
+    const isMainDomain = hostname === mainDomain || hostname.endsWith(`.${mainDomain}`) || hostname === 'localhost:3000';
+
+    if (!isMainDomain) {
+        // It's a custom domain!
+        console.log(`[Middleware] Custom Domain detected: ${hostname}`);
+
+        // Rewrite to the landing page handler
+        // We pass the hostname as a query param so the page knows which content to load
+        const url = request.nextUrl.clone();
+        url.pathname = `/l/domain/${hostname}`;
+        return NextResponse.rewrite(url);
+    }
 
     // ============================================
     // AUTHENTICATION CHECK ONLY
@@ -90,15 +103,6 @@ export async function middleware(request: NextRequest) {
         console.log('[Middleware] Blocking non-admin from admin route');
         return NextResponse.redirect(new URL('/minerar', request.url));
     }
-
-    // 3. CONVENIENCE REDIRECTS REMOVED to prevent loops.
-    // Client-side will handle redirection after login.
-
-    return response;
-    // We do a basic JWT check above for routing
-    // More detailed admin check is done in:
-    // - app/admin/layout.tsx (Server Component with DB query)
-    // - API routes using requireAdmin()
 
     return response;
 }
