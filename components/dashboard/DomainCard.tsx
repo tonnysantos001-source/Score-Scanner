@@ -8,7 +8,8 @@ import {
     Edit3,
     Copy,
     Trash2,
-    RefreshCw
+    RefreshCw,
+    ExternalLink
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
 import { toast } from 'sonner';
@@ -57,80 +58,63 @@ export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCar
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -4 }}
-            className="glass-card p-5 hover:shadow-lg transition-all"
+            className="glass-card p-6 hover:shadow-2xl transition-all h-full flex flex-col"
         >
             {/* Header com Status */}
             <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="flex-1 min-w-0 pr-4"> {/* min-w-0 for truncate */}
+                    <div className="flex items-center gap-2 mb-2">
                         {domain.is_verified ? (
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            <span className="badge badge-success">
+                                <CheckCircle2 className="w-3 h-3" /> VERIFICADO
+                            </span>
                         ) : (
-                            <Clock className="w-5 h-5 text-orange-600" />
+                            <span className="badge badge-warning">
+                                <Clock className="w-3 h-3" /> PENDENTE
+                            </span>
                         )}
-                        <span
-                            className={`text-xs font-semibold px-2 py-1 rounded-full ${domain.is_verified
-                                ? 'bg-green-600/10 text-green-600'
-                                : 'bg-orange-600/10 text-orange-600'
-                                }`}
-                        >
-                            {domain.is_verified ? 'Dados Verificados' : 'Validação Pendente'}
-                        </span>
                     </div>
 
-                    <h3 className="font-bold text-lg text-[var(--color-text-primary)] break-all leading-tight w-full">
+                    <h3 className="font-bold text-xl text-white truncate w-full" title={domain.domain}>
                         {domain.domain}
                     </h3>
-                    <p className="text-xs text-[var(--color-text-muted)] truncate">
+                    <p className="text-sm text-[var(--color-text-muted)] truncate">
                         {domain.company_name}
                     </p>
                 </div>
             </div>
 
             {/* Landing Page Status */}
-            <div className="mb-4 p-3 bg-[var(--color-bg-tertiary)]/30 rounded-lg">
-                <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-[var(--color-text-muted)]">Landing Page:</span>
-                    <span className={landingPage?.is_active ? 'text-green-600' : 'text-[var(--color-text-muted)]'}>
-                        {landingPage?.is_active ? '🟢 Ativa' : '⚪ Inativa'}
+            <div className="mb-4 p-4 bg-[var(--color-bg-tertiary)]/40 rounded-xl border border-[var(--color-border)] flex-1">
+                <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="text-[var(--color-text-muted)] font-medium uppercase tracking-wider">Landing Page</span>
+                    <span className={`flex items-center gap-1.5 font-bold ${landingPage?.is_active ? 'text-green-400' : 'text-gray-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${landingPage?.is_active ? 'bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]' : 'bg-gray-500'}`} />
+                        {landingPage?.is_active ? 'ATIVA' : 'INATIVA'}
                     </span>
                 </div>
                 {publicUrl && landingPage?.is_active && (
-                    <div className="text-xs text-[var(--color-text-muted)] break-all mt-1">
+                    <div className="text-xs text-[var(--color-text-secondary)] break-all font-mono bg-black/20 p-2 rounded-lg truncate">
                         {publicUrl}
                     </div>
                 )}
             </div>
 
             {/* Metadata */}
-            <div className="text-xs text-[var(--color-text-muted)] mb-4 space-y-1">
-                <div>Criado em: {formatDate(domain.created_at)}</div>
-                {domain.verified_at && (
-                    <div>Verificado em: {formatDate(domain.verified_at)}</div>
-                )}
+            <div className="text-xs text-[var(--color-text-muted)] mb-5 flex gap-4">
+                <span>Criado: {new Date(domain.created_at).toLocaleDateString()}</span>
             </div>
 
             {/* Actions */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 mt-auto">
                 {/* Ver Landing Page */}
                 {publicUrl && landingPage?.is_active && (
                     <button
                         onClick={openLandingPage}
-                        className="flex-1 min-w-[100px] px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-xs font-semibold hover:shadow-md transition-all flex items-center justify-center gap-1"
+                        className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 flex items-center justify-center gap-2"
                     >
-                        <Eye className="w-3 h-3" />
+                        <ExternalLink className="w-4 h-4" />
                         Ver
-                    </button>
-                )}
-
-                {/* Editar */}
-                {onEdit && (
-                    <button
-                        onClick={() => onEdit(domain.id)}
-                        className="flex-1 min-w-[100px] px-3 py-2 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-card)] text-[var(--color-text-primary)] rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1"
-                    >
-                        <Edit3 className="w-3 h-3" />
-                        Editar
                     </button>
                 )}
 
@@ -138,21 +122,21 @@ export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCar
                 {publicUrl && (
                     <button
                         onClick={copyUrl}
-                        className="px-3 py-2 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-card)] text-[var(--color-text-primary)] rounded-lg text-xs transition-all"
+                        className="p-2.5 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] transition-colors"
                         title="Copiar URL"
                     >
-                        <Copy className="w-3 h-3" />
+                        <Copy className="w-4 h-4" />
                     </button>
                 )}
 
-                {/* Re-validar */}
-                {!domain.is_verified && onRevalidate && (
+                {/* Editar */}
+                {onEdit && (
                     <button
-                        onClick={() => onRevalidate(domain.id)}
-                        className="px-3 py-2 bg-orange-600/10 hover:bg-orange-600/20 text-orange-600 rounded-lg text-xs transition-all"
-                        title="Re-validar domínio"
+                        onClick={() => onEdit(domain.id)}
+                        className="p-2.5 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] rounded-xl border border-[var(--color-border)] transition-colors"
+                        title="Editar"
                     >
-                        <RefreshCw className="w-3 h-3" />
+                        <Edit3 className="w-4 h-4" />
                     </button>
                 )}
 
@@ -160,10 +144,21 @@ export function DomainCard({ domain, onEdit, onDelete, onRevalidate }: DomainCar
                 {onDelete && (
                     <button
                         onClick={() => onDelete(domain.id)}
-                        className="px-3 py-2 bg-red-600/10 hover:bg-red-600/20 text-red-600 rounded-lg text-xs transition-all"
+                        className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 transition-colors ml-auto"
                         title="Excluir domínio"
                     >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                )}
+
+                {/* Re-validar */}
+                {!domain.is_verified && onRevalidate && (
+                    <button
+                        onClick={() => onRevalidate(domain.id)}
+                        className="p-2.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-xl border border-orange-500/20 transition-colors"
+                        title="Re-validar"
+                    >
+                        <RefreshCw className="w-4 h-4" />
                     </button>
                 )}
             </div>

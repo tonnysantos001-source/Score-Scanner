@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Globe, Check, AlertCircle, RefreshCw, Trash2, ExternalLink } from 'lucide-react';
+import { Globe, Check, AlertCircle, RefreshCw, Trash2, ExternalLink, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Domain {
@@ -79,14 +79,26 @@ export default function DomainList({ keyTrigger }: { keyTrigger: number }) {
         }
     };
 
-    if (loading) return <div className="text-center p-8 text-gray-500">Carregando domínios...</div>;
+    if (loading) {
+        return (
+            <div className="space-y-4">
+                {[1, 2].map((i) => (
+                    <div key={i} className="glass-card p-6 animate-pulse h-24" />
+                ))}
+            </div>
+        );
+    }
 
     if (domains.length === 0) {
         return (
-            <div className="text-center p-8 border border-dashed border-gray-700 rounded-xl">
-                <Globe className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <h3 className="text-white font-medium">Nenhum domínio conectado</h3>
-                <p className="text-gray-400 text-sm">Adicione seu primeiro domínio acima.</p>
+            <div className="text-center p-12 glass-card border-dashed">
+                <div className="w-16 h-16 bg-[var(--color-bg-tertiary)] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Globe className="w-8 h-8 text-gray-500" />
+                </div>
+                <h3 className="text-white font-bold text-lg mb-1">Nenhum domínio conectado</h3>
+                <p className="text-gray-400 text-sm max-w-xs mx-auto">
+                    Use o formulário ao lado para conectar seu primeiro domínio personalizado.
+                </p>
             </div>
         );
     }
@@ -94,62 +106,72 @@ export default function DomainList({ keyTrigger }: { keyTrigger: number }) {
     return (
         <div className="space-y-4">
             {domains.map((domain) => (
-                <div key={domain.id} className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${domain.custom_domain_status === 'active'
-                                ? 'bg-green-500/10 text-green-500'
-                                : 'bg-yellow-500/10 text-yellow-500'
-                            }`}>
-                            <Globe className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h4 className="font-mono text-white text-lg">{domain.domain}</h4>
-                            <div className="flex items-center gap-2 mt-1">
-                                {domain.custom_domain_status === 'active' ? (
-                                    <span className="text-xs font-bold text-green-400 flex items-center gap-1">
-                                        <Check className="w-3 h-3" /> ATIVO
+                <div key={domain.id} className="glass-card p-5 transition-all hover:bg-[var(--color-bg-tertiary)]/50 group">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-4 min-w-0">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${domain.custom_domain_status === 'active'
+                                ? 'bg-green-500/10 text-green-500 shadow-green-500/10'
+                                : 'bg-yellow-500/10 text-yellow-500 shadow-yellow-500/10'
+                                }`}>
+                                <Globe className="w-6 h-6" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h4 className="font-mono text-white text-lg font-bold truncate">
+                                    {domain.domain}
+                                </h4>
+                                <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                    {domain.custom_domain_status === 'active' ? (
+                                        <span className="badge badge-success">
+                                            <Check className="w-3 h-3" /> ATIVO
+                                        </span>
+                                    ) : (
+                                        <span className="badge badge-warning">
+                                            <RefreshCw className="w-3 h-3 animate-spin" /> PENDENTE
+                                        </span>
+                                    )}
+                                    <span className="text-gray-600 text-xs hidden sm:inline">•</span>
+                                    <span className="text-[var(--color-text-muted)] text-xs truncate">
+                                        Adicionado em {new Date(domain.created_at).toLocaleDateString()}
                                     </span>
-                                ) : (
-                                    <span className="text-xs font-bold text-yellow-400 flex items-center gap-1">
-                                        <RefreshCw className="w-3 h-3 animate-pulse" /> PENDENTE
-                                    </span>
+                                </div>
+                                {domain.custom_domain_status === 'failed' && (
+                                    <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
+                                        <ShieldAlert className="w-3 h-3" />
+                                        Falha na verificação. Tente novamente.
+                                    </p>
                                 )}
-                                <span className="text-gray-600 text-xs">•</span>
-                                <span className="text-gray-500 text-xs">
-                                    Adicionado em {new Date(domain.created_at).toLocaleDateString()}
-                                </span>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                        {domain.custom_domain_status !== 'active' && (
-                            <button
-                                onClick={() => handleReverify(domain.domain, domain.id)}
-                                className="p-2 hover:bg-white/5 rounded-lg text-blue-400 hover:text-blue-300 transition-colors"
-                                title="Verificar Novamente"
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                            {domain.custom_domain_status !== 'active' && (
+                                <button
+                                    onClick={() => handleReverify(domain.domain, domain.id)}
+                                    className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg text-blue-400 hover:text-blue-300 transition-colors border border-blue-500/20"
+                                    title="Verificar Novamente"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                </button>
+                            )}
+
+                            <a
+                                href={`https://${domain.domain}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors border border-transparent hover:border-white/10"
+                                title="Abrir Site"
                             >
-                                <RefreshCw className="w-5 h-5" />
+                                <ExternalLink className="w-4 h-4" />
+                            </a>
+
+                            <button
+                                onClick={() => handleDelete(domain.id)}
+                                className="p-2.5 hover:bg-red-500/10 rounded-lg text-gray-500 hover:text-red-400 transition-colors border border-transparent hover:border-red-500/20"
+                                title="Remover"
+                            >
+                                <Trash2 className="w-4 h-4" />
                             </button>
-                        )}
-
-                        <a
-                            href={`https://${domain.domain}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
-                            title="Abrir Site"
-                        >
-                            <ExternalLink className="w-5 h-5" />
-                        </a>
-
-                        <button
-                            onClick={() => handleDelete(domain.id)}
-                            className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
-                            title="Remover"
-                        >
-                            <Trash2 className="w-5 h-5" />
-                        </button>
+                        </div>
                     </div>
                 </div>
             ))}

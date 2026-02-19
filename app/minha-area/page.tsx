@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { DomainCard } from '@/components/dashboard/DomainCard';
 import { EmptyState } from '@/components/dashboard/EmptyState';
 import { SearchAndFilters } from '@/components/dashboard/SearchAndFilters';
 import { EditDomainModal } from '@/components/dashboard/EditDomainModal';
-import { Globe, Loader2 } from 'lucide-react';
+import { Globe, Loader2, Layout, Server, SearchX } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/dashboard/Navigation';
@@ -23,6 +23,7 @@ interface DomainStats {
     active_landing_pages: number;
     created_this_month: number;
 }
+// ... existing interfaces ...
 
 interface Domain {
     id: string;
@@ -219,7 +220,7 @@ export default function MinhaAreaPage() {
     // Loading state enquanto verifica autenticação
     if (authLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
                     <p className="text-gray-400">Carregando...</p>
@@ -234,8 +235,8 @@ export default function MinhaAreaPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)] p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
+        <div className="min-h-screen p-4 md:p-8 pb-20">
+            <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header com menu dropdown */}
                 <Navigation
                     title="Minha Área"
@@ -243,15 +244,22 @@ export default function MinhaAreaPage() {
                 />
 
                 {/* Error State */}
-                {error && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="glass-card p-4 mb-6 border-l-4 border-red-500"
-                    >
-                        <p className="text-red-500 text-sm">❌ {error}</p>
-                    </motion.div>
-                )}
+                <AnimatePresence>
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="glass-card p-4 border-l-4 border-red-500 flex items-center justify-between"
+                        >
+                            <p className="text-red-400 text-sm font-medium">❌ {error}</p>
+                            <button onClick={() => setError(null)} className="text-gray-500 hover:text-white">
+                                <span className="sr-only">Fechar</span>
+                                ✕
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Stats Cards */}
                 <StatsCards
@@ -262,134 +270,164 @@ export default function MinhaAreaPage() {
                     isLoading={isLoadingStats}
                 />
 
-                {/* Search and Filters */}
-                {!isLoadingDomains && domains.length > 0 && (
-                    <SearchAndFilters
-                        searchTerm={searchTerm}
-                        onSearchChange={setSearchTerm}
-                        statusFilter={statusFilter}
-                        onStatusChange={setStatusFilter}
-                        sortBy={sortBy}
-                        onSortChange={setSortBy}
-                    />
-                )}
+                {/* Wrapper Principal das Abas */}
+                <div className="space-y-6">
+                    {/* Tab Navigation Pill Design */}
+                    <div className="flex justify-center md:justify-start">
+                        <div className="bg-[var(--color-bg-tertiary)]/50 p-1 rounded-xl inline-flex border border-[var(--color-border)] relative">
+                            <button
+                                onClick={() => setActiveTab('pages')}
+                                className={`relative px-6 py-2.5 rounded-lg text-sm font-bold transition-all z-10 flex items-center gap-2 ${activeTab === 'pages' ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                                    }`}
+                            >
+                                <Layout className="w-4 h-4" />
+                                Minhas Páginas
+                                {activeTab === 'pages' && (
+                                    <motion.div
+                                        layoutId="activeTabBg"
+                                        className="absolute inset-0 bg-blue-600 rounded-lg -z-10 shadow-lg shadow-blue-900/40"
+                                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                    />
+                                )}
+                            </button>
 
-                {/* Tab Navigation */}
-                <div className="flex gap-4 mb-6 border-b border-gray-700">
-                    <button
-                        onClick={() => setActiveTab('pages')}
-                        className={`pb-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'pages'
-                            ? 'text-blue-400'
-                            : 'text-gray-400 hover:text-gray-300'
-                            }`}
-                    >
-                        Minhas Páginas
-                        {activeTab === 'pages' && (
-                            <motion.div
-                                layoutId="activeTab"
-                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"
-                            />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('domains')}
-                        className={`pb-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'domains'
-                            ? 'text-blue-400'
-                            : 'text-gray-400 hover:text-gray-300'
-                            }`}
-                    >
-                        Domínios Próprios (White Label)
-                        {activeTab === 'domains' && (
-                            <motion.div
-                                layoutId="activeTab"
-                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"
-                            />
-                        )}
-                    </button>
-                </div>
-
-                {/* DOMAINS TAB */}
-                {activeTab === 'domains' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Left Column: Wizard */}
-                            <div className="lg:col-span-1">
-                                <DomainWizard onSuccess={() => setRefreshKey(prev => prev + 1)} />
-                            </div>
-
-                            {/* Right Column: List */}
-                            <div className="lg:col-span-2">
-                                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                                    <Globe className="w-5 h-5 text-blue-400" />
-                                    Domínios Conectados
-                                </h3>
-                                <DomainList keyTrigger={refreshKey} />
-                            </div>
+                            <button
+                                onClick={() => setActiveTab('domains')}
+                                className={`relative px-6 py-2.5 rounded-lg text-sm font-bold transition-all z-10 flex items-center gap-2 ${activeTab === 'domains' ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                                    }`}
+                            >
+                                <Server className="w-4 h-4" />
+                                Domínios Próprios (White Label)
+                                {activeTab === 'domains' && (
+                                    <motion.div
+                                        layoutId="activeTabBg"
+                                        className="absolute inset-0 bg-blue-600 rounded-lg -z-10 shadow-lg shadow-blue-900/40"
+                                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                    />
+                                )}
+                            </button>
                         </div>
-                    </motion.div>
-                )}
+                    </div>
 
-                {/* PAGES TAB */}
-                {activeTab === 'pages' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                    >
-                        <h2 className="text-xl font-bold mb-4">
-                            📋 Meus LPs e Domínios Minerados
-                        </h2>
-
-                        {/* Loading State */}
-                        {isLoadingDomains && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="glass-card p-5 animate-pulse">
-                                        <div className="h-6 bg-[var(--color-bg-tertiary)] rounded mb-2" />
-                                        <div className="h-4 bg-[var(--color-bg-tertiary)] rounded w-3/4 mb-4" />
-                                        <div className="h-12 bg-[var(--color-bg-tertiary)] rounded mb-3" />
-                                        <div className="flex gap-2">
-                                            <div className="h-8 bg-[var(--color-bg-tertiary)] rounded flex-1" />
-                                            <div className="h-8 bg-[var(--color-bg-tertiary)] rounded flex-1" />
+                    {/* Content Area */}
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'domains' ? (
+                            <motion.div
+                                key="domains"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    {/* Left Column: Wizard */}
+                                    <div className="lg:col-span-1">
+                                        <div className="sticky top-8">
+                                            <DomainWizard onSuccess={() => setRefreshKey(prev => prev + 1)} />
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
 
-                        {/* Empty State */}
-                        {!isLoadingDomains && filteredAndSortedDomains.length === 0 && domains.length === 0 && (
-                            <EmptyState />
-                        )}
+                                    {/* Right Column: List */}
+                                    <div className="lg:col-span-2 space-y-4">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                                                <Globe className="w-5 h-5 text-blue-400" />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white">Domínios Conectados</h3>
+                                        </div>
+                                        <DomainList keyTrigger={refreshKey} />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="pages"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <span className="text-2xl">📋</span> Meus LPs e Domínios Minerados
+                                    </h2>
+                                </div>
 
-                        {/* No Results State */}
-                        {!isLoadingDomains && filteredAndSortedDomains.length === 0 && domains.length > 0 && (
-                            <div className="glass-card p-8 text-center">
-                                <p className="text-[var(--color-text-muted)]">
-                                    🔍 Nenhum domínio encontrado com os filtros aplicados
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Domains Grid */}
-                        {!isLoadingDomains && filteredAndSortedDomains.length > 0 && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {filteredAndSortedDomains.map((domain) => (
-                                    <DomainCard
-                                        key={domain.id}
-                                        domain={domain}
-                                        onEdit={handleEdit}
-                                        onDelete={handleDelete}
-                                        onRevalidate={handleRevalidate}
+                                {/* Search and Filters */}
+                                {!isLoadingDomains && domains.length > 0 && (
+                                    <SearchAndFilters
+                                        searchTerm={searchTerm}
+                                        onSearchChange={setSearchTerm}
+                                        statusFilter={statusFilter}
+                                        onStatusChange={setStatusFilter}
+                                        sortBy={sortBy}
+                                        onSortChange={setSortBy}
                                     />
-                                ))}
-                            </div>
+                                )}
+
+                                {/* Loading State */}
+                                {isLoadingDomains && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {[1, 2, 3].map((i) => (
+                                            <div key={i} className="glass-card h-[280px] animate-pulse relative overflow-hidden">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent shimmer" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Empty State */}
+                                {!isLoadingDomains && filteredAndSortedDomains.length === 0 && domains.length === 0 && (
+                                    <EmptyState onAction={() => setActiveTab('domains')} />
+                                )}
+
+                                {/* No Results State */}
+                                {!isLoadingDomains && filteredAndSortedDomains.length === 0 && domains.length > 0 && (
+                                    <div className="glass-card p-12 text-center border-dashed border border-gray-700">
+                                        <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <SearchX className="w-8 h-8 text-gray-500" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-white mb-2">Nenhum resultado encontrado</h3>
+                                        <p className="text-[var(--color-text-muted)]">
+                                            Tente ajustar seus filtros ou termos de busca.
+                                        </p>
+                                        <button
+                                            onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
+                                            className="mt-4 text-blue-400 hover:text-blue-300 text-sm font-semibold"
+                                        >
+                                            Limpar filtros
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Domains Grid */}
+                                {!isLoadingDomains && filteredAndSortedDomains.length > 0 && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        <AnimatePresence mode="popLayout">
+                                            {filteredAndSortedDomains.map((domain) => (
+                                                <motion.div
+                                                    key={domain.id}
+                                                    layout
+                                                    initial={{ opacity: 0, scale: 0.9 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.9 }}
+                                                    transition={{ duration: 0.2 }}
+                                                >
+                                                    <DomainCard
+                                                        domain={domain}
+                                                        onEdit={handleEdit}
+                                                        onDelete={handleDelete}
+                                                        onRevalidate={handleRevalidate}
+                                                    />
+                                                </motion.div>
+                                            ))}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+                            </motion.div>
                         )}
-                    </motion.div>
-                )}
+                    </AnimatePresence>
+                </div>
 
                 {/* Edit Modal */}
                 {editingDomain && (
@@ -415,3 +453,4 @@ export default function MinhaAreaPage() {
         </div>
     );
 }
+
