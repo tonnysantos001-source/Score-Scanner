@@ -30,11 +30,18 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
             }
 
             const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                toast.error('Usuário não autenticado.');
+                return;
+            }
 
             // Generate a temporary entry in DB
             const { data, error } = await supabase
                 .from('verified_domains')
                 .insert({
+                    user_id: user.id,
                     domain: cleanDomain,
                     company_cnpj: '00000000000000', // Placeholder
                     company_name: 'Custom Domain',
@@ -201,8 +208,8 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                             onClick={verifyDNS}
                             disabled={loading || verificationResult?.success}
                             className={`px-6 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors ${verificationResult?.success
-                                    ? 'bg-green-600 text-white cursor-default'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                ? 'bg-green-600 text-white cursor-default'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
                                 }`}
                         >
                             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Verificar Conexão'}
