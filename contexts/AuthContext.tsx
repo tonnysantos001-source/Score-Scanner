@@ -25,10 +25,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Timeout de inatividade: 15 minutos
     const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 min em ms
 
-    const checkUserRole = useCallback(async (userId: string) => {
+    const checkUserRole = useCallback(async (userId: string, client?: any) => {
         try {
-            const client = createClient();
-            const { data: profile, error } = await client
+            const supabaseClient = client || createClient();
+            const { data: profile, error } = await supabaseClient
                 .from('profiles')
                 .select('role')
                 .eq('id', userId)
@@ -38,7 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (process.env.NODE_ENV === 'development') {
                     console.warn('Erro ao buscar role:', error.message);
                 }
-                // Não falha, apenas assume user comum se der erro
                 setIsAdmin(false);
                 return;
             }
@@ -73,16 +72,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const client = createClient();
         setSupabase(client);
 
-        // Safety Timeout: Força o fim do loading após 15s
+        // Safety Timeout: Força o fim do loading após 5s
         const safetyTimeout = setTimeout(() => {
             setLoading((prev) => {
                 if (prev) {
-                    console.warn('Loading timeout reached - Forcing release');
+                    console.warn('[AuthContext] Loading timeout reached (5s) - Forcing release');
                     return false;
                 }
                 return prev;
             });
-        }, 15000);
+        }, 5000);
 
         const initAuth = async () => {
             console.log('[AuthContext] Initializing auth...');
@@ -100,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 if (session?.user) {
                     console.log('[AuthContext] Checking role for:', session.user.id);
-                    await checkUserRole(session.user.id);
+                    await checkUserRole(session.user.id, client);
                 } else {
                     console.log('[AuthContext] No user in session');
                 }

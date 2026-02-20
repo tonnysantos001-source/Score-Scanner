@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Globe, Check, AlertCircle, RefreshCw, Copy, ArrowRight, Server, ShieldCheck, Clock } from 'lucide-react';
+import { Globe, AlertCircle, RefreshCw, Copy, ArrowRight, Server, ShieldCheck, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DomainWizardProps {
@@ -15,7 +14,10 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
     const [domain, setDomain] = useState('');
     const [domainId, setDomainId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [verificationResult, setVerificationResult] = useState<any>(null);
+    const [verificationResult, setVerificationResult] = useState<{
+        success: boolean;
+        error?: string;
+    } | null>(null);
 
     const handleAddDomain = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,42 +33,37 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                 return;
             }
 
-            const supabase = createClient();
-            const { data: { user } } = await supabase.auth.getUser();
+            // Use API route for proper validation and security
+            const response = await fetch('/api/domain/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cnpj: '00000000000000',
+                    domain: cleanDomain,
+                    company_name: 'Custom Domain',
+                }),
+            });
 
-            if (!user) {
-                toast.error('Usuário não autenticado.');
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                const errorMsg = data.error || 'Erro ao adicionar domínio';
+                if (errorMsg.includes('já') || response.status === 400) {
+                    toast.error('Este domínio já está cadastrado.');
+                } else {
+                    toast.error(errorMsg);
+                }
                 return;
             }
 
-            // Generate a temporary entry in DB
-            const { data, error } = await supabase
-                .from('verified_domains')
-                .insert({
-                    user_id: user.id,
-                    domain: cleanDomain,
-                    company_cnpj: '00000000000000', // Placeholder
-                    company_name: 'Custom Domain',
-                    domain_type: 'external',
-                    custom_domain_status: 'pending'
-                })
-                .select()
-                .single();
-
-            if (error) throw error;
-
             setDomain(cleanDomain);
-            setDomainId(data.id);
+            setDomainId(data.domain_id);
             setStep(2);
             toast.success('Domínio pré-cadastrado! Agora configure o DNS.');
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error adding domain:', error);
-            if (error.code === '23505') {
-                toast.error('Este domínio já está cadastrado.');
-            } else {
-                toast.error('Erro ao adicionar domínio.');
-            }
+            toast.error('Erro ao conectar com o servidor.');
         } finally {
             setLoading(false);
         }

@@ -335,7 +335,7 @@ export default function MinhaAreaPage() {
                                             </div>
                                             <h3 className="text-xl font-bold text-white">Domínios Conectados</h3>
                                         </div>
-                                        <DomainList keyTrigger={refreshKey} />
+                                        <DomainList />
                                     </div>
                                 </div>
                             </motion.div>

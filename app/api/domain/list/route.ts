@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         const supabase = await createClient();
 
@@ -26,6 +26,10 @@ export async function GET(request: NextRequest) {
                 verified_at,
                 created_at,
                 verification_token,
+                domain_type,
+                custom_domain_status,
+                custom_domain_error,
+                last_dns_check,
                 landing_pages (
                     id,
                     slug,
@@ -55,7 +59,11 @@ export async function GET(request: NextRequest) {
             verified_at: domain.verified_at,
             verification_token: domain.verification_token,
             created_at: domain.created_at,
-            landing_pages: domain.landing_pages?.map((lp: any) => ({
+            domain_type: domain.domain_type,
+            custom_domain_status: domain.custom_domain_status,
+            custom_domain_error: domain.custom_domain_error,
+            last_dns_check: domain.last_dns_check,
+            landing_pages: domain.landing_pages?.map((lp: Record<string, unknown>) => ({
                 id: lp.id,
                 slug: lp.slug,
                 is_active: lp.is_active,

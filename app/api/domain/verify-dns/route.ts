@@ -4,10 +4,17 @@ import { verifyDomainDNS } from '@/lib/domain/dns-verification';
 
 export async function POST(request: NextRequest) {
     try {
-        const { domain, domainId } = await request.json();
+        const body = await request.json();
 
-        if (!domain) {
-            return NextResponse.json({ error: 'Domain is required' }, { status: 400 });
+        // Accept both param styles for backwards compatibility
+        const domain = body.domain;
+        const domainId = body.domainId || body.domain_id;
+
+        if (!domain && !domainId) {
+            return NextResponse.json(
+                { error: 'domain or domainId is required' },
+                { status: 400 }
+            );
         }
 
         // 1. Check Auth
@@ -18,35 +25,72 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 2. Perform DNS Lookup
-        const verification = await verifyDomainDNS(domain);
+        // 2. If only domainId is given, look up the domain name from DB
+        let domainName = domain;
+        if (!domainName && domainId) {
+            const { data: domainRecord } = await supabase
+                .from('verified_domains')
+                .select('domain')
+                .eq('id', domainId)
+                .eq('user_id', user.id)
+                .single();
 
-        // 3. Update Status in DB (if domainId provided)
+            if (!domainRecord) {
+                return NextResponse.json(
+                    { error: 'Domínio não encontrado' },
+                    { status: 404 }
+                );
+            }
+            domainName = domainRecord.domain;
+        }
+
+        // 3. Perform DNS Lookup
+        const verification = await verifyDomainDNS(domainName);
+
+        // 4. Update Status in DB
         if (domainId) {
-            const status = verification.verified ? 'active' : 'pending';
-            const error = verification.error || null;
+            const newStatus = verification.verified ? 'active' : 'pending';
+
+            const updateData: Record<string, any> = {
+                custom_domain_status: newStatus,
+                custom_domain_error: verification.error || null,
+                last_dns_check: new Date().toISOString(),
+                domain_type: 'external',
+            };
+
+            // If DNS verified, also mark domain as verified (is_verified)
+            if (verification.verified) {
+                updateData.is_verified = true;
+                updateData.verified_at = new Date().toISOString();
+                updateData.dns_status = 'active';
+            }
 
             await supabase
                 .from('verified_domains')
-                .update({
-                    custom_domain_status: status,
-                    custom_domain_error: error,
-                    last_dns_check: new Date().toISOString(),
-                    // If verified, update the main domain field to be this custom one
-                    // OR keep it separate. Strategy: domain_type 'external'
-                    domain_type: 'external'
-                })
+                .update(updateData)
                 .eq('id', domainId)
                 .eq('user_id', user.id);
+
+            // If DNS verified, also activate associated landing page
+            if (verification.verified) {
+                await supabase
+                    .from('landing_pages')
+                    .update({ is_active: true })
+                    .eq('domain_id', domainId);
+            }
         }
 
         return NextResponse.json({
             success: true,
-            verification
+            verification,
+            dns_status: verification.verified ? 'active' : 'pending',
         });
 
     } catch (error) {
-        console.error('DNS API Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        console.error('[verify-dns] Error:', error);
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        );
     }
 }

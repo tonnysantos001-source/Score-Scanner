@@ -85,6 +85,8 @@ Valor: 76.76.21.21`;
                 dns_status: 'pending',
                 dns_instructions: dnsInstructions,
                 is_verified: false,
+                domain_type: 'external',
+                custom_domain_status: 'pending',
             })
             .select()
             .single();

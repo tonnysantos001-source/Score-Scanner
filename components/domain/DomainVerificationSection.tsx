@@ -96,7 +96,7 @@ Valor: 76.76.21.21`;
             const response = await fetch('/api/domain/verify-dns', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domain_id: domainId }),
+                body: JSON.stringify({ domain: domain, domainId: domainId }),
             });
 
             const data = await response.json();
@@ -106,12 +106,14 @@ Valor: 76.76.21.21`;
                 return;
             }
 
-            setDnsStatus(data.dns_status);
+            const isVerified = data.verification?.verified === true;
+            setDnsStatus(isVerified ? 'active' : 'pending');
 
-            if (data.dns_status === 'active') {
+            if (isVerified) {
                 setSuccessMessage('✅ DNS configurado corretamente! Agora você pode adicionar o token do Facebook.');
             } else {
-                setError('DNS ainda não está apontando para Vercel. Aguarde a propagação (pode levar até 48h) ou verifique a configuração.');
+                const dnsError = data.verification?.error || 'DNS ainda não propagado';
+                setError(`DNS ainda não está pronto: ${dnsError}. Aguarde a propagação (pode levar até 48h) ou verifique a configuração.`);
             }
         } catch {
             setError('Erro ao conectar com o servidor');
@@ -232,8 +234,8 @@ Valor: 76.76.21.21`;
                             onClick={handleCheckDNS}
                             disabled={isCheckingDNS}
                             className={`w-full ${dnsStatus === 'active'
-                                    ? 'bg-green-600 hover:bg-green-700'
-                                    : 'bg-orange-600 hover:bg-orange-700'
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-orange-600 hover:bg-orange-700'
                                 } disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded font-bold flex items-center justify-center gap-2`}
                         >
                             {isCheckingDNS ? (
