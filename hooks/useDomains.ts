@@ -36,14 +36,22 @@ async function fetchDomains(): Promise<DomainData[]> {
 }
 
 export function useDomains() {
-    return useQuery({
+    const query = useQuery({
         queryKey: ['domains'],
         queryFn: fetchDomains,
-        staleTime: 30_000,          // 30s - dados considerados "fresh"
+        staleTime: 15_000,           // 15s - dados considerados "fresh"
         refetchOnWindowFocus: true,  // Refetch ao voltar à aba  
-        refetchInterval: 60_000,     // Polling suave a cada 60s
+        refetchInterval: (query) => {
+            // Adaptive polling: faster when pending domains exist
+            const domains = query.state.data;
+            const hasPending = domains?.some(
+                (d) => d.custom_domain_status === 'pending' || d.custom_domain_status === 'failed'
+            );
+            return hasPending ? 15_000 : 60_000; // 15s pending, 60s stable
+        },
         retry: 2,
     });
+    return query;
 }
 
 // ============================================

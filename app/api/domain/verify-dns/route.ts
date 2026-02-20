@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         if (domainId) {
             const newStatus = verification.verified ? 'active' : 'pending';
 
-            const updateData: Record<string, any> = {
+            const updateData: Record<string, unknown> = {
                 custom_domain_status: newStatus,
                 custom_domain_error: verification.error || null,
                 last_dns_check: new Date().toISOString(),
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
                 updateData.is_verified = true;
                 updateData.verified_at = new Date().toISOString();
                 updateData.dns_status = 'active';
+                updateData.dns_method = verification.method || 'CNAME';
             }
 
             await supabase
@@ -82,7 +83,13 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            verification,
+            verification: {
+                verified: verification.verified,
+                error: verification.error,
+                method: verification.method,
+                record: verification.record,
+                details: verification.details,
+            },
             dns_status: verification.verified ? 'active' : 'pending',
         });
 
