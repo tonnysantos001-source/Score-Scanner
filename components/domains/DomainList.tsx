@@ -11,7 +11,7 @@ export default function DomainList() {
 
     // Filter external domains only
     const externalDomains = domains.filter(
-        (d) => d.custom_domain_status !== undefined || !d.is_verified
+        (d) => d.domain_type === 'external' || (!d.is_verified && d.domain.includes('.'))
     );
 
     const handleDelete = async (id: string) => {
@@ -67,13 +67,15 @@ export default function DomainList() {
     return (
         <div className="space-y-4">
             {externalDomains.map((domain) => {
-                const status = domain.custom_domain_status || (domain.is_verified ? 'active' : 'pending');
+                // Professional Status Logic: prioritize dns_status if present
+                const status = domain.dns_status || (domain.is_verified ? 'verified' : 'pending');
+                const displayStatus = (status === 'verified' || domain.is_verified) ? 'active' : 'pending';
 
                 return (
                     <div key={domain.id} className="glass-card p-5 transition-all hover:bg-[var(--color-bg-tertiary)]/50 group">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-start gap-4 min-w-0">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${status === 'active'
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${displayStatus === 'active'
                                     ? 'bg-green-500/10 text-green-500 shadow-green-500/10'
                                     : 'bg-yellow-500/10 text-yellow-500 shadow-yellow-500/10'
                                     }`}>
@@ -84,7 +86,7 @@ export default function DomainList() {
                                         {domain.domain}
                                     </h4>
                                     <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                        {status === 'active' ? (
+                                        {displayStatus === 'active' ? (
                                             <span className="badge badge-success">
                                                 <Check className="w-3 h-3" /> ATIVO
                                             </span>
@@ -98,13 +100,14 @@ export default function DomainList() {
                                             Adicionado em {new Date(domain.created_at).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    {status === 'failed' && (
+
+                                    {(status === 'error' || domain.dns_error_reason) && displayStatus !== 'active' && (
                                         <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
                                             <ShieldAlert className="w-3 h-3" />
-                                            Falha na verificação. Tente novamente.
+                                            {domain.dns_error_reason || 'Falha na verificação. Tente novamente.'}
                                         </p>
                                     )}
-                                    {domain.custom_domain_error && status !== 'active' && (
+                                    {domain.custom_domain_error && displayStatus !== 'active' && !domain.dns_error_reason && (
                                         <p className="text-xs text-yellow-400/80 mt-1">
                                             {domain.custom_domain_error}
                                         </p>
@@ -113,7 +116,7 @@ export default function DomainList() {
                             </div>
 
                             <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                {status !== 'active' && (
+                                {displayStatus !== 'active' && (
                                     <button
                                         onClick={() => handleReverify(domain.domain, domain.id)}
                                         disabled={verifyMutation.isPending}

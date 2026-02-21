@@ -93,17 +93,17 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
 
             const data = await response.json();
 
-            if (data.verification?.verified) {
+            if (data.verification?.verified || data.dns_status === 'verified') {
                 setVerificationResult({
                     success: true,
-                    method: data.verification.method,
+                    method: data.verification?.method || 'DNS',
                 });
-                toast.success(`Domínio verificado via ${data.verification.method === 'CNAME_WWW' ? 'CNAME (www)' : data.verification.method}! 🎉`);
+                toast.success(`Domínio verificado com sucesso! 🎉`);
                 setTimeout(onSuccess, 2000);
             } else {
                 setVerificationResult({
                     success: false,
-                    error: data.verification?.error || 'Registro CNAME não encontrado.',
+                    error: data.verification?.error || 'Registro DNS não encontrado ainda.',
                 });
                 if (!silent) {
                     setPollCount(prev => prev + 1);

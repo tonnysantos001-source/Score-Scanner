@@ -49,20 +49,26 @@ export async function POST(request: NextRequest) {
 
         // 4. Update Status in DB
         if (domainId) {
-            const newStatus = verification.verified ? 'active' : 'pending';
+            const isVerified = verification.verified;
+            const newStatus = isVerified ? 'active' : 'pending';
+            const dnsStatus = isVerified ? 'verified' : (verification.error ? 'error' : 'pending');
 
+            const now = new Date().toISOString();
             const updateData: Record<string, unknown> = {
                 custom_domain_status: newStatus,
                 custom_domain_error: verification.error || null,
-                last_dns_check: new Date().toISOString(),
+                dns_status: dnsStatus,
+                dns_error_reason: verification.error || null,
+                last_dns_check: now,           // Legacy field
+                last_dns_check_at: now,        // Standardized field
                 domain_type: 'external',
             };
 
-            // If DNS verified, also mark domain as verified (is_verified)
-            if (verification.verified) {
+            // If DNS verified, also mark domain flags
+            if (isVerified) {
                 updateData.is_verified = true;
-                updateData.verified_at = new Date().toISOString();
-                updateData.dns_status = 'active';
+                updateData.verified_at = now;  // Legacy field
+                updateData.dns_verified_at = now; // Standardized field
                 updateData.dns_method = verification.method || 'CNAME';
             }
 
@@ -73,7 +79,7 @@ export async function POST(request: NextRequest) {
                 .eq('user_id', user.id);
 
             // If DNS verified, also activate associated landing page
-            if (verification.verified) {
+            if (isVerified) {
                 await supabase
                     .from('landing_pages')
                     .update({ is_active: true })

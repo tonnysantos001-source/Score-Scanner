@@ -75,19 +75,24 @@ export async function GET(request: Request) {
         for (const domainRecord of domains) {
             try {
                 const verification = await verifyDomainDNS(domainRecord.domain);
+                const isVerified = verification.verified;
+                const dnsStatus = isVerified ? 'verified' : (verification.error ? 'error' : 'pending');
+                const now = new Date().toISOString();
 
                 const updateData: Record<string, unknown> = {
-                    custom_domain_status: verification.verified ? 'active' : domainRecord.custom_domain_status,
+                    custom_domain_status: isVerified ? 'active' : domainRecord.custom_domain_status,
                     custom_domain_error: verification.error || null,
-                    last_dns_check: new Date().toISOString(),
+                    dns_status: dnsStatus,
+                    dns_error_reason: verification.error || null,
+                    last_dns_check: now,
+                    last_dns_check_at: now,
                 };
 
-                // If verified, also mark as is_verified and set dns_status
-                if (verification.verified) {
+                // If verified, also mark as is_verified and set verified_at
+                if (isVerified) {
                     updateData.is_verified = true;
-                    updateData.verified_at = new Date().toISOString();
-                    updateData.dns_status = 'active';
-
+                    updateData.verified_at = now;
+                    updateData.dns_verified_at = now;
                     console.log(`[cron] ✅ Domain verified: ${domainRecord.domain} (${verification.method})`);
                 }
 
@@ -97,7 +102,7 @@ export async function GET(request: Request) {
                     .eq('id', domainRecord.id);
 
                 // If verified, auto-activate landing page
-                if (verification.verified) {
+                if (isVerified) {
                     await supabase
                         .from('landing_pages')
                         .update({ is_active: true })
@@ -106,7 +111,7 @@ export async function GET(request: Request) {
 
                 results.push({
                     domain: domainRecord.domain,
-                    verified: verification.verified,
+                    verified: isVerified,
                     method: verification.method,
                     error: verification.error,
                 });

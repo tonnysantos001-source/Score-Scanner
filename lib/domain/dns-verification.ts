@@ -232,7 +232,11 @@ async function queryDNS(
         }
 
         // Records exist but wrong target
-        result.error = `Points to ${result.records.join(', ')} instead of allowed targets`;
+        if (label === 'CNAME') {
+            result.error = `Aponta para ${result.records[0]}. Deve apontar para ${ALLOWED_CNAME_TARGETS[0]}.`;
+        } else {
+            result.error = `IP incorreto: ${result.records.join(', ')}. Use ${ALLOWED_A_RECORDS[0]}.`;
+        }
         return result;
 
     } catch (err: unknown) {
@@ -279,10 +283,10 @@ function buildErrorMessage(domain: string, isRoot: boolean, checks: DNSCheckResu
     }
 
     if (isRoot) {
-        return `Registro DNS não encontrado para ${domain}. Configure um A record (${ALLOWED_A_RECORDS[0]}) ou CNAME www (cname.vercel-dns.com).`;
+        return `DNS não encontrado. Configure um registro A (${ALLOWED_A_RECORDS[0]}) ou CNAME www (${ALLOWED_CNAME_TARGETS[0]}).`;
     }
 
-    return `Registro CNAME não encontrado para ${domain}. Adicione: ${domain} CNAME cname.vercel-dns.com`;
+    return `Registro CNAME não encontrado. Adicione um CNAME para ${domain} apontando para ${ALLOWED_CNAME_TARGETS[0]}.`;
 }
 
 /**

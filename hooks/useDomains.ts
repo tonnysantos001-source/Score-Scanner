@@ -14,8 +14,13 @@ export interface DomainData {
     verified_at: string | null;
     verification_token: string | null;
     created_at: string;
+    domain_type: 'system' | 'external';
     custom_domain_status?: string;
     custom_domain_error?: string;
+    dns_status?: 'pending' | 'verified' | 'error';
+    dns_error_reason?: string;
+    last_dns_check_at?: string;
+    dns_verified_at?: string;
     landing_pages: Array<{
         id: string;
         slug: string;
