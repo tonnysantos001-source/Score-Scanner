@@ -56,8 +56,6 @@ interface GoogleDNSResponse {
 
 const ALLOWED_CNAME_TARGETS = [
     'cname.vercel-dns.com',
-    'cname.verifyads.com',
-    'verifyads.com',
 ];
 
 const ALLOWED_A_RECORDS = [
@@ -281,10 +279,10 @@ function buildErrorMessage(domain: string, isRoot: boolean, checks: DNSCheckResu
     }
 
     if (isRoot) {
-        return `Registro DNS não encontrado para ${domain}. Configure um A record (${ALLOWED_A_RECORDS[0]}) ou CNAME www (cname.verifyads.com).`;
+        return `Registro DNS não encontrado para ${domain}. Configure um A record (${ALLOWED_A_RECORDS[0]}) ou CNAME www (cname.vercel-dns.com).`;
     }
 
-    return `Registro CNAME não encontrado para ${domain}. Adicione: ${domain} CNAME cname.verifyads.com`;
+    return `Registro CNAME não encontrado para ${domain}. Adicione: ${domain} CNAME cname.vercel-dns.com`;
 }
 
 /**
@@ -350,7 +348,7 @@ export function getDNSInstructions(domain: string): {
             primaryOption: {
                 type: 'CNAME',
                 host: 'www',
-                value: 'cname.verifyads.com',
+                value: 'cname.vercel-dns.com',
             },
             alternativeOption: {
                 type: 'A',
@@ -360,8 +358,8 @@ export function getDNSInstructions(domain: string): {
             providerNotes: [
                 'UOL Host: Use "www" como entrada e CNAME como tipo',
                 'Registro.br: Adicione entrada tipo A para @ com IP ' + ALLOWED_A_RECORDS[0],
-                'GoDaddy: Adicione CNAME com host "www" e valor "cname.verifyads.com"',
-                'Cloudflare: Pode usar CNAME Flattening no @ — adicione CNAME @ → cname.verifyads.com',
+                'GoDaddy: Adicione CNAME com host "www" e valor "cname.vercel-dns.com"',
+                'Cloudflare: Pode usar CNAME Flattening no @ — adicione CNAME @ → cname.vercel-dns.com',
             ],
         };
     } else {

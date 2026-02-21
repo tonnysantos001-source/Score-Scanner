@@ -117,7 +117,9 @@ export function useVerifyDNS() {
 
     return useMutation({
         mutationFn: verifyDNS,
-        onSuccess: () => {
+        onSuccess: async () => {
+            // Small delay to ensure Supabase DB commit is visible to subsequent reads
+            await new Promise(resolve => setTimeout(resolve, 1500));
             // Invalidate domains and stats to show updated status
             queryClient.invalidateQueries({ queryKey: ['domains'] });
             queryClient.invalidateQueries({ queryKey: ['domain-stats'] });
