@@ -4,14 +4,16 @@ import { motion } from 'framer-motion';
 import { Globe, Plus, FileText, SearchX } from 'lucide-react';
 
 interface EmptyStateProps {
+    title?: string;
     message?: string;
     actionLabel?: string;
     onAction?: () => void;
 }
 
 export function EmptyState({
-    message = 'Você ainda não tem domínios cadastrados',
-    actionLabel = 'Adicionar Primeiro Domínio',
+    title = 'Nenhum item encontrado',
+    message = 'Você ainda não tem itens cadastrados',
+    actionLabel = 'Começar Agora',
     onAction,
 }: EmptyStateProps) {
     return (
@@ -37,7 +39,7 @@ export function EmptyState({
             </div>
 
             {/* Message */}
-            <h3 className="text-xl font-bold mb-2 text-white">Nenhum domínio encontrado</h3>
+            <h3 className="text-xl font-bold mb-2 text-white">{title}</h3>
             <p className="text-[var(--color-text-muted)] text-sm mb-6 max-w-sm mx-auto">
                 {message}
             </p>

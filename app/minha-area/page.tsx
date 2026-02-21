@@ -214,7 +214,12 @@ export default function MinhaAreaPage() {
 
                                 {/* Empty State */}
                                 {!isLoadingCompanies && (companies?.length || 0) === 0 && (
-                                    <EmptyState onAction={() => router.push('/minerar')} />
+                                    <EmptyState
+                                        title="Nenhuma empresa salva"
+                                        message="Minere um CNPJ, abra o Dossiê Empresarial e clique em Salvar para adicionar uma empresa aqui."
+                                        actionLabel="Ir para Mineração"
+                                        onAction={() => router.push('/minerar')}
+                                    />
                                 )}
 
                                 {/* No Results */}
