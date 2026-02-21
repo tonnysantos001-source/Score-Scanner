@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-function generateSlug(companyName: string, cnpj: string): string {
-    const clean = companyName
-        .toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-
-    const cnpjSuffix = cnpj.slice(-4);
-    return `${clean}-${cnpjSuffix}`;
-}
-
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
@@ -58,10 +47,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Gerar slug para landing page
-        const slug = generateSlug(company_name, cnpj);
-
-        // Instruções DNS padrão
+        // DNS instructions are now generated client-side by DomainWizard
         const dnsInstructions = `Configure no seu registrador de domínio:
 
 Tipo: CNAME
@@ -99,24 +85,9 @@ Valor: 76.76.21.21`;
             );
         }
 
-        // Criar landing page inicial (inativa)
-        const { error: landingPageError } = await supabase
-            .from('landing_pages')
-            .insert({
-                domain_id: verifiedDomain.id,
-                slug: slug,
-                use_generic: true,
-                is_active: false, // Só ativa quando DNS estiver configurado
-            });
-
-        if (landingPageError) {
-            console.error('Error creating landing page:', landingPageError);
-        }
-
         return NextResponse.json({
             success: true,
             domain_id: verifiedDomain.id,
-            slug: slug,
             dns_instructions: dnsInstructions,
             message: 'Domínio adicionado! Configure o DNS conforme as instruções.',
         });
