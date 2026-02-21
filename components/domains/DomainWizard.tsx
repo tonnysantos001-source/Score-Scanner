@@ -384,22 +384,22 @@ function buildDNSInstructions(domain: string): DNSInstructions {
     if (isRoot) {
         return {
             isRoot: true,
-            primaryOption: { type: 'CNAME', host: 'www', value: 'cname.verifyads.com' },
+            primaryOption: { type: 'CNAME', host: 'www', value: 'cname.vercel-dns.com' },
             alternativeOption: { type: 'A', host: '@', value: '76.76.21.21' },
             providerNotes: [
                 'UOL Host: Use "www" como entrada e CNAME como tipo',
                 'Registro.br: Adicione tipo A para @ com IP 76.76.21.21',
-                'GoDaddy: CNAME com host "www" → cname.verifyads.com',
-                'Cloudflare: CNAME @ → cname.verifyads.com (com Flattening)',
-                'Hostinger: CNAME com host "www" → cname.verifyads.com',
+                'GoDaddy: CNAME com host "www" → cname.vercel-dns.com',
+                'Cloudflare: CNAME @ → cname.vercel-dns.com (com Flattening)',
+                'Hostinger: CNAME com host "www" → cname.vercel-dns.com',
             ],
         };
     }
 
     return {
         isRoot: false,
-        primaryOption: { type: 'CNAME', host: parts[0], value: 'cname.verifyads.com' },
-        providerNotes: [`Adicione CNAME "${parts[0]}" → cname.verifyads.com`],
+        primaryOption: { type: 'CNAME', host: parts[0], value: 'cname.vercel-dns.com' },
+        providerNotes: [`Adicione CNAME "${parts[0]}" → cname.vercel-dns.com`],
     };
 }
 
