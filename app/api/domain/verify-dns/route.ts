@@ -58,17 +58,14 @@ export async function POST(request: NextRequest) {
                 custom_domain_status: newStatus,
                 custom_domain_error: verification.error || null,
                 dns_status: dnsStatus,
-                dns_error_reason: verification.error || null,
-                last_dns_check: now,           // Legacy field
-                last_dns_check_at: now,        // Standardized field
+                last_dns_check: now,
                 domain_type: 'external',
             };
 
             // If DNS verified, also mark domain flags
             if (isVerified) {
                 updateData.is_verified = true;
-                updateData.verified_at = now;  // Legacy field
-                updateData.dns_verified_at = now; // Standardized field
+                updateData.verified_at = now;
                 updateData.dns_method = verification.method || 'CNAME';
             }
 

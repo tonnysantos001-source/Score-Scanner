@@ -106,15 +106,22 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                     error: data.verification?.error || 'Registro DNS não encontrado ainda.',
                 });
                 if (!silent) {
+                    toast.error(`Ainda não propagou: ${data.verification?.error || 'Aguarde'}`);
                     setPollCount(prev => prev + 1);
                 }
             }
-        } catch {
-            if (!silent) toast.error('Erro ao verificar DNS.');
+        } catch (err) {
+            console.error('[verifyDNS] Error:', err);
+            if (!silent) toast.error('Erro de conexão com o servidor.');
         } finally {
             if (!silent) setLoading(false);
         }
     }, [domain, domainId, onSuccess]);
+
+    const handleSaveLater = () => {
+        toast.info('Domínio salvo! Verificaremos a propagação automaticamente.');
+        onSuccess();
+    };
 
     // Auto-polling: check every 15s when on step 2 with pending result
     useEffect(() => {
@@ -345,7 +352,7 @@ export default function DomainWizard({ onSuccess }: DomainWizardProps) {
                                 </button>
 
                                 <button
-                                    onClick={onSuccess}
+                                    onClick={handleSaveLater}
                                     className="w-full py-3 bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-white rounded-xl font-medium transition-colors border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)]"
                                 >
                                     Salvar e Verificar Depois

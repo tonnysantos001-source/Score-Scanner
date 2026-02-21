@@ -83,16 +83,13 @@ export async function GET(request: Request) {
                     custom_domain_status: isVerified ? 'active' : domainRecord.custom_domain_status,
                     custom_domain_error: verification.error || null,
                     dns_status: dnsStatus,
-                    dns_error_reason: verification.error || null,
                     last_dns_check: now,
-                    last_dns_check_at: now,
                 };
 
                 // If verified, also mark as is_verified and set verified_at
                 if (isVerified) {
                     updateData.is_verified = true;
                     updateData.verified_at = now;
-                    updateData.dns_verified_at = now;
                     console.log(`[cron] ✅ Domain verified: ${domainRecord.domain} (${verification.method})`);
                 }
 

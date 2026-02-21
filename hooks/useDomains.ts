@@ -18,9 +18,9 @@ export interface DomainData {
     custom_domain_status?: string;
     custom_domain_error?: string;
     dns_status?: 'pending' | 'verified' | 'error';
-    dns_error_reason?: string;
-    last_dns_check_at?: string;
-    dns_verified_at?: string;
+    dns_error_reason?: string; // We map this to custom_domain_error in the API
+    last_dns_check_at?: string; // We map this to last_dns_check in the API
+    dns_verified_at?: string;   // We map this to verified_at in the API
     landing_pages: Array<{
         id: string;
         slug: string;

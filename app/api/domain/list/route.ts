@@ -31,9 +31,6 @@ export async function GET() {
                 custom_domain_error,
                 last_dns_check,
                 dns_status,
-                dns_error_reason,
-                last_dns_check_at,
-                dns_verified_at,
                 landing_pages (
                     id,
                     slug,
@@ -68,9 +65,9 @@ export async function GET() {
             custom_domain_error: domain.custom_domain_error,
             last_dns_check: domain.last_dns_check,
             dns_status: (domain as any).dns_status,
-            dns_error_reason: (domain as any).dns_error_reason,
-            last_dns_check_at: (domain as any).last_dns_check_at,
-            dns_verified_at: (domain as any).dns_verified_at,
+            dns_error_reason: domain.custom_domain_error, // Fallback to existing field
+            last_dns_check_at: domain.last_dns_check,      // Fallback to existing field
+            dns_verified_at: domain.verified_at,           // Fallback to existing field
             landing_pages: domain.landing_pages?.map((lp: Record<string, unknown>) => ({
                 id: lp.id,
                 slug: lp.slug,
