@@ -144,21 +144,49 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#070711] text-white overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
 
-      {/* ── Background layers ── */}
-      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-        {/* Dot grid */}
-        <div className="absolute inset-0 dot-grid opacity-30" />
-        {/* Ambient orbs */}
-        <div className="absolute top-[-10%] left-[10%] w-[700px] h-[700px] rounded-full animate-glow-pulse"
-          style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)' }} />
-        <div className="absolute top-[20%] right-[-5%] w-[500px] h-[500px] rounded-full animate-glow-pulse"
-          style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', animationDelay: '2s' }} />
-        <div className="absolute bottom-[10%] left-[5%] w-[400px] h-[400px] rounded-full animate-glow-pulse"
-          style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)', animationDelay: '4s' }} />
-        {/* Spinning ring decoration */}
-        <div className="absolute top-[30%] right-[15%] w-[200px] h-[200px] rounded-full border border-blue-500/10 animate-spin-slow" />
-        <div className="absolute top-[28%] right-[13%] w-[240px] h-[240px] rounded-full border border-purple-500/5 animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '30s' }} />
+      {/* ── Animated Aurora Background ── */}
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden noise-overlay">
+        {/* Line-grid with radial fade so it's subtle at edges */}
+        <div className="absolute inset-0 line-grid grid-fade-mask opacity-60" />
+
+        {/* ORB 1 — Large blue (top-left hero area) */}
+        <div className="orb-1 absolute -top-[20%] -left-[5%] w-[900px] h-[900px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle at 40% 40%, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0.06) 40%, transparent 70%)',
+            filter: 'blur(60px)',
+          }} />
+
+        {/* ORB 2 — Purple (mid-right) */}
+        <div className="orb-2 absolute top-[15%] right-[-10%] w-[700px] h-[700px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle at 60% 40%, rgba(139,92,246,0.18) 0%, rgba(139,92,246,0.05) 40%, transparent 70%)',
+            filter: 'blur(80px)',
+          }} />
+
+        {/* ORB 3 — Indigo (center-bottom) */}
+        <div className="orb-3 absolute bottom-[10%] left-[25%] w-[600px] h-[600px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle at 50% 50%, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.04) 45%, transparent 70%)',
+            filter: 'blur(70px)',
+          }} />
+
+        {/* ORB 4 — Cyan accent (bottom-right) */}
+        <div className="orb-4 absolute bottom-[-5%] right-[5%] w-[500px] h-[500px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle at 50% 50%, rgba(6,182,212,0.10) 0%, rgba(6,182,212,0.03) 45%, transparent 70%)',
+            filter: 'blur(90px)',
+          }} />
+
+        {/* Spinning decorative rings */}
+        <div className="absolute top-[28%] right-[14%] w-[220px] h-[220px] rounded-full border border-blue-500/10 animate-spin-slow" />
+        <div className="absolute top-[26%] right-[12%] w-[270px] h-[270px] rounded-full border border-purple-500/[0.06] animate-spin-slow"
+          style={{ animationDirection: 'reverse', animationDuration: '32s' }} />
+
+        {/* Vignette to darken edges further */}
+        <div className="absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse 100% 80% at 50% 10%, transparent 50%, rgba(7,7,17,0.7) 100%)' }} />
       </div>
+
 
       {/* ═══════════════════════════════════════════════════════
                 NAVBAR
