@@ -157,7 +157,12 @@ export default function MinhaAreaPage() {
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     <div className="lg:col-span-1">
                                         <div className="sticky top-8">
-                                            <DomainWizard onSuccess={() => { }} />
+                                            <DomainWizard
+                                                onSuccess={() => {
+                                                    // Refresh server components without losing React state
+                                                    router.refresh();
+                                                }}
+                                            />
                                         </div>
                                     </div>
                                     <div className="lg:col-span-2 space-y-4">

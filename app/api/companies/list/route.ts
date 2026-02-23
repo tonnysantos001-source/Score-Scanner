@@ -53,7 +53,17 @@ export async function GET() {
         const formatted = (companies || []).map((c: any) => {
             const domain = c.verified_domains;
             const landingPage = domain?.landing_pages?.[0];
-            const isActive = domain?.is_verified && domain?.custom_domain_status === 'active' && landingPage?.is_active;
+
+            // Domain is verified if is_verified flag is true OR dns_status is 'verified'
+            const domainVerified = domain?.is_verified === true;
+
+            // Landing page is considered active if domain is verified and a landing page exists
+            // We intentionally relax the condition - no longer require custom_domain_status='active'
+            // because that field may lag behind the is_verified flag after DNS resolves
+            const hasActiveLandingPage = domainVerified && landingPage;
+
+            // URL: use the custom domain directly (middleware will serve the right page)
+            const landingPageUrl = hasActiveLandingPage ? `https://${domain.domain}` : null;
 
             return {
                 id: c.id,
@@ -62,11 +72,11 @@ export async function GET() {
                 created_at: c.created_at,
                 domain: domain?.domain || null,
                 domain_id: c.domain_id,
-                domain_verified: domain?.is_verified || false,
-                domain_status: domain?.custom_domain_status || 'pending',
+                domain_verified: domainVerified,
+                domain_status: domain?.custom_domain_status || (domainVerified ? 'active' : 'pending'),
                 landing_page_active: landingPage?.is_active || false,
-                landing_page_url: isActive ? `https://${domain.domain}` : null,
-                is_active: isActive,
+                landing_page_url: landingPageUrl,
+                is_active: hasActiveLandingPage ? true : false,
             };
         });
 

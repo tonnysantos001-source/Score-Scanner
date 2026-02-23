@@ -42,17 +42,21 @@ export async function middleware(request: NextRequest) {
     // CUSTOM DOMAIN ROUTING (White Label)
     // ============================================
     const hostname = request.headers.get('host') || '';
-    
+
     // Configurable main domains + localhost
     const allowedDomains = [
-        'verifyads.com', 
-        'verifyads.com.br', 
-        'localhost:3000', 
+        'verifyads.online',    // ← Production main domain
+        'verifyads.com',
+        'verifyads.com.br',
+        'localhost:3000',
         'localhost',
-        process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, '')
+        process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, ''),
     ].filter(Boolean);
 
-    const isMainDomain = allowedDomains.some(domain => 
+    // Also allow Vercel preview/production deployment URLs
+    const isVercelDeploy = hostname.endsWith('.vercel.app');
+
+    const isMainDomain = isVercelDeploy || allowedDomains.some(domain =>
         hostname === domain || hostname.endsWith(`.${domain}`)
     );
 

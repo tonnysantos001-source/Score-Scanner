@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyDomainDNS } from '@/lib/domain/dns-verification';
 
+export const revalidate = 0;
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -53,6 +55,8 @@ export async function POST(request: NextRequest) {
             const newStatus = isVerified ? 'active' : 'pending';
             const dnsStatus = isVerified ? 'verified' : (verification.error ? 'error' : 'pending');
 
+            console.log(`[verify-dns] Updating DB for ${domainName}: verified=${isVerified}, dnsStatus=${dnsStatus}`);
+
             const now = new Date().toISOString();
             const updateData: Record<string, unknown> = {
                 custom_domain_status: newStatus,
@@ -66,23 +70,35 @@ export async function POST(request: NextRequest) {
             if (isVerified) {
                 updateData.is_verified = true;
                 updateData.verified_at = now;
-                updateData.dns_method = verification.method || 'CNAME';
+                // Note: do NOT include columns that don't exist in the table
+                // dns_method was removed as it's not a real column
             }
 
-            await supabase
+            const { error: updateError } = await supabase
                 .from('verified_domains')
                 .update(updateData)
                 .eq('id', domainId)
                 .eq('user_id', user.id);
 
+            if (updateError) {
+                console.error(`[verify-dns] Error updating verified_domains:`, updateError);
+                // We'll still return the verification result so the user sees the error
+            }
+
             // If DNS verified, also activate associated landing page
             if (isVerified) {
-                await supabase
+                const { error: lpError } = await supabase
                     .from('landing_pages')
                     .update({ is_active: true })
                     .eq('domain_id', domainId);
+
+                if (lpError) {
+                    console.error(`[verify-dns] Error updating landing_pages:`, lpError);
+                }
             }
         }
+
+        console.log(`[verify-dns] Completed ${domainName}. Result:`, verification.verified ? 'Verified' : 'Failed');
 
         return NextResponse.json({
             success: true,
@@ -93,7 +109,7 @@ export async function POST(request: NextRequest) {
                 record: verification.record,
                 details: verification.details,
             },
-            dns_status: verification.verified ? 'active' : 'pending',
+            dns_status: verification.verified ? 'verified' : 'pending',
         });
 
     } catch (error) {

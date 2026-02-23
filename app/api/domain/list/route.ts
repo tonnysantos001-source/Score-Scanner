@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+export const revalidate = 0;
+
 export async function GET() {
     try {
         const supabase = await createClient();
@@ -39,6 +41,17 @@ export async function GET() {
             `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
+
+        // Introspect columns if possible
+        if (domains && domains.length > 0) {
+            console.log(`[domain-list] Columns found in DB:`, Object.keys(domains[0]).join(', '));
+        } else {
+            // If no domains, try a blind select to check existence
+            const { data: colCheck } = await supabase.from('verified_domains').select('*').limit(1);
+            if (colCheck && colCheck.length > 0) {
+                console.log(`[domain-list] Columns found (check):`, Object.keys(colCheck[0]).join(', '));
+            }
+        }
 
         if (domainsError) {
             console.error('Erro ao buscar domínios:', domainsError);
