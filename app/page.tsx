@@ -261,60 +261,6 @@ export default function LandingPage() {
         >
           Sem cartão de crédito • Configuração em 3 minutos • Suporte em português
         </motion.p>
-
-        {/* Hero glass card mockup */}
-        <motion.div
-          variants={fadeUp} custom={4} initial="hidden" animate="visible"
-          className="relative mt-16 max-w-3xl mx-auto"
-        >
-          {/* Glow under card */}
-          <div className="absolute -inset-4 rounded-3xl opacity-30 blur-3xl"
-            style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.2))' }} />
-
-          <div className="relative rounded-2xl border border-white/[0.08] overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(24px)' }}>
-            {/* Window chrome */}
-            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.06]">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-              <div className="flex-1 ml-4 h-5 rounded-md bg-white/[0.04] max-w-xs" />
-            </div>
-            <div className="p-5 sm:p-8">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                {[
-                  { label: 'Domínio', value: 'minhaempresa.com', status: 'ATIVO', color: 'green' },
-                  { label: 'DNS', value: 'CNAME → Vercel', status: 'VERIFICADO', color: 'blue' },
-                  { label: 'Meta Business', value: 'Verificada ✓', status: 'ATIVO', color: 'purple' },
-                ].map((item, i) => (
-                  <motion.div
-                    key={item.label}
-                    variants={fadeIn} custom={i}
-                    className="shimmer-card rounded-xl p-4 text-left border bg-white/[0.03]"
-                    style={{ borderColor: `rgba(${item.color === 'green' ? '74,222,128' : item.color === 'blue' ? '96,165,250' : '167,139,250'},0.15)` }}
-                  >
-                    <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">{item.label}</p>
-                    <p className="text-xs sm:text-sm font-mono text-white truncate mb-2">{item.value}</p>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${item.color === 'green' ? 'bg-green-500/10 text-green-400' :
-                      item.color === 'blue' ? 'bg-blue-500/10 text-blue-400' :
-                        'bg-purple-500/10 text-purple-400'
-                      }`}>
-                      <span className={`w-1 h-1 rounded-full animate-pulse ${item.color === 'green' ? 'bg-green-400' : item.color === 'blue' ? 'bg-blue-400' : 'bg-purple-400'
-                        }`} />
-                      {item.status}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-              <div className="rounded-xl p-4 flex items-center gap-3 border border-green-500/20 bg-green-500/[0.05]">
-                <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
-                <p className="text-xs sm:text-sm text-green-300">
-                  Empresa verificada com sucesso! Landing page no ar em <span className="font-mono font-semibold">minhaempresa.com</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════
@@ -539,55 +485,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════
-                FINAL CTA
-            ═══════════════════════════════════════════════════════ */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
-        <AnimatedSection>
-          <motion.div variants={fadeUp} custom={0} className="max-w-4xl mx-auto relative">
-            {/* Glow */}
-            <div className="absolute -inset-6 rounded-3xl opacity-20 blur-3xl"
-              style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.5), rgba(139,92,246,0.3))' }} />
-            <div className="relative text-center rounded-3xl border border-white/[0.08] px-8 py-16 sm:px-16 overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(24px)' }}>
-              {/* shimmer sweep */}
-              <div className="shimmer-card absolute inset-0 rounded-3xl" />
-              {/* Top glow line */}
-              <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
-
-              <motion.h2
-                variants={fadeUp} custom={0}
-                className="relative text-4xl sm:text-5xl font-black text-white mb-4"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
-              >
-                Pronto para escalar<br />seus{' '}
-                <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent animate-gradient">
-                  anúncios no Meta?
-                </span>
-              </motion.h2>
-              <motion.p variants={fadeUp} custom={1} className="relative text-gray-500 text-lg mb-10 max-w-xl mx-auto">
-                Junte-se a empresas que já desbloquearam o potencial máximo do Facebook Business.
-              </motion.p>
-              <motion.div variants={fadeUp} custom={2} className="relative flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/cadastro"
-                  className="group flex items-center gap-2 px-8 py-4 text-base font-bold text-white rounded-xl transition-all duration-300 hover:-translate-y-1"
-                  style={{
-                    background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
-                    boxShadow: '0 8px 40px rgba(59,130,246,0.35)',
-                  }}
-                >
-                  Criar Minha Conta
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link href="/login" className="px-8 py-4 text-sm font-semibold text-gray-500 hover:text-white transition-colors">
-                  Já tenho conta →
-                </Link>
-              </motion.div>
-            </div>
-          </motion.div>
-        </AnimatedSection>
-      </section>
 
       {/* ═══════════════════════════════════════════════════════
                 FOOTER
