@@ -14,7 +14,7 @@ const fadeUp = {
   hidden: { opacity: 0, y: 40 },
   visible: (i = 0) => ({
     opacity: 1, y: 0,
-    transition: { duration: 0.6, delay: i * 0.1, ease: [0.21, 1.11, 0.81, 0.99] }
+    transition: { duration: 0.6, delay: i * 0.1, ease: 'easeOut' as const }
   }),
 };
 const fadeIn = {
@@ -296,8 +296,8 @@ export default function LandingPage() {
                     <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">{item.label}</p>
                     <p className="text-xs sm:text-sm font-mono text-white truncate mb-2">{item.value}</p>
                     <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${item.color === 'green' ? 'bg-green-500/10 text-green-400' :
-                        item.color === 'blue' ? 'bg-blue-500/10 text-blue-400' :
-                          'bg-purple-500/10 text-purple-400'
+                      item.color === 'blue' ? 'bg-blue-500/10 text-blue-400' :
+                        'bg-purple-500/10 text-purple-400'
                       }`}>
                       <span className={`w-1 h-1 rounded-full animate-pulse ${item.color === 'green' ? 'bg-green-400' : item.color === 'blue' ? 'bg-blue-400' : 'bg-purple-400'
                         }`} />
@@ -472,8 +472,8 @@ export default function LandingPage() {
                   whileHover={{ y: -8 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                   className={`relative rounded-2xl p-7 border transition-all duration-300 h-full flex flex-col ${plan.highlight
-                      ? 'border-blue-500/40 shadow-2xl shadow-blue-500/10'
-                      : 'border-white/[0.08] hover:border-white/[0.15]'
+                    ? 'border-blue-500/40 shadow-2xl shadow-blue-500/10'
+                    : 'border-white/[0.08] hover:border-white/[0.15]'
                     }`}
                   style={{
                     background: plan.highlight
@@ -519,8 +519,8 @@ export default function LandingPage() {
                   <Link
                     href="/cadastro"
                     className={`relative block w-full py-3.5 text-center text-sm font-bold rounded-xl transition-all duration-200 ${plan.highlight
-                        ? 'text-white hover:-translate-y-0.5'
-                        : 'border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-white'
+                      ? 'text-white hover:-translate-y-0.5'
+                      : 'border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-white'
                       }`}
                     style={plan.highlight ? {
                       background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
