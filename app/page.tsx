@@ -142,79 +142,116 @@ const plans = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#070711] text-white overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen text-white overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif", background: 'transparent' }}>
 
       {/* ── Animated Aurora Background ── */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: -10,
         pointerEvents: 'none', overflow: 'hidden',
+        background: '#070711',
       }}>
-        {/* Base background */}
-        <div style={{ position: 'absolute', inset: 0, background: '#070711' }} />
-
-        {/* Subtle dot grid */}
+        {/* Dot grid pattern */}
         <div style={{
           position: 'absolute', inset: 0,
           backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
         }} />
 
-        {/* ORB 1 — Blue, top-left, drifting */}
-        <div className="orb-1" style={{
-          position: 'absolute',
-          top: '-15%', left: '-5%',
-          width: '700px', height: '700px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(59,130,246,0.45) 0%, rgba(59,130,246,0.15) 40%, transparent 70%)',
-          filter: 'blur(30px)',
-        }} />
+        {/* ORB 1 — Blue, top-left */}
+        <motion.div
+          animate={{
+            x: [0, 80, -50, 60, 0],
+            y: [0, -60, 80, -30, 0],
+            scale: [1, 1.15, 0.9, 1.08, 1],
+          }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            top: '-10%', left: '-5%',
+            width: '700px', height: '700px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(59,130,246,0.55) 0%, rgba(59,130,246,0.20) 35%, transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
 
-        {/* ORB 2 — Purple, mid-right, drifting */}
-        <div className="orb-2" style={{
-          position: 'absolute',
-          top: '10%', right: '-8%',
-          width: '600px', height: '600px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.40) 0%, rgba(139,92,246,0.12) 40%, transparent 70%)',
-          filter: 'blur(25px)',
-        }} />
+        {/* ORB 2 — Purple/violet, mid-right */}
+        <motion.div
+          animate={{
+            x: [0, -90, 50, -60, 0],
+            y: [0, 70, -50, 40, 0],
+            scale: [1.05, 0.9, 1.2, 0.95, 1.05],
+          }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            top: '5%', right: '-10%',
+            width: '650px', height: '650px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(139,92,246,0.50) 0%, rgba(139,92,246,0.15) 38%, transparent 70%)',
+            filter: 'blur(35px)',
+          }}
+        />
 
-        {/* ORB 3 — Indigo, center-bottom, drifting */}
-        <div className="orb-3" style={{
-          position: 'absolute',
-          bottom: '5%', left: '20%',
-          width: '550px', height: '550px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.35) 0%, rgba(99,102,241,0.10) 45%, transparent 70%)',
-          filter: 'blur(28px)',
-        }} />
+        {/* ORB 3 — Indigo, center-lower */}
+        <motion.div
+          animate={{
+            x: [0, 70, -30, 50, 0],
+            y: [0, 50, -70, 30, 0],
+            scale: [0.95, 1.1, 0.88, 1.05, 0.95],
+          }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            bottom: '5%', left: '25%',
+            width: '600px', height: '600px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.45) 0%, rgba(99,102,241,0.12) 40%, transparent 70%)',
+            filter: 'blur(38px)',
+          }}
+        />
 
-        {/* ORB 4 — Cyan, bottom-right accent, drifting */}
-        <div className="orb-4" style={{
-          position: 'absolute',
-          bottom: '-5%', right: '10%',
-          width: '450px', height: '450px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(6,182,212,0.30) 0%, rgba(6,182,212,0.08) 45%, transparent 70%)',
-          filter: 'blur(20px)',
-        }} />
+        {/* ORB 4 — Cyan accent, bottom-right */}
+        <motion.div
+          animate={{
+            x: [0, -60, 40, -80, 0],
+            y: [0, -40, 60, -50, 0],
+            scale: [1, 1.12, 0.92, 1.06, 1],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            position: 'absolute',
+            bottom: '-5%', right: '5%',
+            width: '500px', height: '500px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(6,182,212,0.38) 0%, rgba(6,182,212,0.10) 42%, transparent 70%)',
+            filter: 'blur(30px)',
+          }}
+        />
 
-        {/* Spinning rings */}
-        <div className="animate-spin-slow" style={{
-          position: 'absolute', top: '28%', right: '14%',
-          width: '220px', height: '220px',
-          borderRadius: '50%',
-          border: '1px solid rgba(59,130,246,0.15)',
-        }} />
-        <div className="animate-spin-slow" style={{
-          position: 'absolute', top: '26%', right: '12%',
-          width: '280px', height: '280px',
-          borderRadius: '50%',
-          border: '1px solid rgba(139,92,246,0.10)',
-          animationDirection: 'reverse' as const,
-          animationDuration: '32s',
-        }} />
+        {/* Spinning decorative ring */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+          style={{
+            position: 'absolute', top: '28%', right: '14%',
+            width: '220px', height: '220px',
+            borderRadius: '50%',
+            border: '1px solid rgba(59,130,246,0.18)',
+          }}
+        />
+        <motion.div
+          animate={{ rotate: -360 }}
+          transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+          style={{
+            position: 'absolute', top: '26%', right: '12%',
+            width: '280px', height: '280px',
+            borderRadius: '50%',
+            border: '1px solid rgba(139,92,246,0.12)',
+          }}
+        />
       </div>
+
 
       {/* ═══════════════════════════════════════════════════════
                 NAVBAR
