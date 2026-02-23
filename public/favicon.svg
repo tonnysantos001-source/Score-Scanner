@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background circle -->
+  <rect width="32" height="32" rx="8" fill="#070711"/>
+  
+  <!-- Glow effect -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Glow circle behind shield -->
+  <circle cx="16" cy="15" r="12" fill="url(#glow)"/>
+  
+  <!-- Shield body -->
+  <path d="M16 4 L26 8 L26 16 C26 21.5 21.5 26.5 16 28 C10.5 26.5 6 21.5 6 16 L6 8 Z"
+    fill="url(#shieldGrad)" fill-opacity="0.2" stroke="url(#shieldGrad)" stroke-width="1.5"/>
+  
+  <!-- Check mark / V inside shield -->
+  <path d="M11 15.5 L14.5 19 L21 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

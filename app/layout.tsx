@@ -7,7 +7,13 @@ export const metadata: Metadata = {
   title: "VerifyAds — Verifique sua Empresa no Facebook e Desbloqueie Recursos Exclusivos",
   description: "Conecte seu domínio, gere sua landing page verificada e aumente seu limite de anúncios no Meta Business. Planos a partir de $100/mês.",
   keywords: ["verificação Facebook", "Meta Business", "limite anúncios", "WhatsApp Business", "domínio verificado", "CNPJ"],
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
+
 
 export default function RootLayout({
   children,
@@ -17,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -26,7 +33,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen" suppressHydrationWarning style={{ fontFamily: "'Inter', sans-serif" }}>
         <Providers>
-          <div className="fixed inset-0 bg-gradient-radial -z-10" />
           {children}
           <Toaster position="top-right" richColors />
         </Providers>
