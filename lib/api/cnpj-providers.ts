@@ -30,7 +30,12 @@ export interface CNPJData {
     // Activity
     cnae_principal?: string;
     descricao_cnae?: string;
+    cnaes_secundarios?: Array<{ codigo: number | string; descricao: string }>;
     data_abertura?: string;
+    data_situacao_cadastral?: string;
+    motivo_situacao_cadastral?: string;
+    data_especial?: string;
+    codigo_natureza_juridica?: string;
 }
 
 export interface ProviderResponse {
@@ -94,11 +99,17 @@ export async function fetchFromReceitaWS(cnpj: string): Promise<ProviderResponse
                 bairro: data.bairro || undefined,
                 cep: data.cep || undefined,
 
-                // ✅ Activity
+                // ✅ Activity & Additional Data
                 cnae_principal: data.atividade_principal?.[0]?.code || undefined,
                 descricao_cnae: data.atividade_principal?.[0]?.text || undefined,
+                cnaes_secundarios: data.atividades_secundarias?.map((a: any) => ({ codigo: a.code, descricao: a.text })) || [],
                 data_abertura: data.abertura || undefined,
+                data_situacao_cadastral: data.data_situacao || undefined,
+                motivo_situacao_cadastral: data.motivo_situacao || undefined,
+                data_especial: data.data_situacao_especial || undefined,
+                codigo_natureza_juridica: data.natureza_juridica || undefined,
             },
+
         };
     } catch (error) {
         console.error(`❌ [ReceitaWS] Erro de rede:`, error);
@@ -153,11 +164,17 @@ export async function fetchFromBrasilAPI(cnpj: string): Promise<ProviderResponse
                 bairro: data.bairro || undefined,
                 cep: data.cep || undefined,
 
-                // ✅ Activity
-                cnae_principal: data.cnae_fiscal_principal?.codigo || undefined,
-                descricao_cnae: data.cnae_fiscal_principal?.descricao || undefined,
+                // ✅ Activity & Additional Data
+                cnae_principal: data.cnae_fiscal_principal?.codigo || data.cnae_fiscal || undefined,
+                descricao_cnae: data.cnae_fiscal_principal?.descricao || data.cnae_fiscal_descricao || undefined,
+                cnaes_secundarios: data.cnaes_secundarios || [],
                 data_abertura: data.data_inicio_atividade || undefined,
+                data_situacao_cadastral: data.data_situacao_cadastral || undefined,
+                motivo_situacao_cadastral: data.motivo_situacao_cadastral || undefined,
+                data_especial: data.data_especial || undefined,
+                codigo_natureza_juridica: data.codigo_natureza_juridica ? `${data.codigo_natureza_juridica}` : undefined,
             },
+
         };
     } catch (error) {
         console.error(`❌ [BrasilAPI] Erro de rede:`, error);
@@ -200,7 +217,18 @@ export async function fetchFromCNPJWS(cnpj: string): Promise<ProviderResponse> {
                 capital_social: data.capital_social || 0,
                 porte: data.porte?.descricao || 'NAO_INFORMADO',
                 qsa: data.socios || [],
+
+                // ✅ Activity & Additional Data
+                cnae_principal: data.estabelecimento?.atividade_principal?.classificacao || undefined,
+                descricao_cnae: data.estabelecimento?.atividade_principal?.descricao || undefined,
+                cnaes_secundarios: data.estabelecimento?.atividades_secundarias?.map((a: any) => ({ codigo: a.classificacao, descricao: a.descricao })) || [],
+                data_abertura: data.estabelecimento?.data_inicio_atividade || undefined,
+                data_situacao_cadastral: data.estabelecimento?.data_situacao_cadastral || undefined,
+                motivo_situacao_cadastral: data.estabelecimento?.motivo_situacao_cadastral?.descricao || undefined,
+                data_especial: data.estabelecimento?.data_situacao_especial || undefined,
+                codigo_natureza_juridica: data.natureza_juridica?.descricao ? `${data.natureza_juridica.codigo} - ${data.natureza_juridica.descricao}` : undefined,
             },
+
         };
     } catch (error) {
         console.error(`❌ [CNPJ.WS] Erro de rede:`, error);
