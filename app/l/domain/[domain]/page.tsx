@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import Header from '@/components/landing/Header';
 import Hero from '@/components/landing/Hero';
 import Values from '@/components/landing/Values';
@@ -21,7 +21,9 @@ interface Props {
 export default async function CustomDomainPage({ params }: Props) {
     const { domain } = await params;
     const decodedDomain = decodeURIComponent(domain);
-    const supabase = await createClient();
+    // Use service role client: visitors are unauthenticated so anon client
+    // is blocked by RLS on verified_domains — admin bypasses RLS safely.
+    const supabase = createAdminClient();
 
     // 1. Fetch domain + landing page + empresas_usadas data
     const { data: verifiedDomain } = await supabase
