@@ -7,6 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, User, Mail, Phone, FileText, CreditCard, Shield, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import Navigation from '@/components/dashboard/Navigation';
+import AuroraBackground from '@/components/layout/AuroraBackground';
+
 
 interface ProfileData {
     full_name: string;
@@ -144,17 +146,21 @@ export default function MinhaContaPage() {
 
     if (authLoading || loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'transparent' }}>
+                <AuroraBackground />
                 <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
             </div>
         );
     }
 
+
     if (!user) return null;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)] p-4 md:p-8">
+        <div className="min-h-screen p-4 md:p-8" style={{ background: 'transparent' }}>
+            <AuroraBackground />
             <div className="max-w-4xl mx-auto">
+
                 <Navigation
                     title="Minha Conta"
                     description="Gerencie seus dados pessoais e assinatura"

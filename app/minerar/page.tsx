@@ -11,6 +11,8 @@ import { EnhancedCompanyData } from '@/types/company';
 import { MiningFilters, MINING_QUANTITY } from '@/types/filters';
 import { Loader2, Zap } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
+import AuroraBackground from '@/components/layout/AuroraBackground';
+
 
 export default function MinerarPage() {
     const { user, loading, isAdmin } = useAuth();
@@ -39,12 +41,14 @@ export default function MinerarPage() {
     // Se estiver carregando OU se for admin (enquanto redireciona), não renderiza a UI complexa
     if (loading || isAdmin) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white flex-col gap-4">
+            <div className="min-h-screen flex items-center justify-center text-white flex-col gap-4" style={{ background: 'transparent' }}>
+                <AuroraBackground />
                 <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
                 {isAdmin && <p className="text-lg animate-pulse">Redirecionando para Painel Admin...</p>}
             </div>
         );
     }
+
 
     if (!user) return null; // Wait for redirect
 
@@ -53,8 +57,10 @@ export default function MinerarPage() {
     };
 
     return (
-        <main className="min-h-screen px-4 py-8 md:px-8 md:py-12">
+        <main className="min-h-screen px-4 py-8 md:px-8 md:py-12" style={{ background: 'transparent' }}>
+            <AuroraBackground />
             <div className="max-w-7xl mx-auto">
+
                 {/* Header de Navegação */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">

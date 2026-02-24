@@ -7,6 +7,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Zap, ArrowRight } from 'lucide-react';
 import { PLANS, PLAN_IDS } from '@/lib/plans/constants';
+import AuroraBackground from '@/components/layout/AuroraBackground';
+
 
 export default function PlanosPage() {
     const router = useRouter();
@@ -19,7 +21,9 @@ export default function PlanosPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
+        <div className="min-h-screen text-white" style={{ background: 'transparent' }}>
+            <AuroraBackground />
+
             {/* Header */}
             <div className="container mx-auto px-4 py-16">
                 <div className="text-center max-w-3xl mx-auto mb-16">
@@ -37,8 +41,8 @@ export default function PlanosPage() {
                         <div
                             key={plan.id}
                             className={`relative bg-gray-800/50 backdrop-blur-lg border ${plan.popular
-                                    ? 'border-blue-500 shadow-2xl shadow-blue-500/20 scale-105'
-                                    : 'border-gray-700'
+                                ? 'border-blue-500 shadow-2xl shadow-blue-500/20 scale-105'
+                                : 'border-gray-700'
                                 } rounded-2xl p-8 transition-all hover:scale-105`}
                         >
                             {/* Popular Badge */}
@@ -92,8 +96,8 @@ export default function PlanosPage() {
                                 onClick={() => handleSelectPlan(plan.id)}
                                 disabled={loading === plan.id}
                                 className={`w-full ${plan.popular
-                                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
-                                        : 'bg-gray-700 hover:bg-gray-600'
+                                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
+                                    : 'bg-gray-700 hover:bg-gray-600'
                                     } disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all`}
                             >
                                 {loading === plan.id ? (
