@@ -205,7 +205,7 @@ export default async function CustomDomainPage({ params }: Props) {
 export async function generateMetadata({ params }: Props) {
     const { domain } = await params;
     const decodedDomain = decodeURIComponent(domain);
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: verifiedDomain } = await supabase
         .from('verified_domains')
