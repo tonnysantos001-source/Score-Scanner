@@ -95,7 +95,44 @@ export async function POST(request: NextRequest) {
                 if (lpError) {
                     console.error(`[verify-dns] Error updating landing_pages:`, lpError);
                 }
+
+                // ── REGISTER DOMAIN ON VERCEL PROJECT ──────────────────────────
+                // Without this, Vercel's CDN drops traffic from custom domains.
+                // Requires VERCEL_TOKEN + VERCEL_PROJECT_ID in environment.
+                const vercelToken = process.env.VERCEL_TOKEN;
+                const vercelProjectId = process.env.VERCEL_PROJECT_ID;
+
+                if (vercelToken && vercelProjectId) {
+                    try {
+                        const vercelRes = await fetch(
+                            `https://api.vercel.com/v10/projects/${vercelProjectId}/domains`,
+                            {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${vercelToken}`,
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ name: domainName }),
+                            }
+                        );
+
+                        const vercelData = await vercelRes.json();
+
+                        if (vercelRes.ok) {
+                            console.log(`[verify-dns] ✅ Domain registered on Vercel: ${domainName}`);
+                        } else if (vercelData.error?.code === 'domain_already_in_use') {
+                            console.log(`[verify-dns] ℹ️ Domain already on Vercel: ${domainName}`);
+                        } else {
+                            console.error(`[verify-dns] ⚠️ Vercel domain registration failed:`, vercelData);
+                        }
+                    } catch (vercelErr) {
+                        console.error(`[verify-dns] ⚠️ Vercel API call failed:`, vercelErr);
+                    }
+                } else {
+                    console.warn(`[verify-dns] ⚠️ VERCEL_TOKEN or VERCEL_PROJECT_ID not set — domain not registered on Vercel.`);
+                }
             }
+
         }
 
         console.log(`[verify-dns] Completed ${domainName}. Result:`, verification.verified ? 'Verified' : 'Failed');
