@@ -46,6 +46,13 @@ export async function generateOfficialPDF(
 
     let y = 15;
 
+    // ── OUTER BORDER (around the entire content area) ────────────────────────
+    // We draw it after all content; keep coords for later
+    const borderX = lm - 2;
+    const borderY = 12;
+    const borderW = body + 4;
+    // borderH will be computed after all rows are done
+
     // ── BRASÃO ──────────────────────────────────────────────────────────────
     try {
         const logo = await loadImageAsBase64('/brasil-coat-of-arms.png');
@@ -227,20 +234,30 @@ export async function generateOfficialPDF(
     y += 10;
 
     // ── FOOTER ────────────────────────────────────────────────────────────
-    y += 6;
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'italic');
-    doc.setTextColor(60, 60, 60);
+    y += 4;
+
+    // Draw the outer border now that we know the full height
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.4);
+    doc.rect(borderX, borderY, borderW, y - borderY);
+
+    y += 4;
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 30, 30);
     doc.text(
-        'Aprovado pela Instrução Normativa RFB nº 1.863, de 27 de dezembro de 2018.',
-        W / 2, y, { align: 'center' }
+        'Aprovado pela Instru\u00e7\u00e3o Normativa RFB n\u00ba 2.119, de 06 de dezembro de 2022.',
+        lm - 2, y
     );
     y += 5;
-    doc.setFontSize(6.5);
+    const now = new Date();
+    const emitidoDate = now.toLocaleDateString('pt-BR');
+    const emitidoTime = now.toLocaleTimeString('pt-BR');
     doc.text(
-        `Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')} via VerifyAds`,
-        W / 2, y, { align: 'center' }
+        `Emitido no dia ${emitidoDate} \u00e0s ${emitidoTime} (data e hora de Bras\u00edlia).`,
+        lm - 2, y
     );
+    doc.text('P\u00e1gina: 1/1', W - rm + 2, y, { align: 'right' });
 
     return doc.output('blob');
 }
