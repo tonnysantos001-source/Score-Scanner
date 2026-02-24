@@ -18,11 +18,20 @@ export function matchesFilters(
         return false;
     }
 
-    // Check capital social - ONLY if filter is enabled
+    // Check capital social minimum - ONLY if filter is enabled
     if (filters.useCapitalFilter) {
         const capital = company.capital_social;
         if (capital < filters.capitalMinimo) {
             console.log(`❌ Rejeitado: ${company.cnpj} - Capital R$ ${capital} < R$ ${filters.capitalMinimo}`);
+            return false;
+        }
+    }
+
+    // Check capital social MAXIMUM - ONLY if filter is enabled
+    if (filters.useCapitalMaximoFilter && filters.capitalMaximo > 0) {
+        const capital = company.capital_social;
+        if (capital > filters.capitalMaximo) {
+            console.log(`❌ Rejeitado: ${company.cnpj} - Capital R$ ${capital} > R$ ${filters.capitalMaximo} (máximo)`);
             return false;
         }
     }

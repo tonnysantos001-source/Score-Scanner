@@ -3,33 +3,40 @@
  */
 
 export interface MiningFilters {
-    // Capital Social minimum only
+    // Capital Social minimum
     capitalMinimo: number;
+    // Capital Social maximum (0 = no limit)
+    capitalMaximo: number;
 
-    // Toggle to enable/disable capital filter
-    useCapitalFilter: boolean; // false = accept any active company
+    // Toggle to enable/disable capital filters
+    useCapitalFilter: boolean;    // minimum
+    useCapitalMaximoFilter: boolean; // maximum
 
     // Toggle to enable/disable UF filter
-    useUfFilter: boolean; // false = accept any UF
+    useUfFilter: boolean;
 
     // Geographic filters - single UF or 'AUTO'
-    uf: string; // 'AUTO' for automatic, or specific UF like 'SP'
+    uf: string;
 
     // Toggle to enable/disable porte filter
-    usePorteFilter: boolean; // false = accept any porte
+    usePorteFilter: boolean;
 
     // Company size
     porte: 'ME' | 'EPP' | 'DEMAIS' | 'TODOS';
 }
 
+
 export const DEFAULT_MINING_FILTERS: MiningFilters = {
-    capitalMinimo: 10000,      // R$ 10.000
-    useCapitalFilter: false,   // Disabled by default
-    uf: 'AUTO',                // Automatic (all states)
-    useUfFilter: false,        // Disabled by default - accept ANY UF
+    capitalMinimo: 1000,            // R$ 1.000
+    useCapitalFilter: false,        // Disabled by default
+    capitalMaximo: 20000,           // R$ 20.000 — default max
+    useCapitalMaximoFilter: true,   // ENABLED by default
+    uf: 'AUTO',
+    useUfFilter: false,
     porte: 'TODOS',
-    usePorteFilter: false,     // Disabled by default - accept ANY porte
+    usePorteFilter: false,
 };
+
 
 // Fixed quantity - always 20
 export const MINING_QUANTITY = 20;
