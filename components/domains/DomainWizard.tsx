@@ -391,14 +391,16 @@ function buildDNSInstructions(domain: string): DNSInstructions {
     if (isRoot) {
         return {
             isRoot: true,
-            primaryOption: { type: 'CNAME', host: 'www', value: 'cname.vercel-dns.com' },
-            alternativeOption: { type: 'A', host: '@', value: '76.76.21.21' },
+            // A record is the CORRECT way for root/apex domains
+            primaryOption: { type: 'A', host: '@', value: '216.198.79.1' },
+            // CNAME www as secondary (works on most providers)
+            alternativeOption: { type: 'CNAME', host: 'www', value: 'cname.vercel-dns.com' },
             providerNotes: [
-                'UOL Host: Use "www" como entrada e CNAME como tipo',
-                'Registro.br: Adicione tipo A para @ com IP 76.76.21.21',
-                'GoDaddy: CNAME com host "www" → cname.vercel-dns.com',
-                'Cloudflare: CNAME @ → cname.vercel-dns.com (com Flattening)',
-                'Hostinger: CNAME com host "www" → cname.vercel-dns.com',
+                '✅ Adicione registro A com host "@" ou deixe em branco → IP: 216.198.79.1',
+                'Registro.br: Tipo A, host "@", valor 216.198.79.1',
+                'GoDaddy: A Record, host "@", valor 216.198.79.1',
+                'Cloudflare: Tipo A, nome "@", conteúdo 216.198.79.1 (Proxy: desabilitado)',
+                'Hostinger / UOL: A Record "@" → 216.198.79.1',
             ],
         };
     }
@@ -409,6 +411,7 @@ function buildDNSInstructions(domain: string): DNSInstructions {
         providerNotes: [`Adicione CNAME "${parts[0]}" → cname.vercel-dns.com`],
     };
 }
+
 
 function isApexDomainClient(domain: string): boolean {
     const parts = domain.toLowerCase().split('.');
