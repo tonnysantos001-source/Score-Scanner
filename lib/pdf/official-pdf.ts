@@ -19,7 +19,15 @@ async function loadImageAsBase64(url: string): Promise<string> {
     }
 }
 
-export async function generateOfficialPDF(company: EnhancedCompanyData): Promise<Blob> {
+interface PDFOverrides {
+    telefone?: string;
+    email?: string;
+}
+
+export async function generateOfficialPDF(
+    company: EnhancedCompanyData,
+    overrides: PDFOverrides = {}
+): Promise<Blob> {
     const doc = new jsPDF('p', 'mm', 'a4');
 
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -276,8 +284,10 @@ export async function generateOfficialPDF(company: EnhancedCompanyData): Promise
     y += 10;
 
     // ============ ROW 9: EMAIL + TELEFONE ============
-    const email = company.email || company.custom_email || '********';
-    const telefone = company.telefone || company.ddd_telefone_1 || company.custom_phone || '********';
+    // Use overrides from modal (user-edited values) if provided, otherwise fall back to company data
+    const email = overrides.email || company.email || company.custom_email || '********';
+    const telefone = overrides.telefone || company.telefone || company.ddd_telefone_1 || company.custom_phone || '********';
+
 
     const emailWidth = contentWidth * 0.6;
     const telWidth = contentWidth * 0.4;

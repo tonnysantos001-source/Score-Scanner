@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import { X, Share2, CheckCircle2, Eye, Info, Link as LinkIcon } from 'lucide-react';
+import { X, Share2, CheckCircle2, Eye, Info, Link as LinkIcon, FileText, Loader2 } from 'lucide-react';
+
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -23,23 +24,30 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [isSaved, setIsSaved] = useState(false);
     const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
+
     const handleOpenPDF = async () => {
         try {
+            setIsPdfLoading(true);
             const { generateOfficialPDF } = await import('@/lib/pdf/official-pdf');
-            const blob = await generateOfficialPDF(company);
+            // Pass the currently-edited phone and email so the PDF reflects what the user typed
+            const blob = await generateOfficialPDF(company, {
+                telefone: telefone || undefined,
+                email: email || undefined,
+            });
             const url = URL.createObjectURL(blob);
-
-            // Open in new tab
             window.open(url, '_blank');
-
-            toast.success('PDF aberto em nova aba!', {
+            toast.success('PDF gerado e aberto em nova aba!', {
                 description: 'Use Ctrl+S para salvar',
             });
         } catch (error) {
             console.error('Error generating PDF:', error);
             toast.error('Erro ao gerar PDF');
+        } finally {
+            setIsPdfLoading(false);
         }
     };
+
 
     const validateOnFacebook = () => {
         window.open('https://developers.facebook.com/tools/debug/', '_blank');
@@ -139,7 +147,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 20 }}
                 transition={{ type: 'spring', damping: 25 }}
-                className="glass-card max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+                className="glass-card max-w-5xl w-full flex flex-col" style={{ maxHeight: '92vh' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -161,8 +169,9 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
 
                 </div>
 
-                {/* Content - Responsive Grid */}
-                <div className="p-5 overflow-y-auto custom-scrollbar">
+                {/* Content — inner scroll hidden so footer button is always visible */}
+                <div className="p-4 flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                         {/* Column 1: Informações da Empresa (Compactado) */}
                         <div className="space-y-4">
@@ -384,8 +393,8 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                 onClick={handleSaveCompany}
                                 disabled={isSaving || userDomains.length === 0}
                                 className={`w-full py-4 rounded-xl text-base font-bold shadow-lg transition-all flex items-center justify-center gap-3 group ${userDomains.length === 0
-                                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white hover:shadow-purple-500/20'
+                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white hover:shadow-purple-500/20'
                                     }`}
                             >
                                 {isSaving ? (
@@ -405,13 +414,23 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-4 border-t border-[var(--color-border)] flex gap-2">
+                <div className="p-3 border-t border-[var(--color-border)] flex gap-2">
                     <button
                         onClick={handleOpenPDF}
-                        className="flex-1 py-2 px-3 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                        disabled={isPdfLoading}
+                        className="flex-1 py-2.5 px-3 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 disabled:opacity-60 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow shadow-red-900/30"
                     >
-                        <Eye className="w-4 h-4" />
-                        ABRIR PDF
+                        {isPdfLoading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                GERANDO PDF...
+                            </>
+                        ) : (
+                            <>
+                                <FileText className="w-4 h-4" />
+                                GERAR PDF
+                            </>
+                        )}
                     </button>
                 </div>
             </motion.div>
