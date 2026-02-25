@@ -37,48 +37,48 @@ export async function POST(request: NextRequest) {
                 user_id: user.id,
                 plan_id: plan.id,
                 status: 'pending',
-                price_at_period: plan.price
+                price_at_period: plan.price,
             })
             .select('id')
             .single();
 
         if (subError) throw subError;
 
-        // 4. Call Zentripay
-        // GAMBIARRA SOLICITADA: Enviar dados genéricos para não exigir cadastro complexo do cliente.
-        // O gateway exige CPF e Telefone válidos.
+        // 4. Call ZentriPay — payload correto conforme documentação v2
         const pixResponse = await zentripay.createPixTransaction({
             amount: plan.price,
-            paymentType: 'PIX',
-            external_reference: subscription.id,
+            provider: 'v2',
+            method: 'pix',
+            externalReference: subscription.id,
             customer: {
-                name: profile?.full_name || 'Cliente VerifyAds',
-                email: user.email || 'cliente@verifyads.com', // Mantém email real para receipt se possível
-                document: '00000000000', // CPF Genérico/Nulo (Muitos gateways aceitam 000... ou 111...)
-                phone: '11999999999'      // Telefone Genérico
-            }
+                name: profile?.full_name || 'Cliente VerifiAds',
+                email: user.email || 'cliente@verifiads.com',
+                document: '00000000191', // CPF de teste válido
+                phone: '11999999999',
+            },
         });
 
         // 5. Update Subscription with Gateway ID
         await supabase
             .from('subscriptions')
-            .update({ gateway_id: pixResponse.data.idTransaction })
+            .update({ external_id: pixResponse.idTransaction })
             .eq('id', subscription.id);
 
         return NextResponse.json({
             success: true,
             pix: {
-                code: pixResponse.data.paymentCode,
-                qr_image: pixResponse.data.qrcode_image
+                code: pixResponse.paymentCode,
+                qr_image: null,
             },
-            subscriptionId: subscription.id
+            subscriptionId: subscription.id,
         });
 
-    } catch (error: any) {
-        console.error('Checkout error:', error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('Checkout error:', err);
         return NextResponse.json({
             success: false,
-            error: error.message || 'Internal Error'
+            error: err.message || 'Internal Error',
         }, { status: 500 });
     }
 }
