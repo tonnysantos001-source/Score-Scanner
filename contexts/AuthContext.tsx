@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 interface AuthContextType {
     user: User | null;
     isAdmin: boolean;
+    hasActivePlan: boolean;
     loading: boolean;
     signIn: (email: string, password: string) => Promise<void>;
     signUp: (email: string, password: string, fullName: string) => Promise<void>;
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [hasActivePlan, setHasActivePlan] = useState(false);
     const [loading, setLoading] = useState(true);
     const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
 
@@ -43,6 +45,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             setIsAdmin(profile?.role === 'admin');
+
+            // Check active subscription
+            const { data: sub } = await supabaseClient
+                .from('subscriptions')
+                .select('status')
+                .eq('user_id', userId)
+                .in('status', ['active', 'trialing'])
+                .limit(1)
+                .single();
+            setHasActivePlan(!!sub);
         } catch (err) {
             if (process.env.NODE_ENV === 'development') {
                 console.error('Check role error:', err);
@@ -250,6 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             value={{
                 user,
                 isAdmin,
+                hasActivePlan,
                 loading,
                 signIn,
                 signUp,

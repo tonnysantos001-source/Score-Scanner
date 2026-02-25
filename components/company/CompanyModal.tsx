@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import { X, Share2, CheckCircle2, Eye, Link as LinkIcon, FileText, Loader2, Globe } from 'lucide-react';
+import { X, Share2, CheckCircle2, Eye, Link as LinkIcon, FileText, Loader2, Globe, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CompanyModalProps {
     company: EnhancedCompanyData;
@@ -14,6 +15,7 @@ interface CompanyModalProps {
 }
 
 export default function CompanyModal({ company, onClose }: CompanyModalProps) {
+    const { hasActivePlan } = useAuth();
     const [telefone, setTelefone] = useState(company.telefone || company.ddd_telefone_1 || company.custom_phone || '');
     const [email, setEmail] = useState(company.email || company.custom_email || '');
     const [verificationToken, setVerificationToken] = useState('');
@@ -77,6 +79,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                     company_name: company.razao_social,
                     custom_phone: telefone,
                     custom_email: email,
+                    custom_notes: '',
                     verification_token: verificationToken,
                     pixel_id: pixelId,
                     domain_id: selectedDomainId,
@@ -294,19 +297,28 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                         </div>
 
                                         {/* Gerar Link button */}
-                                        <button
-                                            onClick={handleSaveCompany}
-                                            disabled={isSaving}
-                                            className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 disabled:opacity-50 text-white transition flex items-center justify-center gap-2 shadow shadow-purple-900/30"
-                                        >
-                                            {isSaving ? (
-                                                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> VINCULANDO...</>
-                                            ) : (
-                                                <><LinkIcon className="w-3.5 h-3.5" />
-                                                    {verificationToken || pixelId ? 'SALVAR & INJETAR CÓDIGO' : 'GERAR LINK & SALVAR'}
-                                                </>
-                                            )}
-                                        </button>
+                                        {hasActivePlan ? (
+                                            <button
+                                                onClick={handleSaveCompany}
+                                                disabled={isSaving}
+                                                className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 disabled:opacity-50 text-white transition flex items-center justify-center gap-2 shadow shadow-purple-900/30"
+                                            >
+                                                {isSaving ? (
+                                                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> VINCULANDO...</>
+                                                ) : (
+                                                    <><LinkIcon className="w-3.5 h-3.5" />
+                                                        {verificationToken || pixelId ? 'SALVAR & INJETAR CÓDIGO' : 'GERAR LINK & SALVAR'}
+                                                    </>
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => toast.error('Assine um plano para gerar landing pages', { description: 'Acesse Minha Conta → Planos.' })}
+                                                className="w-full py-2.5 rounded-xl text-xs font-bold bg-gray-800 border border-gray-700 text-gray-500 flex items-center justify-center gap-2 cursor-not-allowed"
+                                            >
+                                                <Lock className="w-3.5 h-3.5" /> GERAR LINK — Plano necessário
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </>
@@ -316,17 +328,26 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
 
                 {/* ── FOOTER ── */}
                 <div className="px-3 pb-3 shrink-0">
-                    <button
-                        onClick={handleOpenPDF}
-                        disabled={isPdfLoading}
-                        className="w-full py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 disabled:opacity-60 text-white transition flex items-center justify-center gap-2 shadow shadow-red-900/30"
-                    >
-                        {isPdfLoading ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" /> GERANDO PDF...</>
-                        ) : (
-                            <><FileText className="w-4 h-4" /> GERAR PDF</>
-                        )}
-                    </button>
+                    {hasActivePlan ? (
+                        <button
+                            onClick={handleOpenPDF}
+                            disabled={isPdfLoading}
+                            className="w-full py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 disabled:opacity-60 text-white transition flex items-center justify-center gap-2 shadow shadow-red-900/30"
+                        >
+                            {isPdfLoading ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" /> GERANDO PDF...</>
+                            ) : (
+                                <><FileText className="w-4 h-4" /> GERAR PDF</>
+                            )}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => toast.error('Assine um plano para gerar o PDF', { description: 'Acesse Minha Conta → Planos.' })}
+                            className="w-full py-2.5 rounded-xl text-sm font-bold bg-gray-800 border border-gray-700 text-gray-500 flex items-center justify-center gap-2 cursor-not-allowed"
+                        >
+                            <Lock className="w-4 h-4" /> GERAR PDF — Plano necessário
+                        </button>
+                    )}
                 </div>
             </motion.div>
         </motion.div>
