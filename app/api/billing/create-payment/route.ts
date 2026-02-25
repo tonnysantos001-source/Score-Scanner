@@ -1,5 +1,5 @@
 // app/api/billing/create-payment/route.ts
-// Cria assinatura recorrente via ZentriPay e retorna link de pagamento
+// Cria transação PIX avulsa via ZentriPay e retorna QR code + código copia/cola
 
 import { requireAuth } from '@/lib/auth/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -33,21 +33,26 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 });
         }
 
-        // 2. Cancela subscriptions pendentes anteriores do mesmo usuário
+        // 2. Cancela subscriptions pendentes anteriores
         await supabase
             .from('subscriptions')
             .update({ status: 'canceled' })
             .eq('user_id', user.id)
             .in('status', ['unpaid', 'pending']);
 
-        // 3. Busca dados do perfil
+        // 3. Dados do perfil (fallback gerado automaticamente)
         const { data: profile } = await supabase
             .from('profiles')
             .select('full_name, email, document, phone')
             .eq('id', user.id)
             .single();
 
-        // 4. Cria subscription local (pending payment)
+        const customerName = profile?.full_name || generateName();
+        const customerDoc = (profile?.document || generateCPF()).replace(/\D/g, '');
+        const customerPhone = (profile?.phone || generatePhone()).replace(/\D/g, '');
+        const customerEmail = profile?.email || user.email || `user+${user.id.slice(0, 8)}@verifiads.com`;
+
+        // 4. Cria subscription local (pending)
         const { data: subscription, error: subError } = await supabase
             .from('subscriptions')
             .insert({
@@ -65,35 +70,29 @@ export async function POST(request: Request) {
             throw new Error('Falha ao criar subscription');
         }
 
-        // 5. Dados do cliente (fallback para gerado)
-        const customerName = profile?.full_name || generateName();
-        const customerDoc = (profile?.document || generateCPF()).replace(/\D/g, '');
-        const customerPhone = (profile?.phone || generatePhone()).replace(/\D/g, '');
-        const customerEmail = profile?.email || user.email || `cliente+${user.id.slice(0, 8)}@verifiads.com`;
-
-        // 6. Cria assinatura recorrente na ZentriPay
-        const response = await zentripay.createSubscription({
-            name: `Plano ${plan.name} — VerifiAds`,
+        // 5. Cria transação PIX avulsa (retorna paymentCode inline)
+        const pixResponse = await zentripay.createPixTransaction({
             amount: Number(plan.price),
-            methods: ['PIX'],
-            dueInDays: 1,
+            provider: 'v2',
+            method: 'pix',
             customer: {
                 name: customerName,
                 email: customerEmail,
                 document: customerDoc,
                 phone: customerPhone,
             },
-            interval: { value: 1, unit: 'MONTH' },
+            externalReference: subscription.id,
+            productName: `Plano ${plan.name} — VerifiAds`,
             postBackUrl: WEBHOOK_URL,
         });
 
-        // 7. Salva IDs da ZentriPay na subscription
+        // 6. Salva ID da transação
         await supabase
             .from('subscriptions')
             .update({
-                external_id: String(response.recorrenciaId),
-                pix_qr_code: null,
-                pix_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                external_id: pixResponse.idTransaction,
+                pix_qr_code: pixResponse.paymentCode,
+                pix_expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min
             })
             .eq('id', subscription.id);
 
@@ -101,7 +100,7 @@ export async function POST(request: Request) {
             success: true,
             data: {
                 subscriptionId: subscription.id,
-                paymentLink: response.paymentLink,
+                paymentCode: pixResponse.paymentCode,      // Código copia/cola PIX
                 planName: plan.name,
                 amount: plan.price,
             },

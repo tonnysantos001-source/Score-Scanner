@@ -1,11 +1,11 @@
 'use client';
 
 // components/checkout/PlanCheckoutModal.tsx
-// Modal de checkout: mostra link de pagamento ZentriPay (assinatura recorrente)
+// Modal de checkout PIX inline: QR code + copia/cola sem abrir nova aba
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { X, Copy, CheckCircle2, Loader2, Clock, QrCode } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 interface PlanCheckoutModalProps {
@@ -23,13 +23,19 @@ export default function PlanCheckoutModal({
     onClose,
     onSuccess,
 }: PlanCheckoutModalProps) {
-    const [step, setStep] = useState<'loading' | 'link' | 'waiting' | 'success' | 'error'>('loading');
-    const [paymentLink, setPaymentLink] = useState('');
+    const [step, setStep] = useState<'loading' | 'pix' | 'success' | 'error'>('loading');
+    const [paymentCode, setPaymentCode] = useState('');
     const [subscriptionId, setSubscriptionId] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
+    const [copied, setCopied] = useState(false);
     const [elapsed, setElapsed] = useState(0);
 
-    // Criar pagamento ao abrir o modal
+    // Gera QR code via API pública (sem dependência extra)
+    const qrImageUrl = paymentCode
+        ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(paymentCode)}&size=220x220&bgcolor=0f172a&color=ffffff&margin=2`
+        : '';
+
+    // Cria pagamento ao abrir
     useEffect(() => {
         const createPayment = async () => {
             try {
@@ -39,25 +45,19 @@ export default function PlanCheckoutModal({
                     body: JSON.stringify({ planId }),
                 });
                 const data = await res.json();
-
-                if (!res.ok || !data.success) {
-                    throw new Error(data.error || 'Falha ao criar pagamento');
-                }
-
-                setPaymentLink(data.data.paymentLink);
+                if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao gerar PIX');
+                setPaymentCode(data.data.paymentCode);
                 setSubscriptionId(data.data.subscriptionId);
-                setStep('link');
+                setStep('pix');
             } catch (err) {
-                const e = err as Error;
-                setErrorMsg(e.message);
+                setErrorMsg((err as Error).message);
                 setStep('error');
             }
         };
-
         createPayment();
     }, [planId]);
 
-    // Polling: verifica a cada 5s se o pagamento foi confirmado
+    // Polling a cada 5s para detectar pagamento confirmado
     const checkPayment = useCallback(async () => {
         if (!subscriptionId) return;
         const supabase = createClient();
@@ -67,157 +67,157 @@ export default function PlanCheckoutModal({
             .eq('id', subscriptionId)
             .single();
 
-        if (data?.status === 'active' || data?.status === 'trialing') {
+        if (data?.status === 'active') {
             setStep('success');
             setTimeout(onSuccess, 2000);
         }
     }, [subscriptionId, onSuccess]);
 
     useEffect(() => {
-        if (step !== 'waiting') return;
-
-        const interval = setInterval(checkPayment, 5000);
+        if (step !== 'pix') return;
+        const poll = setInterval(checkPayment, 5000);
         const timer = setInterval(() => setElapsed(e => e + 1), 1000);
-
-        return () => {
-            clearInterval(interval);
-            clearInterval(timer);
-        };
+        return () => { clearInterval(poll); clearInterval(timer); };
     }, [step, checkPayment]);
 
-    const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+    const copyCode = () => {
+        navigator.clipboard.writeText(paymentCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+    };
+
+    const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const seconds = (elapsed % 60).toString().padStart(2, '0');
 
     return (
         <AnimatePresence>
             <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-                {/* Overlay */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                    className="absolute inset-0 bg-black/75 backdrop-blur-md"
                     onClick={step === 'loading' ? undefined : onClose}
                 />
 
-                {/* Modal */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    initial={{ opacity: 0, scale: 0.93, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    className="relative w-full max-w-md bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl p-6 shadow-2xl z-10"
+                    exit={{ opacity: 0, scale: 0.93, y: 20 }}
+                    transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                    className="relative w-full max-w-sm bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl z-10 overflow-hidden"
                 >
-                    {/* Close */}
-                    {step !== 'loading' && (
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    )}
-
-                    {/* Loading */}
-                    {step === 'loading' && (
-                        <div className="text-center py-8">
-                            <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
-                            <p className="font-semibold">Gerando link de pagamento...</p>
-                            <p className="text-sm text-[var(--color-text-muted)] mt-1">Aguarde um momento</p>
-                        </div>
-                    )}
-
-                    {/* Link pronto */}
-                    {step === 'link' && (
-                        <div className="text-center">
-                            <div className="w-14 h-14 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
-                                <ExternalLink className="w-7 h-7 text-blue-500" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-1">Plano {planName}</h3>
-                            <p className="text-[var(--color-text-muted)] mb-2 text-sm">
-                                R$ {Number(planPrice).toFixed(2).replace('.', ',')}/mês • Renovação automática via PIX
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
+                        <div>
+                            <h3 className="font-bold text-white">Pagar via PIX</h3>
+                            <p className="text-xs text-slate-400">
+                                {planName} · R$ {Number(planPrice).toFixed(2).replace('.', ',')}/mês
                             </p>
-
-                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 mb-6 text-sm text-blue-300">
-                                A ZentriPay vai gerar o QR Code PIX para você.<br />
-                                Clique no botão abaixo para acessar a página de pagamento.
-                            </div>
-
-                            <a
-                                href={paymentLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() => setStep('waiting')}
-                                className="flex items-center justify-center gap-2 w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 mb-3"
-                            >
-                                <ExternalLink className="w-4 h-4" />
-                                Ir para a Página de Pagamento
-                            </a>
-                            <button
-                                onClick={() => setStep('waiting')}
-                                className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-                            >
-                                Já paguei, aguardar confirmação →
+                        </div>
+                        {step !== 'loading' && (
+                            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400">
+                                <X className="w-4 h-4" />
                             </button>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
-                    {/* Aguardando confirmação */}
-                    {step === 'waiting' && (
-                        <div className="text-center py-4">
-                            <div className="relative w-16 h-16 mx-auto mb-4">
-                                <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />
-                                <Clock className="w-7 h-7 text-blue-400 absolute inset-0 m-auto" />
+                    <div className="p-5">
+                        {/* ─── Loading ─── */}
+                        {step === 'loading' && (
+                            <div className="text-center py-10">
+                                <Loader2 className="w-10 h-10 text-blue-400 animate-spin mx-auto mb-3" />
+                                <p className="text-sm text-slate-400">Gerando QR Code PIX...</p>
                             </div>
-                            <h3 className="text-xl font-bold mb-1">Aguardando Pagamento</h3>
-                            <p className="text-[var(--color-text-muted)] text-sm mb-4">
-                                Verificando automaticamente a cada 5 segundos
-                            </p>
-                            <div className="bg-[var(--color-bg-tertiary)] rounded-xl p-3 mb-4">
-                                <p className="text-xs text-[var(--color-text-muted)] mb-1">Tempo aguardando</p>
-                                <p className="text-2xl font-mono font-bold text-blue-400">{formatTime(elapsed)}</p>
-                            </div>
-                            <a
-                                href={paymentLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-400 hover:text-blue-300 underline"
-                            >
-                                Abrir link de pagamento novamente
-                            </a>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Sucesso */}
-                    {step === 'success' && (
-                        <div className="text-center py-4">
-                            <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ type: 'spring', stiffness: 300 }}
-                                className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4"
-                            >
-                                <CheckCircle2 className="w-9 h-9 text-green-500" />
-                            </motion.div>
-                            <h3 className="text-xl font-bold text-green-400 mb-1">Pagamento Confirmado!</h3>
-                            <p className="text-[var(--color-text-muted)] text-sm">
-                                Plano {planName} ativado com sucesso. Redirecionando...
-                            </p>
-                        </div>
-                    )}
+                        {/* ─── PIX pronto ─── */}
+                        {step === 'pix' && (
+                            <div className="space-y-4">
+                                {/* QR Code */}
+                                <div className="flex justify-center">
+                                    <div className="bg-[#0f172a] rounded-xl p-1 border border-white/10 shadow-lg">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={qrImageUrl}
+                                            alt="QR Code PIX"
+                                            width={220}
+                                            height={220}
+                                            className="rounded-lg"
+                                        />
+                                    </div>
+                                </div>
 
-                    {/* Erro */}
-                    {step === 'error' && (
-                        <div className="text-center py-4">
-                            <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                                <X className="w-7 h-7 text-red-500" />
+                                {/* Instrução */}
+                                <p className="text-center text-xs text-slate-400">
+                                    Escaneie o QR code com o app do seu banco ou copie o código abaixo
+                                </p>
+
+                                {/* Código copia/cola */}
+                                <div className="bg-white/5 rounded-xl border border-white/10 p-3">
+                                    <p className="text-xs text-slate-500 mb-1.5 font-medium">PIX Copia e Cola</p>
+                                    <p className="text-xs text-slate-300 font-mono break-all leading-relaxed line-clamp-3">
+                                        {paymentCode}
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={copyCode}
+                                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all ${copied
+                                        ? 'bg-green-500/20 border border-green-500/30 text-green-400'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20'
+                                        }`}
+                                >
+                                    {copied
+                                        ? <><CheckCircle2 className="w-4 h-4" />Copiado!</>
+                                        : <><Copy className="w-4 h-4" />Copiar Código PIX</>
+                                    }
+                                </button>
+
+                                {/* Status polling */}
+                                <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Aguardando pagamento... <span className="font-mono text-slate-400">{minutes}:{seconds}</span>
+                                </div>
                             </div>
-                            <h3 className="text-lg font-bold text-red-400 mb-2">Erro ao Criar Pagamento</h3>
-                            <p className="text-sm text-[var(--color-text-muted)] mb-4">{errorMsg}</p>
-                            <button
-                                onClick={onClose}
-                                className="px-6 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-xl text-sm hover:bg-[var(--color-bg-card)] transition-colors"
-                            >
-                                Fechar
-                            </button>
+                        )}
+
+                        {/* ─── Sucesso ─── */}
+                        {step === 'success' && (
+                            <div className="text-center py-8">
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: 'spring', stiffness: 300 }}
+                                    className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4"
+                                >
+                                    <CheckCircle2 className="w-9 h-9 text-green-400" />
+                                </motion.div>
+                                <h3 className="text-lg font-bold text-green-400 mb-1">Pagamento Confirmado!</h3>
+                                <p className="text-sm text-slate-400">Plano {planName} ativado. Redirecionando...</p>
+                            </div>
+                        )}
+
+                        {/* ─── Erro ─── */}
+                        {step === 'error' && (
+                            <div className="text-center py-6">
+                                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-3">
+                                    <X className="w-6 h-6 text-red-400" />
+                                </div>
+                                <h3 className="font-bold text-red-400 mb-2">Erro ao Gerar PIX</h3>
+                                <p className="text-xs text-slate-400 mb-4">{errorMsg}</p>
+                                <button onClick={onClose} className="px-5 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm transition-colors">
+                                    Fechar
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Rodapé segurança */}
+                    {step === 'pix' && (
+                        <div className="px-5 pb-4 flex items-center justify-center gap-1.5 text-xs text-slate-600">
+                            <QrCode className="w-3 h-3" />
+                            Pagamento seguro via Pix · Banco Central do Brasil
                         </div>
                     )}
                 </motion.div>
