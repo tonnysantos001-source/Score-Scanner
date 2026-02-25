@@ -2,7 +2,7 @@
 // EXAMPLE: Protected admin API route with requireAdmin()
 
 import { requireAdmin } from '@/lib/auth/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -10,7 +10,8 @@ export async function GET() {
         // ✅ ROLE CHECK HAPPENS HERE (not in middleware)
         await requireAdmin();
 
-        const supabase = await createClient();
+        // Usa service role para bypassar RLS e listar todos os usuários
+        const supabase = createAdminClient();
 
         const { data: users, error } = await supabase
             .from('profiles')
@@ -19,7 +20,8 @@ export async function GET() {
 
         if (error) throw error;
 
-        return NextResponse.json({ users });
+        // Retorna o array diretamente (não aninhado em objeto)
+        return NextResponse.json(users ?? []);
     } catch (error) {
         const err = error as Error;
 
@@ -51,12 +53,13 @@ export async function GET() {
 export async function PATCH(request: Request) {
     try {
         const admin = await requireAdmin();
-        const { userId, updates } = await request.json();
+        const { userId, role } = await request.json();
 
-        const supabase = await createClient();
+        // Usa service role para bypassar RLS ao atualizar qualquer usuário
+        const supabase = createAdminClient();
 
         // Prevent changing own role (safety)
-        if (userId === admin.id && updates.role) {
+        if (userId === admin.id) {
             return NextResponse.json(
                 { error: 'Cannot change your own role' },
                 { status: 400 }
@@ -65,7 +68,7 @@ export async function PATCH(request: Request) {
 
         const { data, error } = await supabase
             .from('profiles')
-            .update(updates)
+            .update({ role })
             .eq('id', userId)
             .select()
             .single();
