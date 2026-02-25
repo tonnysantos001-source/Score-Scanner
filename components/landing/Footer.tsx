@@ -1,7 +1,5 @@
 'use client';
 
-import { ShieldCheck } from 'lucide-react';
-
 interface FooterProps {
     companyName: string;
     cnpj: string;
@@ -18,12 +16,11 @@ export default function Footer({ companyName, cnpj, address }: FooterProps) {
                     <div className="col-span-1 md:col-span-2">
                         <h3 className="text-white text-lg font-bold mb-4">{companyName}</h3>
                         <p className="text-sm text-slate-400 mb-4 max-w-sm">
-                            Empresa comprometida com a transparência e qualidade. Todos os dados exibidos nesta página são públicos e foram verificados.
+                            Informações cadastrais públicas desta empresa registrada no Brasil. Os dados exibidos são de domínio público.
                         </p>
-                        <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
-                            <ShieldCheck size={16} />
-                            CNPJ Verificado e Ativo
-                        </div>
+                        <p className="text-sm text-slate-500">
+                            CNPJ: {cnpj}
+                        </p>
                     </div>
 
                     <div>
@@ -54,11 +51,6 @@ export default function Footer({ companyName, cnpj, address }: FooterProps) {
                         <p>© {currentYear} {companyName}. Todos os direitos reservados.</p>
                         <p className="mt-1">CNPJ: {cnpj}</p>
                         <p className="mt-1">{address}</p>
-                    </div>
-                    <div className="max-w-md text-center md:text-right opacity-60">
-                        <p>
-                            Este site não faz parte do site do Facebook ou Facebook Inc. Além disso, este site NÃO é endossado pelo Facebook de nenhuma maneira. FACEBOOK é uma marca comercial da FACEBOOK, Inc.
-                        </p>
                     </div>
                 </div>
             </div>

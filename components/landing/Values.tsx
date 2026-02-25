@@ -1,24 +1,24 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Award, Users, TrendingUp } from 'lucide-react';
+import { Database, Users, FileText } from 'lucide-react';
 
 export default function Values() {
     const values = [
         {
-            icon: <Award className="w-8 h-8 text-blue-600" />,
-            title: 'Empresa Verificada',
-            description: 'Esta organização passou por processos de validação de dados cadastrais, garantindo sua existência e regularidade.',
+            icon: <Database className="w-8 h-8 text-blue-600" />,
+            title: 'Dados Públicos',
+            description: 'As informações exibidas aqui são cadastrais e estão disponíveis publicamente na base de dados do governo federal.',
         },
         {
             icon: <Users className="w-8 h-8 text-blue-600" />,
-            title: 'Transparência Total',
-            description: 'Operamos com clareza e honestidade. Todos os nossos dados fiscais e de contato estão disponíveis para consulta pública.',
+            title: 'Transparência',
+            description: 'Acreditamos no acesso livre a informações públicas. Dados fiscais e cadastrais de pessoas jurídicas são de domínio público.',
         },
         {
-            icon: <TrendingUp className="w-8 h-8 text-blue-600" />,
-            title: 'Conformidade Legal',
-            description: 'Atuamos em estrita observância às leis vigentes e normas regulatórias, assegurando segurança jurídica em nossas relações.',
+            icon: <FileText className="w-8 h-8 text-blue-600" />,
+            title: 'Registro Ativo',
+            description: 'A empresa possui cadastro ativo no CNPJ e opera dentro das normas estabelecidas pelos órgãos competentes.',
         },
     ];
 
@@ -26,12 +26,12 @@ export default function Values() {
         <section id="sobre" className="py-20 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h2 className="text-base font-semibold text-blue-600 tracking-wide uppercase">Nossos Valores</h2>
+                    <h2 className="text-base font-semibold text-blue-600 tracking-wide uppercase">Sobre</h2>
                     <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-                        Por que nos escolher?
+                        Informações Cadastrais
                     </p>
                     <p className="mt-4 max-w-2xl text-xl text-slate-500 mx-auto">
-                        Construímos nossa reputação baseada em pilares sólidos que garantem a segurança e satisfação dos nossos parceiros.
+                        Conheça os dados cadastrais desta empresa registrada no Brasil.
                     </p>
                 </div>
 

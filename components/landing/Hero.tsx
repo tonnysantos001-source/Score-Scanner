@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { BadgeCheck, ArrowRight } from 'lucide-react';
+import { FileSearch, ArrowRight } from 'lucide-react';
 
 interface HeroProps {
     companyName: string;
@@ -24,10 +24,10 @@ export default function Hero({ companyName, description, cnpj }: HeroProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-medium mb-8"
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-sm font-medium mb-8"
                 >
-                    <BadgeCheck size={16} />
-                    Empresa Verificada • CNPJ {cnpj}
+                    <FileSearch size={16} />
+                    CNPJ {cnpj} &bull; Dados da Receita Federal
                 </motion.div>
 
                 <motion.h1
@@ -45,7 +45,7 @@ export default function Hero({ companyName, description, cnpj }: HeroProps) {
                     transition={{ duration: 0.6, delay: 0.2 }}
                     className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed"
                 >
-                    {description || `Referência em qualidade e compromisso. Conheça a ${companyName}, uma empresa dedicada a oferecer as melhores soluções com total transparência.`}
+                    {description || `Conheça a ${companyName}. Informações cadastrais disponíveis publicamente.`}
                 </motion.p>
 
                 <motion.div
@@ -58,7 +58,7 @@ export default function Hero({ companyName, description, cnpj }: HeroProps) {
                         href="#dados"
                         className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-slate-900 rounded-full hover:bg-slate-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900"
                     >
-                        Ver Dados Oficiais
+                        Ver Informações da Empresa
                         <ArrowRight className="ml-2 w-5 h-5" />
                     </a>
                 </motion.div>

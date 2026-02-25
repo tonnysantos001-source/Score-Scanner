@@ -1,12 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Building2, MapPin, Calendar, Wallet, FileText, CheckCircle2 } from 'lucide-react';
+import { Building2, MapPin, Calendar, Wallet, FileText } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 
 interface CompanyDataProps {
-    company: any; // Tipar corretamente se possível, mas any funciona para o MVP
+    company: any;
 }
 
 export default function CompanyData({ company }: CompanyDataProps) {
@@ -16,12 +16,8 @@ export default function CompanyData({ company }: CompanyDataProps) {
                 <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
                     {/* Header do Card */}
                     <div className="bg-slate-900 p-8 sm:p-10 text-center">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-semibold mb-6">
-                            <CheckCircle2 size={16} />
-                            Empresa Verificada & Ativa
-                        </div>
-                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Dossiê Empresarial Público</h2>
-                        <p className="text-slate-400">Dados oficiais consultados na Receita Federal</p>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Ficha Cadastral</h2>
+                        <p className="text-slate-400">Informações cadastrais disponíveis publicamente</p>
                     </div>
 
                     {/* Conteúdo */}
