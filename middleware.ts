@@ -45,9 +45,10 @@ export async function middleware(request: NextRequest) {
 
     // Configurable main domains + localhost
     const allowedDomains = [
-        'verifyads.online',    // ← Production main domain
-        'verifyads.com',
-        'verifyads.com.br',
+        'verifiads.com',           // ← Domínio principal do sistema
+        'www.verifiads.com',       // ← Com www
+        'verifiads.online',        // ← Legado / backup
+        'verifiads.com.br',        // ← Legado / backup
         'localhost:3000',
         'localhost',
         process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, ''),
