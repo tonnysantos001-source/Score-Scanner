@@ -110,7 +110,7 @@ export default function UserMenu() {
                             </Link>
 
                             <Link
-                                href="/minha-area"
+                                href="/minha-conta"
                                 onClick={() => setIsOpen(false)}
                                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-white transition-colors"
                             >
