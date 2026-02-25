@@ -51,7 +51,7 @@ export default function AdminUsersPage() {
                             .in('status', ['active', 'trialing', 'unpaid'])
                             .order('created_at', { ascending: false })
                             .limit(1)
-                            .single();
+                            .maybeSingle();
                         return {
                             ...u,
                             subscription: sub ? {

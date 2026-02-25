@@ -6,9 +6,9 @@ import Navigation from '@/components/dashboard/Navigation';
 import AuroraBackground from '@/components/layout/AuroraBackground';
 import {
     Facebook, FileText, Globe, Shield, ChevronDown,
-    CheckCircle, Copy, ExternalLink, Smartphone,
-    BookOpen, Zap, HelpCircle, ArrowRight, Terminal,
-    Info, AlertCircle,
+    CheckCircle, Terminal,
+    BookOpen, Zap, HelpCircle,
+    Info, AlertCircle, Lightbulb, Key, Smartphone,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -17,8 +17,13 @@ interface Step {
     title: string;
     description: string;
     hint?: string;
-    hintType?: 'info' | 'warning' | 'success' | 'code';
-    code?: string;
+    hintType?: 'info' | 'warning' | 'success' | 'code' | 'tip';
+}
+
+interface TipBlock {
+    type: 'tip' | 'warning' | 'info';
+    title: string;
+    body: string;
 }
 
 interface GuideSection {
@@ -29,6 +34,7 @@ interface GuideSection {
     title: string;
     subtitle: string;
     steps: Step[];
+    extra?: TipBlock[];
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -38,37 +44,57 @@ const guides: GuideSection[] = [
         id: 'facebook',
         icon: <Facebook className="w-5 h-5" />,
         color: '#3b82f6',
-        badge: 'Meta Business',
-        title: 'Verificar Domínio no Facebook Ads',
-        subtitle: 'Conecte seu domínio ao Meta Business e desbloqueie recursos exclusivos de anúncios.',
+        badge: 'Etapa 1 — Meta Business',
+        title: 'Verificar Empresa no Facebook Ads',
+        subtitle: 'Acesse o Gerenciador de Empresas do Facebook e complete o processo de verificação do seu negócio.',
         steps: [
             {
-                title: 'Acesse o Gerenciador de Negócios',
-                description: 'No Meta Business Suite, vá até Configurações do Negócio → Segurança da Marca → Domínios.',
-                hint: 'Menu Lateral → Segurança da Marca → Domínios',
+                title: 'Acesse o Gerenciador de Empresas do Facebook',
+                description: 'Abra o navegador e acesse business.facebook.com. Faça login com sua conta do Facebook pessoal (que deve ser administradora de uma Página Comercial). Se não tiver um negócio criado, clique em "Criar Conta" e preencha os dados da sua empresa.',
+                hint: 'Acesse: business.facebook.com → Fazer Login',
                 hintType: 'code',
             },
             {
-                title: 'Adicione o Domínio',
-                description: "Clique em 'Adicionar', selecione 'Criar um novo domínio' e cole o link da sua Landing Page gerada neste sistema.",
-                hint: 'Use o link sem "http://" ou "https://". Ex: seudominio.com',
-                hintType: 'info',
-            },
-            {
-                title: 'Copie a Meta-tag de Verificação',
-                description: 'Selecione "Adicione uma meta-tag ao seu código-fonte HTML" e copie o código completo.',
-                hint: '<meta name="facebook-domain-verification" content="TOKEN" />',
+                title: 'Vá em Configurações do Negócio',
+                description: 'No painel principal do Meta Business Suite, clique no ícone de engrenagem ⚙️ no canto inferior esquerdo (ou clique no menu hambúrguer ☰ e selecione "Configurações do Negócio"). Uma nova tela será aberta com todas as configurações.',
+                hint: 'Menu lateral esquerdo → Configurações do Negócio (ícone de engrenagem)',
                 hintType: 'code',
             },
             {
-                title: 'Cole no VerifyAds',
-                description: 'Volte aqui, encontre seu domínio em Minha Área → Domínios, clique em Editar (ícone lápis) e cole o token no campo "Token de Verificação". Salve.',
+                title: 'Encontre "Central de Segurança" ou "Verificação do Negócio"',
+                description: 'Na barra lateral esquerda das Configurações do Negócio, procure por "Central de Segurança" ou role até encontrar "Verificação do Negócio". Clique nela. Será exibido o status atual da sua conta — se ainda não verificada, aparecerá o botão "Iniciar verificação".',
+                hint: 'Configurações do Negócio → Central de Segurança → Verificação do Negócio',
+                hintType: 'code',
             },
             {
-                title: 'Clique em Verificar no Facebook',
-                description: "Volte ao Facebook e clique no botão verde 'Verificar Domínio'. O domínio deve ser verificado em segundos.",
-                hint: 'Verificado com sucesso!',
+                title: 'Escolha o método: "Verificar pelo site" (Meta-tag)',
+                description: 'O Facebook oferece múltiplos métodos de verificação. Para usar o VerifyAds, selecione "Confirmação do domínio" ou o método via meta-tag HTML. O Facebook irá gerar um código único para você — algo como: <meta name="facebook-domain-verification" content="SEUTOKEN">. Copie TODO esse código.',
+                hint: '<meta name="facebook-domain-verification" content="abc123xyz..." />',
+                hintType: 'code',
+            },
+            {
+                title: 'Copie o Token e Cole no VerifyAds',
+                description: 'Volte ao VerifyAds. Vá em Minerar → encontre uma empresa → clique nela para abrir o Dossiê → No campo "Verificação Facebook", cole o código completo da meta-tag (pode colar o código inteiro, o sistema extrai o token automaticamente). Em seguida, selecione o domínio e clique em "SALVAR & INJETAR CÓDIGO". O token será automaticamente inserido no HTML da sua landing page.',
+                hint: '⚠️ IMPORTANTE: Cole o token ANTES de gerar o link. Assim o código será inserido na página no momento certo.',
+                hintType: 'warning',
+            },
+            {
+                title: 'Volte ao Facebook e clique em "Verificar Domínio"',
+                description: 'Depois que o link for gerado no VerifyAds, volte ao painel do Facebook → Configurações do Negócio → Segurança da Marca → Domínios. Adicione o domínio da sua landing page (sem https://) e clique em "Verificar". O Facebook irá acessar sua página e ler a meta-tag automaticamente.',
+                hint: 'Domínio verificado com sucesso! O Facebook confirma em segundos.',
                 hintType: 'success',
+            },
+        ],
+        extra: [
+            {
+                type: 'tip',
+                title: '🔓 Facebook não mostra a opção "Verificar Empresa"?',
+                body: 'Contas novas do Facebook Business frequentemente NÃO mostram a opção de "Verificação do Negócio" porque a conta ainda não tem histórico suficiente. O atalho mais rápido é: crie um Aplicativo Facebook (acesse developers.facebook.com → Meus Apps → Criar App → selecione "Outro" → escolha "Negócio"). Ao criar o app e vinculá-lo ao seu Business Manager, o Facebook normalmente libera a opção de verificação de empresa em minutos a horas. Após ver a opção, delete o app se quiser (a verificação permanece).',
+            },
+            {
+                type: 'info',
+                title: '🔵 Dica alternativa: use a verificação via DNS',
+                body: 'Se não conseguir pelo método de meta-tag, o Facebook também aceita verificação por registro DNS TXT. No seu provedor de domínio (Cloudflare, GoDaddy, etc.), adicione um registro TXT com o valor fornecido pelo Facebook. Funciona mesmo sem a landing page.',
             },
         ],
     },
@@ -76,67 +102,169 @@ const guides: GuideSection[] = [
         id: 'pdf',
         icon: <FileText className="w-5 h-5" />,
         color: '#f59e0b',
-        badge: 'PDF & Comprovante',
-        title: 'Editar o PDF para receber SMS',
-        subtitle: 'Personalize o comprovante gerado para adicionar seu número de telefone.',
+        badge: 'Etapa 2 — PDF & SMS',
+        title: 'Usar o PDF para Verificação por SMS',
+        subtitle: 'O Facebook pode pedir confirmação por SMS. Entenda como funciona e como trocar o CNPJ para receber o código no seu número.',
         steps: [
             {
-                title: 'Gere e Baixe o PDF',
-                description: 'Na página Minerar CNPJ, encontre uma empresa, gere o comprovante e faça o download do arquivo PDF.',
-            },
-            {
-                title: 'Abra em um Editor de PDF',
-                description: 'Recomendamos Adobe Acrobat, Foxit Reader ou ILovePDF (online, gratuito).',
-                hint: 'Acesse ilovepdf.com → Editor de PDF → Adicionar Texto',
+                title: 'Entenda o processo de SMS do Facebook',
+                description: 'Durante a verificação do negócio, o Facebook pode solicitar confirmação de identidade. Uma das opções é confirmar pelo número de telefone associado ao CNPJ — o Facebook envia um SMS com um código para esse número. O comprovante gerado pelo VerifyAds usa dados reais da Receita Federal, incluindo um número de contato.',
+                hint: 'O Facebook envia um SMS para o número que aparece no documento que você enviar.',
                 hintType: 'info',
             },
             {
-                title: 'Adicione seu Número de Telefone',
-                description: 'Use a ferramenta de "Texto" ou "Editar Conteúdo" para adicionar ou substituir o campo de telefone no cabeçalho do comprovante.',
-                hint: 'Dica: Mantenha a mesma fonte e tamanho para parecer original.',
+                title: 'Gere o PDF da empresa no VerifyAds',
+                description: 'Na página Minerar CNPJ, pesquise empresas usando os filtros de cidade e CNAE. Quando encontrar uma empresa com situação "ATIVA", clique nela para abrir o Dossiê Empresarial. Em seguida, clique no botão vermelho "GERAR PDF" no rodapé do modal. O PDF abrirá em uma nova aba.',
+                hint: 'Use Ctrl+S (ou Cmd+S no Mac) para salvar o PDF no seu computador.',
+                hintType: 'code',
+            },
+            {
+                title: '⚠️ Troque o CNPJ pelo seu número de telefone para receber o SMS',
+                description: 'ATENÇÃO: O número de telefone que aparece no PDF é o da empresa na Receita Federal. Para receber o SMS de verificação no SEU número, você precisa editar o PDF e substituir o telefone pelo seu. Abra o PDF em um editor (recomendamos ILovePDF.com — gratuito e online) → clique em "Editar" → use a ferramenta de texto para apagar o número antigo → escreva o seu número de celular no formato (DDD) NNNNN-NNNN.',
+                hint: '⚠️ Troque o número do CNPJ pelo seu celular. O SMS do Facebook virá para esse número.',
                 hintType: 'warning',
             },
             {
-                title: 'Salve e Use',
-                description: 'Salve o PDF editado. Ele agora contém seu número e pode ser enviado ao Meta para confirmação por SMS.',
-                hint: 'O SMS chegará no número que você colocou no PDF.',
+                title: 'Acesse o ILovePDF para editar',
+                description: 'Acesse ilovepdf.com no navegador → clique em "Editar PDF" → faça upload do PDF gerado → use a ferramenta de texto (ícone "T") para adicionar ou substituir o telefone → clique em "Editar PDF" para aplicar → baixe o arquivo editado.',
+                hint: 'Acesse: ilovepdf.com → Editar PDF → Ferramenta de Texto "T"',
+                hintType: 'code',
+            },
+            {
+                title: 'Envie o PDF ao Facebook e aguarde o SMS',
+                description: 'No Facebook → Verificação do Negócio → escolha o método "Documento oficial" → faça upload do PDF editado. O Facebook analisará o documento e enviará um SMS com o código de verificação para o número que você colocou no PDF. Insira o código recebido para concluir a verificação.',
+                hint: 'SMS recebido! Insira o código de 6 dígitos na tela do Facebook para confirmar.',
                 hintType: 'success',
+            },
+        ],
+        extra: [
+            {
+                type: 'warning',
+                title: '⚠️ Dica importante sobre o número de telefone',
+                body: 'O número inserido no PDF deve ser um celular brasileiro válido e que você tenha acesso imediato. O SMS do Facebook chega em até 5 minutos. Se não receber, você pode solicitar o reenvio. Números de VoIP ou virtuais podem não receber SMS — use seu celular físico.',
             },
         ],
     },
     {
-        id: 'dominio',
+        id: 'landingpage',
         icon: <Globe className="w-5 h-5" />,
         color: '#8b5cf6',
-        badge: 'Domínio',
-        title: 'Configurar um Domínio Personalizado',
-        subtitle: 'Conecte seu próprio domínio para servir sua landing page de verificação.',
+        badge: 'Etapa 3 — Landing Page',
+        title: 'Gerar e Publicar sua Landing Page',
+        subtitle: 'Crie a página de verificação da empresa no seu domínio e deixe ela pronta para o Facebook Ads.',
         steps: [
             {
-                title: 'Compre ou Use um Domínio Existente',
-                description: 'Você precisa de um domínio próprio (ex: minhaverficacao.com.br). Use GoDaddy, Registro.br ou Cloudflare.',
-            },
-            {
-                title: 'Adicione o Domínio no VerifyAds',
-                description: 'Em Minha Área → aba Domínios, clique em "+ Adicionar Domínio" e insira seu domínio.',
-            },
-            {
-                title: 'Aponte o DNS — Adicione um CNAME',
-                description: 'No painel do seu registrador de domínio, crie um registro CNAME apontando para o nosso servidor.',
-                hint: 'CNAME  @  →  cname.vercel-dns.com  (TTL 300)',
+                title: 'Conecte seu domínio no VerifyAds',
+                description: 'Antes de gerar a landing page, você precisa de um domínio próprio conectado (ex: minhaempresa.com.br). Acesse Minha Área → aba "Domínios" → clique em "+ Adicionar Domínio". Insira seu domínio SEM https:// e clique em Salvar. O sistema vai exibir o registro DNS que você precisa configurar.',
+                hint: 'Minha Área → Domínios → + Adicionar Domínio',
                 hintType: 'code',
             },
             {
-                title: 'Aguarde a Propagação',
-                description: 'A propagação de DNS pode levar de 10 minutos a 48 horas. Após isso, clique em "Verificar Conexão" no VerifyAds.',
-                hint: 'Em geral, leva menos de 30 minutos com Cloudflare.',
+                title: 'Configure o DNS (CNAME) no seu registrador',
+                description: 'Acesse o painel de controle onde você comprou o domínio (ex: Registro.br, GoDaddy, Hostgator, Cloudflare). Vá em "Gerenciar DNS" ou "Zone Editor" e adicione um registro CNAME. O HOST deve ser "@" ou o subdomínio desejado, e o VALOR deve apontar para cname.vercel-dns.com.',
+                hint: 'CNAME  →  @  →  cname.vercel-dns.com  (TTL: Auto ou 300)',
+                hintType: 'code',
+            },
+            {
+                title: 'Aguarde a propagação e verifique a conexão',
+                description: 'A propagação DNS pode levar de 5 minutos a 48 horas (com Cloudflare costuma ser menos de 5 minutos). Após configurar o CNAME, volte ao VerifyAds → Minha Área → Domínios → clique em "Verificar Conexão" no domínio adicionado. Quando aparecer o badge verde "Verificado", seu domínio está pronto.',
+                hint: 'Com Cloudflare como nameserver, a propagação costuma ser quase instantânea.',
                 hintType: 'info',
             },
             {
-                title: 'Landing Page Ativa!',
-                description: 'Quando a verificação for bem-sucedida, sua landing page estará disponível no seu domínio e visível para o Facebook.',
-                hint: 'Domínio verificado e landing page ativa!',
+                title: 'Cole o Token do Facebook ANTES de gerar o link',
+                description: 'Este passo é fundamental! Na tela de Minerar, após encontrar a empresa, clique para abrir o Dossiê. No campo "Verificação Facebook" → "Token Meta-tag", cole o código que o Facebook gerou para você (ex: <meta name="facebook-domain-verification" content="abc123">). O sistema extrai o token automaticamente. Faça isso ANTES de clicar em Gerar Link.',
+                hint: '⚠️ Se gerar o link sem o token, o Facebook não conseguirá verificar o domínio. Cole o token primeiro!',
+                hintType: 'warning',
+            },
+            {
+                title: 'Selecione o domínio e gere o link',
+                description: 'No Dossiê Empresarial (modal após clicar na empresa), na coluna direita "Página White Label", selecione o domínio que você conectou no passo 1 no menu suspenso. Em seguida, clique em "SALVAR & INJETAR CÓDIGO" (ou "GERAR LINK & SALVAR"). O sistema cria a landing page com os dados da empresa e o token do Facebook embutido no HTML.',
+                hint: 'Sua landing page será publicada em: https://seudominio.com',
+                hintType: 'code',
+            },
+            {
+                title: 'Verifique a landing page no navegador',
+                description: 'Abra uma nova aba e acesse o link do seu domínio (ex: https://seudominio.com.br). Você verá a página da empresa com nome, CNPJ, endereço e dados verificados pela Receita Federal. Se quiser confirmar que o token do Facebook está embutido, clique com botão direito na página → "Exibir código-fonte da página" → pressione Ctrl+F e busque por "facebook-domain-verification".',
+                hint: 'Ctrl+F na página → busque "facebook-domain-verification" → deve aparecer seu token.',
+                hintType: 'code',
+            },
+            {
+                title: 'Adicione o domínio no Facebook e verifique',
+                description: 'Com a landing page publicada e o token embutido, vá ao Facebook → Configurações do Negócio → Segurança da Marca → Domínios → clique em "+ Adicionar" → insira seu domínio (sem https://) → clique em "Verificar Domínio". O Facebook acessará sua página, lerá a meta-tag e confirmará a verificação em segundos.',
+                hint: '✅ Domínio verificado! Agora você pode usar o domínio em campanhas do Facebook Ads.',
                 hintType: 'success',
+            },
+        ],
+        extra: [
+            {
+                type: 'tip',
+                title: '💡 Dica: Confira o token na página gerada',
+                body: 'Após gerar o link, acesse seu domínio no navegador, clique com botão direito → Ver Código-fonte (Ctrl+U). Pressione Ctrl+F e pesquise por "facebook-domain-verification". Você deve encontrar a linha com seu token. Se não encontrar, edite o domínio no VerifyAds, adicione o token e salve novamente.',
+            },
+        ],
+    },
+    {
+        id: 'token',
+        icon: <Key className="w-5 h-5" />,
+        color: '#10b981',
+        badge: 'Etapa 4 — Token Facebook',
+        title: 'Como Obter o Token de Verificação do Facebook',
+        subtitle: 'Passo a passo detalhado para encontrar e copiar o token correto no Meta Business Manager.',
+        steps: [
+            {
+                title: 'Acesse o Meta Business Suite',
+                description: 'Abra o navegador e acesse business.facebook.com. Faça login com sua conta do Facebook. Na tela inicial do Meta Business Suite, você verá o painel geral com suas páginas e ativos.',
+                hint: 'business.facebook.com → Entrar',
+                hintType: 'code',
+            },
+            {
+                title: 'Vá em Configurações do Negócio',
+                description: 'No canto inferior esquerdo do painel, clique no ícone de Configurações (⚙️ engrenagem). Isso abrirá a tela "Configurações do Negócio" com todas as opções administrativas.',
+                hint: 'Ícone ⚙️ no canto inferior esquerdo → Configurações do Negócio',
+                hintType: 'code',
+            },
+            {
+                title: 'Acesse Segurança da Marca → Domínios',
+                description: 'Na barra lateral esquerda das Configurações do Negócio, role para baixo até encontrar "Segurança da Marca". Clique em "Domínios" abaixo dessa opção. Você verá uma lista de domínios já adicionados (ou vazia se for a primeira vez).',
+                hint: 'Configurações do Negócio → Segurança da Marca → Domínios',
+                hintType: 'code',
+            },
+            {
+                title: 'Adicione um novo domínio',
+                description: 'Clique no botão "+ Adicionar" no canto superior esquerdo da lista de domínios. Uma janela pop-up será aberta pedindo o endereço do domínio. Digite seu domínio SEM "https://" e SEM barras. Exemplo: seudominio.com.br. Clique em "Adicionar Domínio".',
+                hint: 'Digite apenas o domínio, sem https:// Ex: meusite.com.br',
+                hintType: 'info',
+            },
+            {
+                title: 'Escolha o método "Meta-tag HTML"',
+                description: 'Após adicionar o domínio, o Facebook vai pedir que você escolha como quer verificar. Clique na opção "Adicione uma meta-tag ao código-fonte HTML do seu site". O Facebook vai gerar um código único para você, parecido com: <meta name="facebook-domain-verification" content="TOKEN_AQUI" />',
+                hint: '<meta name="facebook-domain-verification" content="abc123xyz789..." />',
+                hintType: 'code',
+            },
+            {
+                title: 'COPIE o token e cole no VerifyAds',
+                description: 'Copie TODO o código da meta-tag mostrado pelo Facebook (incluindo as tags <meta .../>). Volte ao VerifyAds, abra o Dossiê da empresa que deseja, e cole no campo "Token Meta-tag" da seção "Verificação Facebook". O sistema vai extrair automaticamente apenas o valor do "content". DEPOIS clique em "SALVAR & INJETAR CÓDIGO".',
+                hint: '⚠️ Não feche a aba do Facebook! Você precisará voltar para clicar em Verificar.',
+                hintType: 'warning',
+            },
+            {
+                title: 'Volte ao Facebook e clique em Verificar Domínio',
+                description: 'Com a landing page publicada e o token embutido, volte à aba do Facebook → Domínios → clique em "Verificar Domínio" ao lado do seu domínio. O Facebook vai acessar sua página e ler a meta-tag. Em alguns segundos aparecerá "Domínio verificado" com um ícone verde.',
+                hint: '✅ Domínio verificado com sucesso no Facebook!',
+                hintType: 'success',
+            },
+        ],
+        extra: [
+            {
+                type: 'tip',
+                title: '🔓 Facebook novo não mostra a opção "Verificar Domínio"?',
+                body: 'Contas novas do Meta Business frequentemente não exibem a seção "Segurança da Marca → Domínios". Para desbloquear: acesse developers.facebook.com → clique em "Meus Apps" → "Criar App" → selecione "Outro" → avance para o tipo "Negócio" → preencha um nome qualquer → clique em "Criar App". Ao vincular o app ao seu Business Manager, o Facebook normalmente libera a opção de verificação de domínio em minutos. Após ver a opção desbloqueada, você pode excluir o app.',
+            },
+            {
+                type: 'info',
+                title: '📋 Alternativa: Verificação por DNS TXT',
+                body: 'Se preferir não usar meta-tag, o Facebook também aceita verificação por registro DNS TXT. No painel do domínio (Cloudflare, etc.), adicione um registro TXT com o nome @ e o valor fornecido pelo Facebook. Funciona bem mesmo sem landing page publicada.',
             },
         ],
     },
@@ -146,24 +274,36 @@ const guides: GuideSection[] = [
 
 const faqs = [
     {
+        q: 'Por que o Facebook não mostra a opção de verificar empresa?',
+        a: 'Contas novas do Meta Business não têm esse recurso liberado automaticamente. O atalho mais eficiente é criar um Aplicativo Facebook em developers.facebook.com → Meus Apps → Criar App → tipo "Negócio". Isso normalmente desbloqueia a verificação de empresa no Business Manager em minutos.',
+    },
+    {
+        q: 'Onde exatamente eu coloco o token do Facebook no VerifyAds?',
+        a: 'Na página Minerar, clique em uma empresa para abrir o Dossiê. No modal, na coluna do meio, tem a seção "Verificação Facebook" com o campo "Token Meta-tag". Cole lá o código completo da meta-tag (o sistema extrai o token sozinho). Cole ANTES de gerar o link.',
+    },
+    {
+        q: 'Como confirmo que o token está na landing page gerada?',
+        a: 'Abra seu domínio no navegador, clique com botão direito → "Exibir código-fonte da página" (ou pressione Ctrl+U). Use Ctrl+F para buscar por "facebook-domain-verification". Você deve encontrar a linha com seu token no <head> da página.',
+    },
+    {
+        q: 'Para que serve trocar o CNPJ pelo meu número no PDF?',
+        a: 'O Facebook usa o PDF para confirmar que você é dono do negócio. Ele pode enviar um SMS com código de verificação para o telefone que aparece no documento. Como o número original é da empresa na Receita Federal, você precisa substituir pelo SEU número de celular para receber o SMS.',
+    },
+    {
+        q: 'O que é o ILovePDF e como usar para editar o PDF?',
+        a: 'ILovePDF (ilovepdf.com) é um editor de PDF online gratuito. Acesse o site → clique em "Editar PDF" → faça upload do PDF gerado → use a ferramenta "T" de texto para selecionar e substituir o número de telefone → clique em "Editar PDF" → baixe o arquivo editado.',
+    },
+    {
         q: 'Por que meu domínio não está verificando?',
-        a: 'O DNS pode levar até 48h para propagar. Certifique-se de que o registro CNAME está correto no painel do seu registrador. Se o erro persistir, verifique se não há outro registro A ou AAAA conflitando.',
+        a: 'O DNS pode levar até 48h para propagar. Certifique-se de que o registro CNAME está correto e não há registros A ou AAAA conflitando. Verifique também se o token do Facebook foi inserido antes de gerar o link — se não foi, edite o domínio no VerifyAds, adicione o token e salve novamente.',
     },
     {
-        q: 'Preciso do meta-token do Facebook ou só do domínio?',
-        a: 'Para a verificação completa no Meta Business, você precisa do token de verificação da meta-tag. O sistema injeta esse token automaticamente na sua Landing Page quando você o insere no cadastro do domínio.',
+        q: 'Quanto tempo leva para o Facebook verificar o domínio?',
+        a: 'Normalmente segundos, desde que o DNS já tenha propagado e o token esteja corretamente embutido na landing page. O Facebook acessa seu site e lê a meta-tag automaticamente.',
     },
     {
-        q: 'Quanto tempo leva para o Facebook verificar meu domínio?',
-        a: 'Normalmente segundos, desde que o DNS já tenha propagado. O Facebook acessa seu domínio e lê a meta-tag automaticamente.',
-    },
-    {
-        q: 'O PDF gerado é aceito pelo Meta?',
-        a: 'Sim. O comprovante de residência gerado usa dados reais da Receita Federal via BrasilAPI e segue o formato padrão exigido pelo Meta para confirmação de identidade.',
-    },
-    {
-        q: 'Posso ter múltiplos domínios no mesmo plano?',
-        a: 'Depende do seu plano. O plano Starter inclui 1 domínio, o Pro inclui 3 e o Agência inclui domínios ilimitados. Veja a página de Planos para detalhes.',
+        q: 'Posso usar o mesmo domínio para várias empresas?',
+        a: 'Sim, mas o domínio serve como raiz (ex: seudominio.com). No momento, cada domínio hospeda a landing page de uma empresa por vez. Para múltiplas empresas, use múltiplos domínios ou subdomínios.',
     },
 ];
 
@@ -175,17 +315,24 @@ export default function DocsPage() {
 
     const currentGuide = guides.find(g => g.id === activeGuide)!;
 
+    const tabLabels: Record<string, string> = {
+        facebook: 'Verificar no Facebook',
+        pdf: 'PDF & SMS',
+        landingpage: 'Landing Page',
+        token: 'Obter Token',
+    };
+
     return (
         <div className="min-h-screen p-4 md:p-8 pb-20 text-white" style={{ background: 'transparent', fontFamily: "'Inter', sans-serif" }}>
             <AuroraBackground />
             <div className="max-w-5xl mx-auto">
                 <Navigation
                     title="Central de Ajuda"
-                    description="Guias, tutoriais e respostas para as principais dúvidas"
+                    description="Guias completos passo a passo para verificar sua empresa no Facebook Ads"
                 />
 
                 {/* Category tabs */}
-                <div className="flex gap-3 mb-8 flex-wrap">
+                <div className="flex gap-2 mb-8 flex-wrap mt-8">
                     {guides.map((guide) => (
                         <button
                             key={guide.id}
@@ -203,7 +350,7 @@ export default function DocsPage() {
                             <span style={{ color: activeGuide === guide.id ? guide.color : 'rgba(255,255,255,0.4)' }}>
                                 {guide.icon}
                             </span>
-                            {guide.title.split(' ').slice(0, 2).join(' ')}
+                            {tabLabels[guide.id]}
                         </button>
                     ))}
 
@@ -264,27 +411,35 @@ export default function DocsPage() {
                         </div>
 
                         {/* Steps */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 mb-8">
                             {currentGuide.steps.map((step, idx) => (
                                 <StepCard
                                     key={idx}
                                     number={idx + 1}
-                                    total={currentGuide.steps.length}
                                     step={step}
                                     accentColor={currentGuide.color}
                                     isLast={idx === currentGuide.steps.length - 1}
                                 />
                             ))}
                         </div>
+
+                        {/* Extra tip blocks */}
+                        {currentGuide.extra && (
+                            <div className="space-y-4">
+                                {currentGuide.extra.map((block, idx) => (
+                                    <TipCard key={idx} block={block} />
+                                ))}
+                            </div>
+                        )}
                     </motion.div>
                 </AnimatePresence>
 
                 {/* Quick Tips */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-16">
                     {[
-                        { icon: <Zap className="w-5 h-5" />, title: 'Propagação DNS', body: 'Use Cloudflare como nameserver para propagação quase instantânea do seu domínio.', color: '#f59e0b' },
-                        { icon: <Shield className="w-5 h-5" />, title: 'Token Seguro', body: 'O token do Facebook deve ser inserido exatamente como copiado — sem espaços extras.', color: '#3b82f6' },
-                        { icon: <BookOpen className="w-5 h-5" />, title: 'Suporte atualizado', body: 'Os tutoriais são revisados a cada atualização do Meta Business Suite.', color: '#8b5cf6' },
+                        { icon: <Zap className="w-5 h-5" />, title: 'Cole o token primeiro', body: 'Sempre insira o token do Facebook ANTES de clicar em Gerar Link. Assim ele é embutido automaticamente na página.', color: '#f59e0b' },
+                        { icon: <Shield className="w-5 h-5" />, title: 'Troque seu número no PDF', body: 'Substitua o telefone do CNPJ pelo seu celular no PDF para receber o SMS de verificação do Facebook.', color: '#3b82f6' },
+                        { icon: <BookOpen className="w-5 h-5" />, title: 'Conta nova? Crie um App', body: 'Se o Facebook não mostrar a opção de verificar empresa, crie um App em developers.facebook.com para desbloquear o recurso.', color: '#8b5cf6' },
                     ].map((tip, idx) => (
                         <motion.div
                             key={idx}
@@ -336,8 +491,8 @@ export default function DocsPage() {
 
 // ─── Step Card ─────────────────────────────────────────────────────────────────
 
-function StepCard({ number, total, step, accentColor, isLast }: {
-    number: number; total: number; step: Step; accentColor: string; isLast: boolean;
+function StepCard({ number, step, accentColor, isLast }: {
+    number: number; step: Step; accentColor: string; isLast: boolean;
 }) {
     return (
         <motion.div
@@ -366,7 +521,7 @@ function StepCard({ number, total, step, accentColor, isLast }: {
             {/* Content */}
             <div className="flex-1 pb-6">
                 <div
-                    className="rounded-xl p-5 border transition-all duration-200 hover:border-opacity-60"
+                    className="rounded-xl p-5 border transition-all duration-200"
                     style={{
                         background: 'rgba(255,255,255,0.03)',
                         borderColor: 'rgba(255,255,255,0.07)',
@@ -380,11 +535,11 @@ function StepCard({ number, total, step, accentColor, isLast }: {
                     {step.hintType === 'code' && step.hint && (
                         <div className="flex items-center gap-2 bg-black/30 rounded-lg px-4 py-2.5 font-mono text-xs text-green-400 border border-green-500/20">
                             <Terminal className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                            <span className="truncate">{step.hint}</span>
+                            <span className="break-all">{step.hint}</span>
                         </div>
                     )}
                     {step.hintType === 'info' && step.hint && (
-                        <div className="flex items-start gap-2 bg-blue-500/08 rounded-lg px-3 py-2.5 text-xs text-blue-300 border border-blue-500/20"
+                        <div className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs text-blue-300 border border-blue-500/20"
                             style={{ background: 'rgba(59,130,246,0.08)' }}>
                             <Info className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
                             <span>{step.hint}</span>
@@ -407,6 +562,44 @@ function StepCard({ number, total, step, accentColor, isLast }: {
                 </div>
             </div>
         </motion.div>
+    );
+}
+
+// ─── Tip Card ─────────────────────────────────────────────────────────────────
+
+function TipCard({ block }: { block: TipBlock }) {
+    const styles = {
+        tip: {
+            border: 'border-yellow-500/25',
+            bg: 'rgba(234,179,8,0.07)',
+            icon: <Lightbulb className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />,
+            titleColor: 'text-yellow-300',
+        },
+        warning: {
+            border: 'border-orange-500/25',
+            bg: 'rgba(249,115,22,0.07)',
+            icon: <AlertCircle className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />,
+            titleColor: 'text-orange-300',
+        },
+        info: {
+            border: 'border-blue-500/25',
+            bg: 'rgba(59,130,246,0.07)',
+            icon: <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />,
+            titleColor: 'text-blue-300',
+        },
+    };
+    const s = styles[block.type];
+    return (
+        <div
+            className={`rounded-xl border ${s.border} p-5 flex gap-4`}
+            style={{ background: s.bg }}
+        >
+            {s.icon}
+            <div>
+                <p className={`font-bold text-sm mb-1.5 ${s.titleColor}`}>{block.title}</p>
+                <p className="text-gray-400 text-sm leading-relaxed">{block.body}</p>
+            </div>
+        </div>
     );
 }
 

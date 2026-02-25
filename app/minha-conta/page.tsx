@@ -74,7 +74,7 @@ export default function MinhaContaPage() {
                 .in('status', ['active', 'trialing', 'unpaid'])
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
 
             if (subData) {
                 setSubscription({
@@ -353,6 +353,7 @@ export default function MinhaContaPage() {
                                         value={newEmail}
                                         onChange={e => setNewEmail(e.target.value)}
                                         placeholder="Novo endereço de email"
+                                        autoComplete="email"
                                         className="w-full px-3 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         required
                                     />
@@ -380,6 +381,7 @@ export default function MinhaContaPage() {
                                             value={newPassword}
                                             onChange={e => setNewPassword(e.target.value)}
                                             placeholder="Nova senha"
+                                            autoComplete="new-password"
                                             className="w-full pl-3 pr-10 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                                             required
                                             minLength={6}
@@ -393,6 +395,7 @@ export default function MinhaContaPage() {
                                         value={confirmPassword}
                                         onChange={e => setConfirmPassword(e.target.value)}
                                         placeholder="Confirmar nova senha"
+                                        autoComplete="new-password"
                                         className="w-full px-3 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                                         required
                                     />

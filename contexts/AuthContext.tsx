@@ -46,14 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             setIsAdmin(profile?.role === 'admin');
 
-            // Check active subscription
+            // Check active subscription — usa maybeSingle() para não gerar erro 406 quando não há plano
             const { data: sub } = await supabaseClient
                 .from('subscriptions')
                 .select('status')
                 .eq('user_id', userId)
                 .in('status', ['active', 'trialing'])
                 .limit(1)
-                .single();
+                .maybeSingle();
             setHasActivePlan(!!sub);
         } catch (err) {
             if (process.env.NODE_ENV === 'development') {
@@ -96,31 +96,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }, 5000);
 
         const initAuth = async () => {
-            console.log('[AuthContext] Initializing auth...');
             try {
                 const { data: { session }, error } = await client.auth.getSession();
-
-                if (error) {
-                    console.error('[AuthContext] Error fetching session:', error);
-                    // Não dar throw aqui para não cair no catch que fazia logout
-                    // Apenas assume sem sessão por enquanto
-                }
-
-                console.log('[AuthContext] Session found:', session?.user?.email);
+                if (error) console.warn('[AuthContext] Session error:', error.message);
                 setUser(session?.user ?? null);
-
                 if (session?.user) {
-                    console.log('[AuthContext] Checking role for:', session.user.id);
                     await checkUserRole(session.user.id, client);
-                } else {
-                    console.log('[AuthContext] No user in session');
                 }
             } catch (err) {
                 console.error('[AuthContext] Unexpected init error:', err);
-                // REMOVED aggressive signOut here to prevent loop
             } finally {
                 setLoading(false);
-                console.log('[AuthContext] Loading finished');
             }
         };
 
@@ -129,18 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const {
             data: { subscription },
         } = client.auth.onAuthStateChange(async (event, session) => {
-            console.log('[AuthContext] Auth state change:', event, session?.user?.email);
-
-            // Gerenciar loading baseado no evento
-            if (event === 'INITIAL_SESSION') {
-                // Já tratado pelo initAuth, mas serve de backup
-            }
-
             try {
                 if (event === 'SIGNED_OUT') {
                     setUser(null);
                     setIsAdmin(false);
-                    // Não seta loading false aqui pois pode ser mudança de rota
+                    setHasActivePlan(false);
                 } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                     setUser(session?.user ?? null);
                     if (session?.user) {
