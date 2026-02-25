@@ -56,7 +56,7 @@ export default function AdminUsersPage() {
                             ...u,
                             subscription: sub ? {
                                 status: sub.status,
-                                plan_name: (sub.plans as { name: string })?.name,
+                                plan_name: (sub.plans as unknown as { name: string })?.name,
                                 trial_ends_at: sub.trial_ends_at,
                             } : undefined,
                         };
