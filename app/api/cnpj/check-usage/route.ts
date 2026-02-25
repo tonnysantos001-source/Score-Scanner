@@ -30,9 +30,9 @@ export async function GET(request: NextRequest) {
             .from('empresas_usadas')
             .select('id, user_id, company_name, created_at')
             .eq('cnpj', cnpj)
-            .single();
+            .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 = not found (ok)
+        if (error) {
             console.error('Erro ao verificar CNPJ:', error);
             return NextResponse.json({
                 success: false,
@@ -47,10 +47,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             isUsed,
+            used: isUsed, // compatibilidade
             isOwnedByCurrentUser,
             data: isUsed ? {
-                company_name: data.company_name,
-                created_at: data.created_at
+                company_name: data!.company_name,
+                created_at: data!.created_at
             } : null
         });
 

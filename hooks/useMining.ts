@@ -86,7 +86,8 @@ export function useMining(): UseMiningReturn {
             });
             if (response.ok) {
                 const data = await response.json();
-                return data.used === true;
+                // API retorna { isUsed: boolean } — verificar se já está vinculado a outro usuário
+                return data.isUsed === true;
             }
             return false;
         } catch {
@@ -123,18 +124,12 @@ export function useMining(): UseMiningReturn {
         let consecutiveErrors = 0;
 
         try {
-            console.log(`🎯 Iniciando mineração com CACHE INTELIGENTE...`);
-
             // Initialize cache
             await cnpjCache.initialize();
-            const cacheStats = cnpjCache.getStats();
-            console.log(`📊 Cache: ${cacheStats.whitelist} whitelist, ${cacheStats.blacklist} blacklist, ${cacheStats.used} used`);
 
             // Get available sources
             const cachedCNPJs = cnpjCache.getAvailableCNPJs();
             const wordlist = await import('@/lib/mining/cnpj-wordlist').then(m => m.CNPJ_WORDLIST_2025);
-
-            console.log(`📋 Sources: ${cachedCNPJs.length} cached + ${wordlist.length} wordlist`);
 
             // Indices for tracking
             let cacheIndex = 0;
@@ -174,8 +169,6 @@ export function useMining(): UseMiningReturn {
                     continue;
                 }
 
-                console.log(`${source} Testing: ${cnpj}`);
-
                 triedCNPJs.current.add(cnpj);
                 tried++;
 
@@ -188,8 +181,6 @@ export function useMining(): UseMiningReturn {
                     isComplete: false,
                 });
 
-                console.log(`🔍 Testando CNPJ ${tried}: ${cnpj}`);
-
                 try {
                     // Apply delay BEFORE making request (except first one)
                     if (tried > 1) {
@@ -200,21 +191,16 @@ export function useMining(): UseMiningReturn {
 
                     if (!company) {
                         // CNPJ not found (404) or error fetching
-                        console.log(`❌ CNPJ ${cnpj} não encontrado (404 ou erro na API)`);
-
-                        // Add to blacklist
                         cnpjCache.processMiningResult(cnpj, {
                             found: false,
                             reason: 'NOT_FOUND',
                         });
                     } else if (matchesFilters(company, filters)) {
-                        // Verificar se já está na wordlist (usado por outro cliente)
+                        // Verificar se já está vinculado a outro cliente (exclusividade global)
                         const isUsed = await checkCnpjUsage(cnpj);
 
                         if (isUsed) {
-                            console.log(`🚫 CNPJ ${cnpj} já está em uso (wordlist)`);
-
-                            // Adicionar à blacklist como filtrado/usado
+                            // Adicionar à blacklist local / cache para não tentar novamente
                             cnpjCache.processMiningResult(cnpj, {
                                 found: true,
                                 active: false,
@@ -225,8 +211,6 @@ export function useMining(): UseMiningReturn {
 
                         foundCompanies.push(company);
 
-                        console.log(`✅ ENCONTRADO! ${company.razao_social} - Total: ${foundCompanies.length}/${MINING_QUANTITY}`);
-
                         // Add to whitelist cache
                         cnpjCache.processMiningResult(cnpj, {
                             found: true,
@@ -234,10 +218,9 @@ export function useMining(): UseMiningReturn {
                             data: company,
                         });
 
-                        // ✅ UPDATE REACT STATE so it appears in UI!
+                        // Update React state
                         setCompanies([...foundCompanies]);
 
-                        // Update progress with new company found
                         setProgress({
                             tried,
                             found: foundCompanies.length,
@@ -249,12 +232,9 @@ export function useMining(): UseMiningReturn {
                         consecutiveErrors = 0;
                     } else {
                         // Doesn't match filters
-                        console.log(`⏭️  CNPJ ${cnpj} não corresponde aos filtros`);
-
-                        // Add to blacklist (filtered out)
                         cnpjCache.processMiningResult(cnpj, {
                             found: true,
-                            active: true,  // Company exists but filtered
+                            active: true,
                             reason: 'FILTERED',
                         });
                     }
