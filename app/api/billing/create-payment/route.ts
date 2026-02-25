@@ -1,72 +1,53 @@
 // app/api/billing/create-payment/route.ts
-// Create PIX payment via ZentriPay
+// Cria assinatura recorrente via ZentriPay e retorna link de pagamento
 
 import { requireAuth } from '@/lib/auth/server';
-import { createClient } from '@/lib/supabase/server';
-import { ZentripayClient } from '@/lib/zentripay/client';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { zentripay } from '@/lib/zentripay/client';
 import { generateCPF, generatePhone, generateName } from '@/lib/utils/random-generator';
 import { NextResponse } from 'next/server';
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifiads.com';
+const WEBHOOK_URL = `${BASE_URL}/api/webhooks/zentripay`;
 
 export async function POST(request: Request) {
     try {
         const user = await requireAuth();
-        const supabase = await createClient();
+        const supabase = createAdminClient();
         const body = await request.json();
-
         const { planId } = body;
 
         if (!planId) {
-            return NextResponse.json(
-                { error: 'Plan ID required' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'planId obrigatório' }, { status: 400 });
         }
 
-        // Get plan details
-        const { data: plan, error: planError } = await supabase
+        // 1. Busca o plano
+        const { data: plan } = await supabase
             .from('plans')
             .select('*')
-            .eq('name', planId.charAt(0).toUpperCase() + planId.slice(1))
+            .eq('id', planId)
             .eq('is_active', true)
             .single();
 
-        if (planError || !plan) {
-            return NextResponse.json(
-                { error: 'Plan not found' },
-                { status: 404 }
-            );
+        if (!plan) {
+            return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 });
         }
 
-        // Get user profile
-        const { data: profileData } = await supabase
+        // 2. Cancela subscriptions pendentes anteriores do mesmo usuário
+        await supabase
+            .from('subscriptions')
+            .update({ status: 'canceled' })
+            .eq('user_id', user.id)
+            .in('status', ['unpaid', 'pending']);
+
+        // 3. Busca dados do perfil
+        const { data: profile } = await supabase
             .from('profiles')
             .select('full_name, email, document, phone')
             .eq('id', user.id)
             .single();
 
-        const profile = profileData as {
-            full_name: string;
-            email: string;
-            document?: string;
-            phone?: string;
-        };
-
-        // Get gateway settings
-        const { data: settings, error: settingsError } = await supabase
-            .rpc('get_gateway_settings')
-            .single();
-
-        if (!settings || settingsError) {
-            return NextResponse.json(
-                { error: 'Gateway not configured' },
-                { status: 500 }
-            );
-        }
-
-        // TypeScript types for RPC response
-        const gatewaySettings = settings as { api_key: string; api_secret: string };
-
-        // Create subscription record (pending payment)
+        // 4. Cria subscription local (pending payment)
         const { data: subscription, error: subError } = await supabase
             .from('subscriptions')
             .insert({
@@ -74,44 +55,45 @@ export async function POST(request: Request) {
                 plan_id: plan.id,
                 status: 'unpaid',
                 price_at_period: plan.price,
-                currency: plan.currency,
+                currency: 'BRL',
                 payment_method: 'pix',
             })
             .select()
             .single();
 
         if (subError || !subscription) {
-            throw new Error('Failed to create subscription');
+            throw new Error('Falha ao criar subscription');
         }
 
-        // Initialize ZentriPay client
-        const zentripay = new ZentripayClient(gatewaySettings.api_key);
+        // 5. Dados do cliente (fallback para gerado)
+        const customerName = profile?.full_name || generateName();
+        const customerDoc = (profile?.document || generateCPF()).replace(/\D/g, '');
+        const customerPhone = (profile?.phone || generatePhone()).replace(/\D/g, '');
+        const customerEmail = profile?.email || user.email || `cliente+${user.id.slice(0, 8)}@verifiads.com`;
 
-        // Create PIX payment
-        const payment = await zentripay.createPixTransaction({
+        // 6. Cria assinatura recorrente na ZentriPay
+        const response = await zentripay.createSubscription({
+            name: `Plano ${plan.name} — VerifiAds`,
             amount: Number(plan.price),
-            paymentType: 'PIX',
+            methods: ['PIX'],
+            dueInDays: 1,
             customer: {
-                name: profile?.full_name || generateName(),
-                email: profile?.email || user.email,
-                document: profile?.document || generateCPF(),
-                phone: profile?.phone || generatePhone(),
+                name: customerName,
+                email: customerEmail,
+                document: customerDoc,
+                phone: customerPhone,
             },
-            external_reference: subscription.id,
+            interval: { value: 1, unit: 'MONTH' },
+            postBackUrl: WEBHOOK_URL,
         });
 
-        if (!payment.success) {
-            throw new Error('Failed to create payment');
-        }
-
-        // Update subscription with PIX data
+        // 7. Salva IDs da ZentriPay na subscription
         await supabase
             .from('subscriptions')
             .update({
-                external_id: payment.data.idTransaction,
-                pix_qr_code: payment.data.paymentCode,
-                pix_qr_code_base64: payment.data.qrcode_image || '',
-                pix_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15min
+                external_id: String(response.recorrenciaId),
+                pix_qr_code: null,
+                pix_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             })
             .eq('id', subscription.id);
 
@@ -119,23 +101,15 @@ export async function POST(request: Request) {
             success: true,
             data: {
                 subscriptionId: subscription.id,
-                paymentId: payment.data.idTransaction,
-                qrCode: payment.data.paymentCode,
-                qrCodeBase64: payment.data.qrcode_image,
+                paymentLink: response.paymentLink,
+                planName: plan.name,
                 amount: plan.price,
-                expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
             },
         });
+
     } catch (error) {
         const err = error as Error;
-
-        if (process.env.NODE_ENV === 'development') {
-            console.error('[Billing] Create payment error:', err);
-        }
-
-        return NextResponse.json(
-            { error: err.message || 'Failed to create payment' },
-            { status: 500 }
-        );
+        console.error('[Billing] create-payment error:', err.message);
+        return NextResponse.json({ error: err.message || 'Falha ao criar pagamento' }, { status: 500 });
     }
 }
