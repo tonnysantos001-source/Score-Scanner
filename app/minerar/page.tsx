@@ -12,6 +12,7 @@ import { MiningFilters, MINING_QUANTITY } from '@/types/filters';
 import { Loader2, Zap } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
 import AuroraBackground from '@/components/layout/AuroraBackground';
+import WelcomePopup from '@/components/layout/WelcomePopup';
 
 
 export default function MinerarPage() {
@@ -20,19 +21,11 @@ export default function MinerarPage() {
     const { companies, progress, isMining, error, startMining, stopMining } = useMining();
     const [selectedCompany, setSelectedCompany] = useState<EnhancedCompanyData | null>(null);
 
-    // DEBUG: Log status
-    useEffect(() => {
-        console.log('[MinerarPage] Auth State:', { loading, user: user?.email, isAdmin });
-    }, [loading, user, isAdmin]);
-
     useEffect(() => {
         if (!loading) {
             if (!user) {
-                console.log('[MinerarPage] No user, redirecting to login');
                 router.push('/login');
             } else if (isAdmin) {
-                // FAILOVER: Se admin cair aqui, manda para o painel correto
-                console.log('[MinerarPage] User is ADMIN, redirecting to /admin');
                 router.push('/admin');
             }
         }
@@ -200,6 +193,9 @@ export default function MinerarPage() {
                     onClose={() => setSelectedCompany(null)}
                 />
             )}
+
+            {/* Welcome Popup — first-time users only */}
+            <WelcomePopup />
         </main>
     );
 }
