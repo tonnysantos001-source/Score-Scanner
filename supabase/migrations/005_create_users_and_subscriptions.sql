@@ -80,10 +80,12 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     CONSTRAINT valid_status CHECK (
         status IN (
             'active',
+            'trialing',
             'canceled',
             'past_due',
             'unpaid',
-            'expired'
+            'expired',
+            'pending'
         )
     )
 );
