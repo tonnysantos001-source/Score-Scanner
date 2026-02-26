@@ -49,7 +49,6 @@ export async function POST(request: Request) {
                 payment_method: 'trial',
                 current_period_start: now.toISOString(),
                 current_period_end: trialEnd.toISOString(),
-                trial_ends_at: trialEnd.toISOString(),
             })
             .select()
             .single();
