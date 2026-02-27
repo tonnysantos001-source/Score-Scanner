@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
@@ -28,8 +28,9 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [userDomains, setUserDomains] = useState<any[]>([]);
     const [isLoadingDomains, setIsLoadingDomains] = useState(true);
 
-    // Fetch domains on mount
-    useState(() => {
+    // Fetch domains on mount — useEffect garante que rode sempre que o modal abre
+    useEffect(() => {
+        let cancelled = false;
         const fetchDomains = async () => {
             try {
                 const { createClient } = await import('@/lib/supabase/client');
@@ -39,15 +40,16 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                     .select('id, domain')
                     .eq('domain_type', 'external')
                     .order('created_at', { ascending: false });
-                if (data) {
+                if (!cancelled && data) {
                     setUserDomains(data);
                     if (data.length > 0) setSelectedDomainId(data[0].id);
                 }
             } catch { /* silent */ }
-            finally { setIsLoadingDomains(false); }
+            finally { if (!cancelled) setIsLoadingDomains(false); }
         };
         fetchDomains();
-    });
+        return () => { cancelled = true; };
+    }, []);
 
     const handleOpenPDF = async () => {
         try {
