@@ -1,6 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+// ─── Vercel API helper ────────────────────────────────────────────────────────
+
+async function registerDomainOnVercel(domain: string): Promise<{ ok: boolean; error?: string }> {
+    const token = process.env.VERCEL_TOKEN;
+    const projectId = process.env.VERCEL_PROJECT_ID;
+
+    if (!token || !projectId) {
+        console.warn('[Vercel] VERCEL_TOKEN ou VERCEL_PROJECT_ID não configurado');
+        return { ok: false, error: 'Vercel credentials not configured' };
+    }
+
+    try {
+        const res = await fetch(`https://api.vercel.com/v10/projects/${projectId}/domains`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: domain }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            // 409 = domínio já existe no projeto (não é erro fatal)
+            if (res.status === 409) {
+                console.log(`[Vercel] Domínio ${domain} já estava registrado na Vercel (409).`);
+                return { ok: true };
+            }
+            console.error('[Vercel] Erro ao registrar domínio:', data);
+            return { ok: false, error: data.error?.message || 'Vercel registration failed' };
+        }
+
+        console.log(`[Vercel] ✅ Domínio ${domain} registrado com sucesso na Vercel.`);
+        return { ok: true };
+    } catch (err) {
+        console.error('[Vercel] Exceção ao registrar domínio:', err);
+        return { ok: false, error: 'Network error calling Vercel API' };
+    }
+}
+
+// ─── Route Handler ────────────────────────────────────────────────────────────
+
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
@@ -47,7 +90,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // DNS instructions are now generated client-side by DomainWizard
+        // ─── 1. Registrar na Vercel ANTES de salvar no banco ─────────────────
+        const vercelResult = await registerDomainOnVercel(domain);
+
+        // Instruções de DNS
         const dnsInstructions = `Configure no seu registrador de domínio:
 
 Tipo: CNAME
@@ -60,7 +106,7 @@ Tipo: A
 Nome: @ (ou deixe em branco)
 Valor: 76.76.21.21`;
 
-        // Inserir domínio no banco
+        // ─── 2. Inserir domínio no banco ─────────────────────────────────────
         const { data: verifiedDomain, error: insertError } = await supabase
             .from('verified_domains')
             .insert({
@@ -89,7 +135,10 @@ Valor: 76.76.21.21`;
             success: true,
             domain_id: verifiedDomain.id,
             dns_instructions: dnsInstructions,
-            message: 'Domínio adicionado! Configure o DNS conforme as instruções.',
+            vercel_registered: vercelResult.ok,
+            message: vercelResult.ok
+                ? 'Domínio adicionado e registrado na Vercel! Configure o DNS conforme as instruções.'
+                : `Domínio salvo, mas falha ao registrar na Vercel: ${vercelResult.error}`,
         });
 
     } catch (error) {
