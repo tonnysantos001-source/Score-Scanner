@@ -28,27 +28,52 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [userDomains, setUserDomains] = useState<any[]>([]);
     const [isLoadingDomains, setIsLoadingDomains] = useState(true);
 
-    // Fetch domains on mount — useEffect garante que rode sempre que o modal abre
+    // Fetch domains on mount — com timeout para não travar o modal
     useEffect(() => {
         let cancelled = false;
+
         const fetchDomains = async () => {
+            // Timeout de segurança — garante que o loading sempre termina
+            const timeoutId = setTimeout(() => {
+                if (!cancelled) {
+                    console.warn('[CompanyModal] Domain fetch timeout — forcing loading off');
+                    cancelled = true;
+                    setIsLoadingDomains(false);
+                }
+            }, 5000);
+
             try {
                 const { createClient } = await import('@/lib/supabase/client');
                 const supabase = createClient();
-                const { data } = await supabase
+
+                const { data, error } = await supabase
                     .from('verified_domains')
                     .select('id, domain')
                     .eq('domain_type', 'external')
                     .order('created_at', { ascending: false });
-                if (!cancelled && data) {
+
+                clearTimeout(timeoutId);
+
+                if (cancelled) return;
+
+                if (error) {
+                    console.error('[CompanyModal] Domain fetch error:', error);
+                } else if (data) {
                     setUserDomains(data);
                     if (data.length > 0) setSelectedDomainId(data[0].id);
                 }
-            } catch { /* silent */ }
-            finally { if (!cancelled) setIsLoadingDomains(false); }
+            } catch (err) {
+                clearTimeout(timeoutId);
+                console.error('[CompanyModal] Domain fetch exception:', err);
+            } finally {
+                if (!cancelled) setIsLoadingDomains(false);
+            }
         };
+
         fetchDomains();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const handleOpenPDF = async () => {
