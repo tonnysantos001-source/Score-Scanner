@@ -28,39 +28,33 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [userDomains, setUserDomains] = useState<any[]>([]);
     const [isLoadingDomains, setIsLoadingDomains] = useState(true);
 
-    // Fetch domains on mount — com timeout para não travar o modal
+    // Fetch domains via API route (server-side auth — evita timeout do Supabase client)
     useEffect(() => {
         let cancelled = false;
 
         const fetchDomains = async () => {
-            // Timeout de segurança — garante que o loading sempre termina
             const timeoutId = setTimeout(() => {
                 if (!cancelled) {
-                    console.warn('[CompanyModal] Domain fetch timeout — forcing loading off');
+                    console.warn('[CompanyModal] Domain fetch timeout');
                     cancelled = true;
                     setIsLoadingDomains(false);
                 }
-            }, 5000);
+            }, 8000);
 
             try {
-                const { createClient } = await import('@/lib/supabase/client');
-                const supabase = createClient();
-
-                const { data, error } = await supabase
-                    .from('verified_domains')
-                    .select('id, domain')
-                    .eq('domain_type', 'external')
-                    .order('created_at', { ascending: false });
-
+                const res = await fetch('/api/domain/list', { credentials: 'include' });
                 clearTimeout(timeoutId);
-
                 if (cancelled) return;
 
-                if (error) {
-                    console.error('[CompanyModal] Domain fetch error:', error);
-                } else if (data) {
-                    setUserDomains(data);
-                    if (data.length > 0) setSelectedDomainId(data[0].id);
+                if (res.ok) {
+                    const json = await res.json();
+                    const domains = (json.domains || []) as { id: string; domain: string; is_verified: boolean }[];
+                    // Filtra apenas domínios com DNS verificado
+                    const active = domains.filter(d => d.is_verified);
+                    setUserDomains(active);
+                    if (active.length > 0) setSelectedDomainId(active[0].id);
+                } else {
+                    console.error('[CompanyModal] Domain list API error:', res.status);
                 }
             } catch (err) {
                 clearTimeout(timeoutId);
@@ -71,9 +65,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
         };
 
         fetchDomains();
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
     }, []);
 
     const handleOpenPDF = async () => {
