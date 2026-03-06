@@ -88,12 +88,10 @@ export class CNPJCache {
      */
     shouldSkip(cnpj: string): boolean {
         if (LocalStorage.isBlacklisted(cnpj)) {
-            console.log(`⏭️  Skipping blacklisted: ${cnpj}`);
             return true;
         }
 
         if (LocalStorage.isUsed(cnpj)) {
-            console.log(`⏭️  Skipping used: ${cnpj}`);
             return true;
         }
 

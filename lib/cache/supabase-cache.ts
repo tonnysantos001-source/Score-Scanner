@@ -3,7 +3,7 @@
  * Handles syncing with remote Supabase database
  */
 
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { CNPJWhitelistEntry, CNPJBlacklistEntry, CNPJUsedEntry } from './local-storage';
 
 export class SupabaseCache {
@@ -11,7 +11,8 @@ export class SupabaseCache {
      * Fetch whitelist from Supabase
      */
     static async fetchWhitelist(): Promise<CNPJWhitelistEntry[]> {
-        if (!supabase) return []; // Supabase not available
+        let supabase: ReturnType<typeof createClient>;
+        try { supabase = createClient(); } catch { return []; }
 
         try {
             const { data, error } = await supabase
@@ -46,7 +47,8 @@ export class SupabaseCache {
      * Fetch blacklist from Supabase
      */
     static async fetchBlacklist(): Promise<CNPJBlacklistEntry[]> {
-        if (!supabase) return []; // Supabase not available
+        let supabase: ReturnType<typeof createClient>;
+        try { supabase = createClient(); } catch { return []; }
 
         try {
             const { data, error } = await supabase
@@ -74,7 +76,8 @@ export class SupabaseCache {
      * Fetch used CNPJs from Supabase
      */
     static async fetchUsed(): Promise<CNPJUsedEntry[]> {
-        if (!supabase) return []; // Supabase not available
+        let supabase: ReturnType<typeof createClient>;
+        try { supabase = createClient(); } catch { return []; }
 
         try {
             const { data, error } = await supabase
@@ -101,7 +104,8 @@ export class SupabaseCache {
      * Insert or update whitelist entry
      */
     static async upsertWhitelist(entry: CNPJWhitelistEntry): Promise<void> {
-        if (!supabase) return; // Supabase not available
+        let supabase: ReturnType<typeof createClient>;
+        try { supabase = createClient(); } catch { return; }
 
         try {
             const { error } = await supabase
@@ -135,7 +139,8 @@ export class SupabaseCache {
      * Insert blacklist entry
      */
     static async insertBlacklist(entry: CNPJBlacklistEntry): Promise<void> {
-        if (!supabase) return; // Supabase not available
+        let supabase: ReturnType<typeof createClient>;
+        try { supabase = createClient(); } catch { return; }
 
         try {
             const { error } = await supabase
@@ -162,7 +167,8 @@ export class SupabaseCache {
      * Insert used entry
      */
     static async insertUsed(cnpj: string): Promise<void> {
-        if (!supabase) return; // Supabase not available
+        let supabase: ReturnType<typeof createClient>;
+        try { supabase = createClient(); } catch { return; }
 
         try {
             const { error } = await supabase
@@ -185,7 +191,8 @@ export class SupabaseCache {
      * Get cache statistics from Supabase
      */
     static async getStats() {
-        if (!supabase) return { whitelist: 0, blacklist: 0, used: 0 };
+        let supabase: ReturnType<typeof createClient>;
+        try { supabase = createClient(); } catch { return { whitelist: 0, blacklist: 0, used: 0 }; }
 
         try {
             const [whitelistCount, blacklistCount, usedCount] = await Promise.all([

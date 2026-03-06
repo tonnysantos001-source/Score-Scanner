@@ -131,6 +131,7 @@ export function useMining(): UseMiningReturn {
             const cachedCNPJs = cnpjCache.getAvailableCNPJs();
             const wordlist = await import('@/lib/mining/cnpj-wordlist').then(m => m.CNPJ_WORDLIST_2025);
 
+            console.log(`[Mining] Cache loaded: ${cachedCNPJs.length} whitelist CNPJs, ${wordlist.length} wordlist CNPJs`);
             // Indices for tracking
             let cacheIndex = 0;
             let wordlistIndex = 0;
