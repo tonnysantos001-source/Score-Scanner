@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import { X, Share2, CheckCircle2, Eye, Link as LinkIcon, FileText, Loader2, Globe, Lock } from 'lucide-react';
+import { X, Share2, CheckCircle2, Eye, Link as LinkIcon, FileText, Loader2, Globe, Lock, Save, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -264,21 +264,39 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                     <div className="flex flex-col gap-2">
                         {isSaved && generatedUrl ? (
                             // Sucesso
-                            <div className="flex-1 rounded-xl border border-green-500/20 bg-green-500/8 p-4 flex flex-col gap-3" style={{ background: 'rgba(34,197,94,0.06)' }}>
-                                <div className="flex items-center gap-2 text-green-400">
-                                    <CheckCircle2 className="w-5 h-5" />
-                                    <p className="font-bold text-sm">Link Gerado!</p>
+                            <div className="flex-1 rounded-xl border border-green-500/20 bg-green-500/8 p-4 flex flex-col justify-between gap-3" style={{ background: 'rgba(34,197,94,0.06)' }}>
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-2 text-green-400">
+                                        <CheckCircle2 className="w-5 h-5" />
+                                        <p className="font-bold text-sm">Página Ativa!</p>
+                                    </div>
+                                    <input readOnly value={generatedUrl}
+                                        className="w-full px-3 py-2 bg-black/20 border border-green-500/20 rounded-lg text-xs font-mono text-gray-300" />
+                                    <div className="flex gap-2">
+                                        <button onClick={() => { navigator.clipboard.writeText(generatedUrl); toast.success('Copiado!'); }}
+                                            className="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                                            <Share2 className="w-3.5 h-3.5" /> Copiar
+                                        </button>
+                                        <button onClick={() => window.open(generatedUrl, '_blank')}
+                                            className="flex-1 py-2 bg-white/10 hover:bg-white/15 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                                            <Eye className="w-3.5 h-3.5" /> Abrir
+                                        </button>
+                                    </div>
                                 </div>
-                                <input readOnly value={generatedUrl}
-                                    className="w-full px-3 py-2 bg-black/20 border border-green-500/20 rounded-lg text-xs font-mono text-gray-300" />
-                                <div className="flex gap-2">
-                                    <button onClick={() => { navigator.clipboard.writeText(generatedUrl); toast.success('Copiado!'); }}
-                                        className="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-                                        <Share2 className="w-3.5 h-3.5" /> Copiar
+                                <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-green-500/20">
+                                    <button
+                                        onClick={handleSaveCompany}
+                                        disabled={isSaving}
+                                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20"
+                                    >
+                                        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                        {isSaving ? 'SALVANDO...' : 'ATUALIZAR PIXEL/META'}
                                     </button>
-                                    <button onClick={() => window.open(generatedUrl, '_blank')}
-                                        className="flex-1 py-2 bg-white/10 hover:bg-white/15 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-                                        <Eye className="w-3.5 h-3.5" /> Abrir
+                                    <button
+                                        onClick={() => window.location.href = '/minha-area'}
+                                        className="w-full py-2.5 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" /> IR PARA MINHA ÁREA
                                     </button>
                                 </div>
                             </div>
