@@ -22,6 +22,14 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 });
         }
 
+        // Fetch the domain associated with this company before deleting
+        const { data: companyData } = await supabase
+            .from('empresas_usadas')
+            .select('domain_id')
+            .eq('id', companyId)
+            .eq('user_id', user.id)
+            .single();
+
         // Ensure the company belongs to this user
         const { error: deleteError } = await supabase
             .from('empresas_usadas')
@@ -32,6 +40,22 @@ export async function DELETE(request: NextRequest) {
         if (deleteError) {
             console.error('[companies/delete] Error:', deleteError);
             return NextResponse.json({ success: false, error: 'Erro ao excluir empresa' }, { status: 500 });
+        }
+
+        // Clean up linked domain and landing page if they existed
+        if (companyData?.domain_id) {
+            // Remove the landing page
+            await supabase
+                .from('landing_pages')
+                .delete()
+                .eq('domain_id', companyData.domain_id);
+
+            // Clears company linkage from domain
+            await supabase
+                .from('verified_domains')
+                .update({ company_cnpj: null, company_name: null, verification_token: null })
+                .eq('id', companyData.domain_id)
+                .eq('user_id', user.id);
         }
 
         return NextResponse.json({ success: true, message: 'Empresa excluída com sucesso' });
