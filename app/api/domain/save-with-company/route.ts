@@ -84,14 +84,12 @@ export async function POST(request: NextRequest) {
             if (existingCompany.user_id !== user.id) {
                 return NextResponse.json({ success: false, error: 'Empresa já utilizada por outro cliente' }, { status: 409 });
             }
-            // Update mapping if changed? 
-            // Ideally we just update the content linked to the domain_id they passed 
-            // OR if they are changing the domain for this company? 
-            // Use case: User selects domain A. Then selects domain B.
-            // We should update 'empresas_usadas' to point to domain B?
-            // AND update Landing Page content on domain B?
-
-            // For now, let's assume simple update of content on the target domain
+            // Update mapping if changed
+            if (existingCompany.domain_id !== targetDomain.id) {
+                await supabase.from('empresas_usadas')
+                    .update({ domain_id: targetDomain.id, company_name })
+                    .eq('id', existingCompany.id);
+            }
         } else {
             // Create usage record
             await supabase.from('empresas_usadas').insert({
@@ -135,13 +133,19 @@ export async function POST(request: NextRequest) {
             await supabase.from('landing_pages').insert(lpData);
         }
 
-        // Update Domain Verification Token if provided
+        // Update Domain Verification Token and Company Info
+        const domainUpdatePayload: Record<string, string> = {
+            company_cnpj: cleanCnpj,
+            company_name: company_name
+        };
         if (verification_token) {
-            await supabase
-                .from('verified_domains')
-                .update({ verification_token })
-                .eq('id', targetDomain.id);
+            domainUpdatePayload.verification_token = verification_token;
         }
+
+        await supabase
+            .from('verified_domains')
+            .update(domainUpdatePayload)
+            .eq('id', targetDomain.id);
 
         return NextResponse.json({
             success: true,

@@ -47,8 +47,6 @@ export async function middleware(request: NextRequest) {
     const allowedDomains = [
         'verifiads.com',           // ← Domínio principal do sistema
         'www.verifiads.com',       // ← Com www
-        'verifiads.online',        // ← Legado / backup
-        'verifiads.com.br',        // ← Legado / backup
         'localhost:3000',
         'localhost',
         process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, ''),
