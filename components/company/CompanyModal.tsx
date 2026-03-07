@@ -48,7 +48,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
 
                 if (res.ok) {
                     const json = await res.json();
-                    const domains = (json.domains || []) as { id: string; domain: string; is_verified: boolean }[];
+                    const domains = (json.domains || []) as { id: string; domain: string; is_verified: boolean; landing_page_active?: boolean }[];
                     // Filtra apenas domínios com DNS verificado
                     const active = domains.filter(d => d.is_verified);
                     setUserDomains(active);
@@ -310,7 +310,9 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                                 disabled={isSaving}
                                             >
                                                 {userDomains.map(d => (
-                                                    <option key={d.id} value={d.id}>{d.domain}</option>
+                                                    <option key={d.id} value={d.id}>
+                                                        {d.domain} {d.landing_page_active ? '(Em uso)' : '(Disponível)'}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
