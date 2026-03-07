@@ -13,43 +13,26 @@ export function matchesFilters(
         company.tipo_situacao_cadastral.toUpperCase().includes('ATIVA') ||
         company.tipo_situacao_cadastral === '2';
 
-    if (!isActive) {
-        console.log(`❌ Rejeitado: ${company.cnpj} - Status: ${company.tipo_situacao_cadastral} (não ativo)`);
-        return false;
-    }
+    if (!isActive) return false;
 
     // Check capital social minimum - ONLY if filter is enabled
     if (filters.useCapitalFilter) {
-        const capital = company.capital_social;
-        if (capital < filters.capitalMinimo) {
-            console.log(`❌ Rejeitado: ${company.cnpj} - Capital R$ ${capital} < R$ ${filters.capitalMinimo}`);
-            return false;
-        }
+        if (company.capital_social < filters.capitalMinimo) return false;
     }
 
     // Check capital social MAXIMUM - ONLY if filter is enabled
     if (filters.useCapitalMaximoFilter && filters.capitalMaximo > 0) {
-        const capital = company.capital_social;
-        if (capital > filters.capitalMaximo) {
-            console.log(`❌ Rejeitado: ${company.cnpj} - Capital R$ ${capital} > R$ ${filters.capitalMaximo} (máximo)`);
-            return false;
-        }
+        if (company.capital_social > filters.capitalMaximo) return false;
     }
 
     // Check UF - ONLY if filter is enabled AND not AUTO
     if (filters.useUfFilter && filters.uf !== 'AUTO') {
-        if (company.uf !== filters.uf) {
-            console.log(`❌ Rejeitado: ${company.cnpj} - UF ${company.uf} !== ${filters.uf}`);
-            return false;
-        }
+        if (company.uf !== filters.uf) return false;
     }
 
     // Check porte - ONLY if filter is enabled AND not TODOS
     if (filters.usePorteFilter && filters.porte !== 'TODOS') {
-        if (company.porte !== filters.porte) {
-            console.log(`❌ Rejeitado: ${company.cnpj} - Porte ${company.porte} !== ${filters.porte}`);
-            return false;
-        }
+        if (company.porte !== filters.porte) return false;
     }
 
     return true;

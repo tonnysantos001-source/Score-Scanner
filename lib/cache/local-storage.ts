@@ -1,6 +1,7 @@
 /**
  * localStorage Cache Manager for CNPJs
  * Provides persistent storage for whitelist, blacklist, and used CNPJs
+ * Uses in-memory Sets for O(1) lookup performance
  */
 
 const STORAGE_KEYS = {
@@ -34,7 +35,45 @@ export interface CNPJUsedEntry {
     used_at: string; // ISO timestamp
 }
 
+// In-memory Sets for O(1) lookups — populated lazily from localStorage
+let _blacklistSet: Set<string> | null = null;
+let _usedSet: Set<string> | null = null;
+
+function getBlacklistSet(): Set<string> {
+    if (!_blacklistSet) {
+        try {
+            const data = localStorage.getItem(STORAGE_KEYS.BLACKLIST);
+            const entries: CNPJBlacklistEntry[] = data ? JSON.parse(data) : [];
+            _blacklistSet = new Set(entries.map(e => e.cnpj));
+        } catch {
+            _blacklistSet = new Set();
+        }
+    }
+    return _blacklistSet;
+}
+
+function getUsedSet(): Set<string> {
+    if (!_usedSet) {
+        try {
+            const data = localStorage.getItem(STORAGE_KEYS.USED);
+            const entries: CNPJUsedEntry[] = data ? JSON.parse(data) : [];
+            _usedSet = new Set(entries.map(e => e.cnpj));
+        } catch {
+            _usedSet = new Set();
+        }
+    }
+    return _usedSet;
+}
+
 export class LocalStorage {
+    /**
+     * Invalidate in-memory Sets (call after bulk writes from Supabase sync)
+     */
+    static invalidateSets(): void {
+        _blacklistSet = null;
+        _usedSet = null;
+    }
+
     /**
      * Get whitelist from localStorage
      */
@@ -65,17 +104,13 @@ export class LocalStorage {
     static addToWhitelist(entry: CNPJWhitelistEntry): void {
         const whitelist = this.getWhitelist();
 
-        // Check if already exists
         const existingIndex = whitelist.findIndex(e => e.cnpj === entry.cnpj);
-
         if (existingIndex >= 0) {
-            // Update existing entry
             whitelist[existingIndex] = {
                 ...entry,
                 times_verified: whitelist[existingIndex].times_verified + 1,
             };
         } else {
-            // Add new entry
             whitelist.push({ ...entry, times_verified: 1 });
         }
 
@@ -97,11 +132,12 @@ export class LocalStorage {
     }
 
     /**
-     * Save blacklist to localStorage
+     * Save blacklist to localStorage — also invalidates in-memory Set
      */
     static setBlacklist(entries: CNPJBlacklistEntry[]): void {
         try {
             localStorage.setItem(STORAGE_KEYS.BLACKLIST, JSON.stringify(entries));
+            _blacklistSet = null; // force rebuild on next lookup
         } catch (error) {
             console.error('Error saving blacklist:', error);
         }
@@ -111,29 +147,20 @@ export class LocalStorage {
      * Add single entry to blacklist
      */
     static addToBlacklist(cnpj: string, reason: CNPJBlacklistEntry['reason']): void {
+        if (getBlacklistSet().has(cnpj)) return; // fast O(1) duplicate check
+
         const blacklist = this.getBlacklist();
-
-        // Avoid duplicates
-        if (blacklist.some(e => e.cnpj === cnpj)) {
-            return;
-        }
-
-        blacklist.push({
-            cnpj,
-            reason,
-            added_at: new Date().toISOString(),
-        });
-
-        this.setBlacklist(blacklist);
+        blacklist.push({ cnpj, reason, added_at: new Date().toISOString() });
+        this.setBlacklist(blacklist); // invalidates Set via setBlacklist
+        getBlacklistSet().add(cnpj); // update in-memory Set immediately
         console.log(`❌ Added to blacklist: ${cnpj} (${reason})`);
     }
 
     /**
-     * Check if CNPJ is in blacklist
+     * Check if CNPJ is in blacklist — O(1) via in-memory Set
      */
     static isBlacklisted(cnpj: string): boolean {
-        const blacklist = this.getBlacklist();
-        return blacklist.some(e => e.cnpj === cnpj);
+        return getBlacklistSet().has(cnpj);
     }
 
     /**
@@ -150,11 +177,12 @@ export class LocalStorage {
     }
 
     /**
-     * Save used list to localStorage
+     * Save used list to localStorage — also invalidates in-memory Set
      */
     static setUsed(entries: CNPJUsedEntry[]): void {
         try {
             localStorage.setItem(STORAGE_KEYS.USED, JSON.stringify(entries));
+            _usedSet = null; // force rebuild on next lookup
         } catch (error) {
             console.error('Error saving used list:', error);
         }
@@ -164,28 +192,20 @@ export class LocalStorage {
      * Mark CNPJ as used
      */
     static markAsUsed(cnpj: string): void {
+        if (getUsedSet().has(cnpj)) return; // fast O(1) duplicate check
+
         const used = this.getUsed();
-
-        // Avoid duplicates
-        if (used.some(e => e.cnpj === cnpj)) {
-            return;
-        }
-
-        used.push({
-            cnpj,
-            used_at: new Date().toISOString(),
-        });
-
-        this.setUsed(used);
+        used.push({ cnpj, used_at: new Date().toISOString() });
+        this.setUsed(used); // invalidates Set via setUsed
+        getUsedSet().add(cnpj); // update in-memory Set immediately
         console.log(`🗑️ Marked as used: ${cnpj}`);
     }
 
     /**
-     * Check if CNPJ is marked as used
+     * Check if CNPJ is marked as used — O(1) via in-memory Set
      */
     static isUsed(cnpj: string): boolean {
-        const used = this.getUsed();
-        return used.some(e => e.cnpj === cnpj);
+        return getUsedSet().has(cnpj);
     }
 
     /**
@@ -207,17 +227,17 @@ export class LocalStorage {
         Object.values(STORAGE_KEYS).forEach(key => {
             localStorage.removeItem(key);
         });
+        _blacklistSet = null;
+        _usedSet = null;
         console.log('🗑️ All cache cleared');
     }
 
     /**
-     * Get available CNPJs from whitelist (not used)
+     * Get available whitelist entries (not yet used) — with full company data
      */
     static getAvailableWhitelist(): CNPJWhitelistEntry[] {
         const whitelist = this.getWhitelist();
-        const used = this.getUsed();
-        const usedCNPJs = new Set(used.map(e => e.cnpj));
-
-        return whitelist.filter(entry => !usedCNPJs.has(entry.cnpj));
+        const usedSet = getUsedSet();
+        return whitelist.filter(entry => !usedSet.has(entry.cnpj));
     }
 }

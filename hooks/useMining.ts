@@ -3,7 +3,7 @@ import { EnhancedCompanyData } from '@/types/company';
 import { MiningFilters, MiningProgress, MINING_QUANTITY } from '@/types/filters';
 import { generateValidCNPJ } from '@/lib/mining/cnpj-generator';
 import { matchesFilters } from '@/lib/mining/filter-matcher';
-import { cnpjCache } from '@/lib/cache/cnpj-cache';
+import { cnpjCache, CNPJWhitelistEntry } from '@/lib/cache/cnpj-cache';
 
 interface UseMiningReturn {
     companies: EnhancedCompanyData[];
@@ -22,6 +22,52 @@ const MINING_CONFIG = {
     retryAttempts: 2,
     maxConsecutiveErrors: 100, // Allow many 404s
 };
+
+/**
+ * Convert a whitelist cache entry to an EnhancedCompanyData stub.
+ * Only the fields needed for filter matching and display are populated.
+ */
+function whitelistEntryToCompany(entry: CNPJWhitelistEntry): EnhancedCompanyData {
+    return {
+        cnpj: entry.cnpj,
+        razao_social: entry.razao_social,
+        nome_fantasia: entry.nome_fantasia,
+        cnpj_raiz: entry.cnpj.slice(0, 8),
+        data_inicio_atividade: '',
+        data_situacao_cadastral: '',
+        tipo_situacao_cadastral: 'ATIVA', // whitelist only contains active companies
+        motivo_situacao_cadastral: '',
+        codigo_natureza_juridica: '',
+        opcao_pelo_mei: false,
+        opcao_pelo_simples: false,
+        capital_social: entry.capital_social,
+        porte: entry.porte,
+        descricao_tipo_de_logradouro: '',
+        logradouro: '',
+        numero: '',
+        bairro: '',
+        cep: '',
+        uf: entry.uf,
+        codigo_municipio: 0,
+        municipio: entry.municipio,
+        qualificacao_do_responsavel: 0,
+        cnae_fiscal: 0,
+        cnae_fiscal_descricao: '',
+        cnaes_secundarios: [],
+        trust_score: entry.trust_score,
+        trust_score_breakdown: {
+            cadastral_situation: 40,
+            capital_social: 0,
+            activity_time: 0,
+            company_size: 0,
+            location: 0,
+            total: entry.trust_score,
+            level: entry.trust_score >= 80 ? 'excellent' : entry.trust_score >= 60 ? 'good' : entry.trust_score >= 40 ? 'medium' : 'low',
+        },
+        cached_at: entry.found_at,
+        updated_at: entry.found_at,
+    };
+}
 
 export function useMining(): UseMiningReturn {
     const [companies, setCompanies] = useState<EnhancedCompanyData[]>([]);
@@ -50,11 +96,9 @@ export function useMining(): UseMiningReturn {
                     return null; // CNPJ doesn't exist
                 }
                 if (response.status === 429) {
-                    // Rate limiting - throw error to be caught by mining loop
                     throw new Error('RATE_LIMIT');
                 }
                 if (response.status === 500) {
-                    // Check if it's rate limit error (just in case)
                     try {
                         const errorData = await response.json();
                         if (errorData.error === 'RATE_LIMIT') {
@@ -72,7 +116,7 @@ export function useMining(): UseMiningReturn {
         } catch (err) {
             if (err instanceof Error) {
                 if (err.name === 'AbortError' || err.message === 'RATE_LIMIT') {
-                    throw err; // Re-throw to be handled by mining loop
+                    throw err;
                 }
             }
             return null;
@@ -86,13 +130,10 @@ export function useMining(): UseMiningReturn {
             });
             if (response.ok) {
                 const data = await response.json();
-                // API retorna { isUsed: boolean } — verificar se já está vinculado a outro usuário
                 return data.isUsed === true;
             }
             return false;
         } catch {
-            // Em caso de erro na verificação (ex: abort), assume não usado para não travar
-            // O backend ainda bloqueará no momento de salvar se estiver usado
             return false;
         }
     };
@@ -124,148 +165,162 @@ export function useMining(): UseMiningReturn {
         let consecutiveErrors = 0;
 
         try {
-            // Initialize cache
+            // Initialize cache (Supabase sync + localStorage merge)
             await cnpjCache.initialize();
 
-            // Get available sources
-            const cachedCNPJs = cnpjCache.getAvailableCNPJs();
+            // Get whitelist entries WITH full data — fast-path candidates
+            const whitelistEntries = cnpjCache.getAvailableWithData();
             const wordlist = await import('@/lib/mining/cnpj-wordlist').then(m => m.CNPJ_WORDLIST_2025);
 
-            console.log(`[Mining] Cache loaded: ${cachedCNPJs.length} whitelist CNPJs, ${wordlist.length} wordlist CNPJs`);
-            // Indices for tracking
-            let cacheIndex = 0;
-            let wordlistIndex = 0;
+            console.log(`[Mining] Cache loaded: ${whitelistEntries.length} whitelist CNPJs, ${wordlist.length} wordlist CNPJs`);
 
-            while (foundCompanies.length < MINING_QUANTITY) {
-                // Check if mining was stopped
-                if (abortControllerRef.current.signal.aborted) {
-                    break;
-                }
+            // ─── PHASE 1: Fast-path whitelist ─────────────────────────────────
+            // Process cached whitelist entries directly — no API call, no delay.
+            // These are companies already validated in previous sessions.
+            if (whitelistEntries.length > 0) {
+                console.log(`[Mining] ⚡ Fast-path: testing ${whitelistEntries.length} cached whitelist entries...`);
 
-                let cnpj: string;
-                let source: string;
+                for (const entry of whitelistEntries) {
+                    if (abortControllerRef.current.signal.aborted) break;
+                    if (foundCompanies.length >= MINING_QUANTITY) break;
 
-                // INTELLIGENT PRIORITIZATION:
-                // 95% Cached (already validated) >>> 4% Wordlist >>> 1% Generation
-                const rand = Math.random();
+                    const cnpj = entry.cnpj;
+                    if (triedCNPJs.current.has(cnpj)) continue;
+                    triedCNPJs.current.add(cnpj);
+                    tried++;
 
-                if (rand < 0.95 && cacheIndex < cachedCNPJs.length) {
-                    // Use cache (95% - HIGHEST priority)
-                    cnpj = cachedCNPJs[cacheIndex++];
-                    source = `💎 Cache ${cacheIndex}/${cachedCNPJs.length}`;
-                } else if (rand < 0.99 && wordlistIndex < wordlist.length) {
-                    // Use wordlist (4%)
-                    cnpj = wordlist[wordlistIndex++];
-                    source = `📋 Wordlist ${wordlistIndex}/${wordlist.length}`;
-                } else {
-                    // Generate random (1% - discovery)
-                    do {
-                        cnpj = generateValidCNPJ(filters.uf);
-                    } while (triedCNPJs.current.has(cnpj));
-                    source = `🎲 Generated`;
-                }
+                    // Convert to company stub for filter matching
+                    const companyStub = whitelistEntryToCompany(entry);
 
-                // Skip if already tried or should skip (blacklist/used)
-                if (triedCNPJs.current.has(cnpj) || cnpjCache.shouldSkip(cnpj)) {
-                    continue;
-                }
-
-                triedCNPJs.current.add(cnpj);
-                tried++;
-
-                // Update progress IMMEDIATELY before testing
-                setProgress({
-                    tried,
-                    found: foundCompanies.length,
-                    target: MINING_QUANTITY,
-                    percentage: (foundCompanies.length / MINING_QUANTITY) * 100,
-                    isComplete: false,
-                });
-
-                try {
-                    // Apply delay BEFORE making request (except first one)
-                    if (tried > 1) {
-                        await sleep(MINING_CONFIG.delayBetweenRequests);
-                    }
-
-                    const company = await fetchCompany(cnpj);
-
-                    if (!company) {
-                        // CNPJ not found (404) or error fetching
-                        cnpjCache.processMiningResult(cnpj, {
-                            found: false,
-                            reason: 'NOT_FOUND',
-                        });
-                    } else if (matchesFilters(company, filters)) {
-                        // Verificar se já está vinculado a outro cliente (exclusividade global)
-                        const isUsed = await checkCnpjUsage(cnpj);
-
-                        if (isUsed) {
-                            // Adicionar à blacklist local / cache para não tentar novamente
-                            cnpjCache.processMiningResult(cnpj, {
-                                found: true,
-                                active: false,
-                                reason: 'USED',
-                            });
-                            continue;
-                        }
-
-                        foundCompanies.push(company);
-
-                        // Add to whitelist cache
-                        cnpjCache.processMiningResult(cnpj, {
-                            found: true,
-                            active: true,
-                            data: company,
-                        });
-
-                        // Update React state
-                        setCompanies([...foundCompanies]);
-
-                        setProgress({
-                            tried,
-                            found: foundCompanies.length,
-                            target: MINING_QUANTITY,
-                            percentage: (foundCompanies.length / MINING_QUANTITY) * 100,
-                            isComplete: false,
-                        });
-
-                        consecutiveErrors = 0;
-                    } else {
-                        // Doesn't match filters
-                        cnpjCache.processMiningResult(cnpj, {
-                            found: true,
-                            active: true,
-                            reason: 'FILTERED',
-                        });
-                    }
-
-                } catch (err) {
-                    if (err instanceof Error && err.name === 'AbortError') {
-                        break;
-                    }
-
-                    // Check for rate limiting
-                    if (err instanceof Error && err.message === 'RATE_LIMIT') {
-                        console.log(`❌ Rate limit detectado! Aguardando ${MINING_CONFIG.delayOnRateLimit / 1000}s...`);
-                        await sleep(MINING_CONFIG.delayOnRateLimit);
-                        console.log('✅ Retomando mineração após rate limit...');
-                        consecutiveErrors = 0; // Reset errors on rate limit
-                        tried--; // Don't count rate limited requests
+                    // Check filters (synchronous, instant)
+                    if (!matchesFilters(companyStub, filters)) {
+                        cnpjCache.processMiningResult(cnpj, { found: true, active: true, reason: 'FILTERED' });
                         continue;
                     }
 
-                    console.log(`❌ Erro ao testar CNPJ ${cnpj}: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-
-                    consecutiveErrors++;
-                    if (consecutiveErrors >= MINING_CONFIG.maxConsecutiveErrors) {
-                        throw new Error('Muitos erros consecutivos. Tente relaxar os filtros.');
+                    // Check if already taken by another user (one network call, no delay)
+                    const isUsed = await checkCnpjUsage(cnpj);
+                    if (isUsed) {
+                        cnpjCache.processMiningResult(cnpj, { found: true, active: false, reason: 'USED' });
+                        continue;
                     }
+
+                    // ✅ Good to use — add directly from cache
+                    foundCompanies.push(companyStub);
+                    setCompanies([...foundCompanies]);
+                    setProgress({
+                        tried,
+                        found: foundCompanies.length,
+                        target: MINING_QUANTITY,
+                        percentage: (foundCompanies.length / MINING_QUANTITY) * 100,
+                        isComplete: false,
+                    });
+
+                    console.log(`[Mining] ⚡ Fast-path found: ${cnpj} (${entry.razao_social})`);
                 }
 
-                // Safety limit - stop after trying too many
-                if (tried >= MINING_QUANTITY * 100) {
-                    throw new Error('Limite de tentativas excedido. Tente relaxar os filtros.');
+                console.log(`[Mining] Fast-path complete: ${foundCompanies.length}/${MINING_QUANTITY} found from cache`);
+            }
+
+            // ─── PHASE 2: Slow-path — API mining for remaining slots ──────────
+            if (foundCompanies.length < MINING_QUANTITY) {
+                console.log(`[Mining] 🔄 API mining: need ${MINING_QUANTITY - foundCompanies.length} more companies...`);
+
+                let wordlistIndex = 0;
+
+                while (foundCompanies.length < MINING_QUANTITY) {
+                    if (abortControllerRef.current.signal.aborted) break;
+
+                    let cnpj: string;
+
+                    // Use wordlist (preferred) or generate random
+                    if (wordlistIndex < wordlist.length) {
+                        cnpj = wordlist[wordlistIndex++];
+                    } else {
+                        do {
+                            cnpj = generateValidCNPJ(filters.uf);
+                        } while (triedCNPJs.current.has(cnpj));
+                    }
+
+                    // Skip if already tried or in blacklist/used
+                    if (triedCNPJs.current.has(cnpj) || cnpjCache.shouldSkip(cnpj)) {
+                        continue;
+                    }
+
+                    triedCNPJs.current.add(cnpj);
+                    tried++;
+
+                    // Update progress
+                    setProgress({
+                        tried,
+                        found: foundCompanies.length,
+                        target: MINING_QUANTITY,
+                        percentage: (foundCompanies.length / MINING_QUANTITY) * 100,
+                        isComplete: false,
+                    });
+
+                    try {
+                        // Apply delay before each API request (except first)
+                        if (tried > 1) {
+                            await sleep(MINING_CONFIG.delayBetweenRequests);
+                        }
+
+                        const company = await fetchCompany(cnpj);
+
+                        if (!company) {
+                            cnpjCache.processMiningResult(cnpj, { found: false, reason: 'NOT_FOUND' });
+                        } else if (matchesFilters(company, filters)) {
+                            const isUsed = await checkCnpjUsage(cnpj);
+
+                            if (isUsed) {
+                                cnpjCache.processMiningResult(cnpj, { found: true, active: false, reason: 'USED' });
+                                continue;
+                            }
+
+                            foundCompanies.push(company);
+
+                            cnpjCache.processMiningResult(cnpj, {
+                                found: true,
+                                active: true,
+                                data: company,
+                            });
+
+                            setCompanies([...foundCompanies]);
+                            setProgress({
+                                tried,
+                                found: foundCompanies.length,
+                                target: MINING_QUANTITY,
+                                percentage: (foundCompanies.length / MINING_QUANTITY) * 100,
+                                isComplete: false,
+                            });
+
+                            consecutiveErrors = 0;
+                        } else {
+                            cnpjCache.processMiningResult(cnpj, { found: true, active: true, reason: 'FILTERED' });
+                        }
+
+                    } catch (err) {
+                        if (err instanceof Error && err.name === 'AbortError') break;
+
+                        if (err instanceof Error && err.message === 'RATE_LIMIT') {
+                            console.log(`❌ Rate limit! Aguardando ${MINING_CONFIG.delayOnRateLimit / 1000}s...`);
+                            await sleep(MINING_CONFIG.delayOnRateLimit);
+                            console.log('✅ Retomando após rate limit...');
+                            consecutiveErrors = 0;
+                            tried--;
+                            continue;
+                        }
+
+                        consecutiveErrors++;
+                        if (consecutiveErrors >= MINING_CONFIG.maxConsecutiveErrors) {
+                            throw new Error('Muitos erros consecutivos. Tente relaxar os filtros.');
+                        }
+                    }
+
+                    // Safety limit
+                    if (tried >= MINING_QUANTITY * 100) {
+                        throw new Error('Limite de tentativas excedido. Tente relaxar os filtros.');
+                    }
                 }
             }
 
@@ -284,7 +339,7 @@ export function useMining(): UseMiningReturn {
             }
         } finally {
             setIsMining(false);
-            isMiningRef.current = false; // FIX: Reset ref so we can start again
+            isMiningRef.current = false;
             abortControllerRef.current = null;
         }
     }, []);
@@ -294,7 +349,7 @@ export function useMining(): UseMiningReturn {
             abortControllerRef.current.abort();
         }
         setIsMining(false);
-        isMiningRef.current = false; // FIX: Reset ref on manual stop
+        isMiningRef.current = false;
     }, []);
 
     const clearResults = useCallback(() => {

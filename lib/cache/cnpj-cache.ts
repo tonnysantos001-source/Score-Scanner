@@ -18,6 +18,9 @@ export interface CompanyData {
     trust_score?: number;
 }
 
+// Re-export so useMining can use the type directly
+export type { CNPJWhitelistEntry };
+
 export class CNPJCache {
     /**
      * Initialize cache (pull from Supabase + merge with localStorage)
@@ -42,7 +45,6 @@ export class CNPJCache {
 
             // Merge whitelist (Supabase + Local, unique by CNPJ)
             const mergedWhitelistMap = new Map<string, CNPJWhitelistEntry>();
-
             remoteWhitelist.forEach(entry => mergedWhitelistMap.set(entry.cnpj, entry));
             localWhitelist.forEach(entry => {
                 const existing = mergedWhitelistMap.get(entry.cnpj);
@@ -50,7 +52,6 @@ export class CNPJCache {
                     mergedWhitelistMap.set(entry.cnpj, entry);
                 }
             });
-
             LocalStorage.setWhitelist(Array.from(mergedWhitelistMap.values()));
 
             // Merge blacklist (unique by CNPJ)
@@ -65,37 +66,41 @@ export class CNPJCache {
             localUsed.forEach(entry => mergedUsedMap.set(entry.cnpj, entry));
             LocalStorage.setUsed(Array.from(mergedUsedMap.values()));
 
+            // Rebuild in-memory Sets from the freshly merged data
+            LocalStorage.invalidateSets();
+
             const stats = LocalStorage.getStats();
             console.log(`📊 Merged cache: ${stats.whitelist} whitelist, ${stats.blacklist} blacklist, ${stats.used} used`);
 
         } catch (error) {
             console.error('❌ Supabase sync failed, using local cache only:', error);
+            LocalStorage.invalidateSets(); // rebuild Sets from whatever is in localStorage
             const stats = LocalStorage.getStats();
             console.log(`📊 Local cache: ${stats.whitelist} whitelist, ${stats.blacklist} blacklist, ${stats.used} used`);
         }
     }
 
     /**
-     * Get available CNPJs for mining (prioritize whitelist)
+     * Get available CNPJ strings for mining (backwards compat)
      */
     getAvailableCNPJs(): string[] {
-        const available = LocalStorage.getAvailableWhitelist();
-        return available.map(e => e.cnpj);
+        return LocalStorage.getAvailableWhitelist().map(e => e.cnpj);
     }
 
     /**
-     * Check if CNPJ should be skipped
+     * Get available whitelist entries WITH full company data.
+     * Use this for the fast-path: whitelist companies can be shown
+     * directly without making an API call.
+     */
+    getAvailableWithData(): CNPJWhitelistEntry[] {
+        return LocalStorage.getAvailableWhitelist();
+    }
+
+    /**
+     * Check if CNPJ should be skipped (O(1) via in-memory Sets)
      */
     shouldSkip(cnpj: string): boolean {
-        if (LocalStorage.isBlacklisted(cnpj)) {
-            return true;
-        }
-
-        if (LocalStorage.isUsed(cnpj)) {
-            return true;
-        }
-
-        return false;
+        return LocalStorage.isBlacklisted(cnpj) || LocalStorage.isUsed(cnpj);
     }
 
     /**
