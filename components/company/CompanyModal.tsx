@@ -71,8 +71,21 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const handleOpenPDF = async () => {
         try {
             setIsPdfLoading(true);
+
+            // If this is a fast-path stub (missing data_inicio_atividade), we must fetch the full data first
+            let fullCompanyData = company;
+            if (!company.data_inicio_atividade && !company.data_abertura) {
+                const cleanCnpj = company.cnpj.replace(/\D/g, '');
+                const res = await fetch(`/api/cnpj?cnpj=${cleanCnpj}`);
+                if (res.ok) {
+                    fullCompanyData = await res.json();
+                } else {
+                    console.warn('[CompanyModal] Failed to fetch full company data for PDF, using stub.');
+                }
+            }
+
             const { generateOfficialPDF } = await import('@/lib/pdf/official-pdf');
-            const blob = await generateOfficialPDF(company, {
+            const blob = await generateOfficialPDF(fullCompanyData, {
                 telefone: telefone || undefined,
                 email: email || undefined,
             });
@@ -137,8 +150,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.93, y: 16 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-                className="glass-card w-full flex flex-col"
-                style={{ maxWidth: 900, maxHeight: '95vh' }}
+                className="glass-card w-full flex flex-col max-w-[900px] max-h-[95vh]"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* ── HEADER ── */}

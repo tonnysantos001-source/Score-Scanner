@@ -12,6 +12,7 @@ export interface CompanyData {
   motivo_situacao_cadastral: string;
   nome_cidade_exterior?: string;
   codigo_natureza_juridica: string;
+  ente_federativo_responsavel?: string;
   data_especial?: string;
   opcao_pelo_mei: boolean;
   opcao_pelo_simples: boolean;

@@ -212,7 +212,7 @@ export async function generateOfficialPDF(
     y += 10;
 
     // ── ROW 10: ENTE FEDERATIVO RESPONSÁVEL (EFR) ─────────────────────────
-    row1('ENTE FEDERATIVO RESPONSÁVEL (EFR)', '*****');
+    row1('ENTE FEDERATIVO RESPONSÁVEL (EFR)', company.ente_federativo_responsavel || '********');
 
     // ── ROW 11: SITUAÇÃO CADASTRAL | DATA DA SITUAÇÃO CADASTRAL ──────────
     const sitW = body * 0.60;

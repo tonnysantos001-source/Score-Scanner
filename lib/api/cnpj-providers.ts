@@ -36,6 +36,7 @@ export interface CNPJData {
     motivo_situacao_cadastral?: string;
     data_especial?: string;
     codigo_natureza_juridica?: string;
+    ente_federativo_responsavel?: string;
 }
 
 export interface ProviderResponse {
@@ -108,6 +109,7 @@ export async function fetchFromReceitaWS(cnpj: string): Promise<ProviderResponse
                 motivo_situacao_cadastral: data.motivo_situacao || undefined,
                 data_especial: data.data_situacao_especial || undefined,
                 codigo_natureza_juridica: data.natureza_juridica || undefined,
+                ente_federativo_responsavel: data.efr || undefined,
             },
 
         };
@@ -172,7 +174,8 @@ export async function fetchFromBrasilAPI(cnpj: string): Promise<ProviderResponse
                 data_situacao_cadastral: data.data_situacao_cadastral || undefined,
                 motivo_situacao_cadastral: data.motivo_situacao_cadastral || undefined,
                 data_especial: data.data_especial || undefined,
-                codigo_natureza_juridica: data.codigo_natureza_juridica ? `${data.codigo_natureza_juridica}` : undefined,
+                codigo_natureza_juridica: data.natureza_juridica || (data.codigo_natureza_juridica ? `${data.codigo_natureza_juridica}` : undefined),
+                ente_federativo_responsavel: data.ente_federativo_responsavel || undefined,
             },
 
         };
@@ -227,6 +230,7 @@ export async function fetchFromCNPJWS(cnpj: string): Promise<ProviderResponse> {
                 motivo_situacao_cadastral: data.estabelecimento?.motivo_situacao_cadastral?.descricao || undefined,
                 data_especial: data.estabelecimento?.data_situacao_especial || undefined,
                 codigo_natureza_juridica: data.natureza_juridica?.descricao ? `${data.natureza_juridica.codigo} - ${data.natureza_juridica.descricao}` : undefined,
+                ente_federativo_responsavel: data.ente_federativo_responsavel || undefined,
             },
 
         };
