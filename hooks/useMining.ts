@@ -189,6 +189,12 @@ export function useMining(): UseMiningReturn {
                     triedCNPJs.current.add(cnpj);
                     tried++;
 
+                    // Skip if trust_score < 65 (hard requirement)
+                    if (entry.trust_score < 65) {
+                        cnpjCache.processMiningResult(cnpj, { found: true, active: true, reason: 'FILTERED' });
+                        continue;
+                    }
+
                     // Convert to company stub for filter matching
                     const companyStub = whitelistEntryToCompany(entry);
 

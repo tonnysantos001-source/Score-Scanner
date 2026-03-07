@@ -15,6 +15,9 @@ export function matchesFilters(
 
     if (!isActive) return false;
 
+    // Hard requirement: trust score must be >= 65
+    if ((company.trust_score ?? 0) < 65) return false;
+
     // Check capital social minimum - ONLY if filter is enabled
     if (filters.useCapitalFilter) {
         if (company.capital_social < filters.capitalMinimo) return false;

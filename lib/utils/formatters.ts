@@ -11,8 +11,10 @@ export function formatCurrency(value: number): string {
 /**
  * Format date to Brazilian format (DD/MM/YYYY)
  */
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | undefined | null): string {
+    if (!date || date === '') return '—';
     const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return '—';
     return new Intl.DateTimeFormat('pt-BR').format(dateObj);
 }
 
