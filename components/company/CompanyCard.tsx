@@ -15,10 +15,11 @@ interface CompanyCardProps {
 }
 
 export default function CompanyCard({ company, onClick, index = 0 }: CompanyCardProps) {
-    // ✅ REAL TRUST SCORE CALCULATION
+    // ✅ Use the stored score if available (fast-path stubs don't have enough data to recalculate accurately)
     const trustScoreData = calculateTrustScore(company);
-    const scoreColor = getScoreColor(trustScoreData.score);
-    const scoreLabel = getScoreLabel(trustScoreData.score);
+    const score = company.trust_score || trustScoreData.score;
+    const scoreColor = getScoreColor(score);
+    const scoreLabel = getScoreLabel(score);
 
 
 
@@ -60,7 +61,7 @@ export default function CompanyCard({ company, onClick, index = 0 }: CompanyCard
                         className="text-3xl font-bold"
                         style={{ color: scoreColor }}
                     >
-                        {trustScoreData.score}
+                        {score}
                     </div>
                     <div className="text-xs text-[var(--color-text-muted)]">Trust Score</div>
                 </motion.div>
