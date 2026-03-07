@@ -17,7 +17,7 @@ export interface CNPJData {
     qsa: any[];
 
     // Contact info
-    telefone?: string;
+    ddd_telefone_1?: string;
     email?: string;
 
     // Full address
@@ -28,10 +28,10 @@ export interface CNPJData {
     cep?: string;
 
     // Activity
-    cnae_principal?: string;
-    descricao_cnae?: string;
+    cnae_fiscal?: string | number;
+    cnae_fiscal_descricao?: string;
     cnaes_secundarios?: Array<{ codigo: number | string; descricao: string }>;
-    data_abertura?: string;
+    data_inicio_atividade?: string;
     data_situacao_cadastral?: string;
     motivo_situacao_cadastral?: string;
     data_especial?: string;
@@ -85,12 +85,18 @@ export async function fetchFromReceitaWS(cnpj: string): Promise<ProviderResponse
                 tipo_situacao_cadastral: data.situacao || 'ATIVA',
                 uf: data.uf,
                 municipio: data.municipio,
-                capital_social: parseFloat(String(data.capital_social || 0).replace(/[^\d,]/g, '').replace(',', '.')) || 0,
+                capital_social: (function (val: any) {
+                    let str = String(val || '0');
+                    if (str.includes(',')) {
+                        str = str.replace(/\./g, '').replace(',', '.');
+                    }
+                    return parseFloat(str) || 0;
+                })(data.capital_social),
                 porte: data.porte || 'NAO_INFORMADO',
                 qsa: data.qsa || [],
 
                 // ✅ Contact (ReceitaWS has these!)
-                telefone: data.telefone || undefined,
+                ddd_telefone_1: data.telefone || undefined,
                 email: data.email || undefined,
 
                 // ✅ Full address
@@ -101,11 +107,11 @@ export async function fetchFromReceitaWS(cnpj: string): Promise<ProviderResponse
                 cep: data.cep || undefined,
 
                 // ✅ Activity & Additional Data
-                cnae_principal: data.atividade_principal?.[0]?.code || undefined,
-                descricao_cnae: data.atividade_principal?.[0]?.text || undefined,
+                cnae_fiscal: data.atividade_principal?.[0]?.code || undefined,
+                cnae_fiscal_descricao: data.atividade_principal?.[0]?.text || undefined,
                 cnaes_secundarios: data.atividades_secundarias?.map((a: any) => ({ codigo: a.code, descricao: a.text })) || [],
-                data_abertura: data.abertura || undefined,
-                data_situacao_cadastral: data.data_situacao || undefined,
+                data_inicio_atividade: data.abertura ? data.abertura.split('/').reverse().join('-') : undefined,
+                data_situacao_cadastral: data.data_situacao ? data.data_situacao.split('/').reverse().join('-') : undefined,
                 motivo_situacao_cadastral: data.motivo_situacao || undefined,
                 data_especial: data.data_situacao_especial || undefined,
                 codigo_natureza_juridica: data.natureza_juridica || undefined,
@@ -156,21 +162,21 @@ export async function fetchFromBrasilAPI(cnpj: string): Promise<ProviderResponse
                 qsa: data.qsa || [],
 
                 // ✅ Contact (BrasilAPI has phone!)
-                telefone: data.ddd_telefone_1 || data.ddd_telefone_2 || undefined,
+                ddd_telefone_1: data.ddd_telefone_1 || data.ddd_telefone_2 || undefined,
                 email: undefined, // BrasilAPI doesn't have email
 
                 // ✅ Full address
-                logradouro: data.descricao_tipo_de_logradouro + ' ' + data.logradouro || undefined,
+                logradouro: (data.descricao_tipo_de_logradouro ? data.descricao_tipo_de_logradouro + ' ' : '') + data.logradouro || undefined,
                 numero: data.numero || undefined,
                 complemento: data.complemento || undefined,
                 bairro: data.bairro || undefined,
                 cep: data.cep || undefined,
 
                 // ✅ Activity & Additional Data
-                cnae_principal: data.cnae_fiscal_principal?.codigo || data.cnae_fiscal || undefined,
-                descricao_cnae: data.cnae_fiscal_principal?.descricao || data.cnae_fiscal_descricao || undefined,
+                cnae_fiscal: data.cnae_fiscal_principal?.codigo || data.cnae_fiscal || undefined,
+                cnae_fiscal_descricao: data.cnae_fiscal_principal?.descricao || data.cnae_fiscal_descricao || undefined,
                 cnaes_secundarios: data.cnaes_secundarios || [],
-                data_abertura: data.data_inicio_atividade || undefined,
+                data_inicio_atividade: data.data_inicio_atividade || undefined,
                 data_situacao_cadastral: data.data_situacao_cadastral || undefined,
                 motivo_situacao_cadastral: data.motivo_situacao_cadastral || undefined,
                 data_especial: data.data_especial || undefined,
@@ -222,10 +228,10 @@ export async function fetchFromCNPJWS(cnpj: string): Promise<ProviderResponse> {
                 qsa: data.socios || [],
 
                 // ✅ Activity & Additional Data
-                cnae_principal: data.estabelecimento?.atividade_principal?.classificacao || undefined,
-                descricao_cnae: data.estabelecimento?.atividade_principal?.descricao || undefined,
+                cnae_fiscal: data.estabelecimento?.atividade_principal?.classificacao || undefined,
+                cnae_fiscal_descricao: data.estabelecimento?.atividade_principal?.descricao || undefined,
                 cnaes_secundarios: data.estabelecimento?.atividades_secundarias?.map((a: any) => ({ codigo: a.classificacao, descricao: a.descricao })) || [],
-                data_abertura: data.estabelecimento?.data_inicio_atividade || undefined,
+                data_inicio_atividade: data.estabelecimento?.data_inicio_atividade || undefined,
                 data_situacao_cadastral: data.estabelecimento?.data_situacao_cadastral || undefined,
                 motivo_situacao_cadastral: data.estabelecimento?.motivo_situacao_cadastral?.descricao || undefined,
                 data_especial: data.estabelecimento?.data_situacao_especial || undefined,

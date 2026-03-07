@@ -32,7 +32,7 @@ export interface CompanyData {
   ddd_fax?: string;
   qualificacao_do_responsavel: number;
   capital_social_display?: string;
-  cnae_fiscal: number;
+  cnae_fiscal: string | number;
   cnae_fiscal_descricao: string;
   cnaes_secundarios: Array<{
     codigo: number;
