@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
         const lpData = {
             domain_id: targetDomain.id,
-            slug: 'home', // Virtual slug for root
+            slug: generateSlug(company_name, cleanCnpj), // Generate unique slug
             title_text: company_name,
             description_text: custom_notes || `Conheça a ${company_name}. Dados verificados.`,
             facebook_pixel_id: pixel_id || null,
