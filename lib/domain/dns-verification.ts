@@ -59,9 +59,8 @@ const ALLOWED_CNAME_TARGETS = [
 ];
 
 const ALLOWED_A_RECORDS = [
-    '216.198.79.1',     // Vercel new primary IPv4 (recommended)
-    '76.76.21.21',      // Vercel legacy primary IPv4
-    '76.76.21.22',      // Vercel legacy secondary
+    '76.76.21.21',      // Vercel primary IPv4
+    '76.76.21.22',      // Vercel secondary IPv4
 ];
 
 const DNS_RESOLVERS = [
@@ -70,6 +69,35 @@ const DNS_RESOLVERS = [
 ] as const;
 
 const TIMEOUT_MS = 6000;
+
+async function checkVercelVerification(domain: string): Promise<{ verified: boolean; error?: string }> {
+    const token = process.env.VERCEL_TOKEN;
+    const projectId = process.env.VERCEL_PROJECT_ID;
+    if (!token || !projectId) return { verified: true };
+
+    try {
+        const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/domains/${domain}?strict=true`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            return { verified: false, error: 'Domínio ainda não registrado no projeto Vercel' };
+        }
+        const data = await res.json();
+        if (data.verified === true) {
+            return { verified: true };
+        }
+        if (data.verification && data.verification.length > 0) {
+            const v = data.verification[0];
+            return {
+                verified: false,
+                error: `Validação pendente na Vercel: adicione o registro ${v.type} com o Host "${v.domain}" e Valor "${v.value}" no seu DNS.`
+            };
+        }
+        return { verified: false, error: 'Apontamento DNS ainda não reconhecido pela Vercel.' };
+    } catch {
+        return { verified: true };
+    }
+}
 
 // ============================================
 // Main Entry Point
@@ -96,10 +124,13 @@ export async function verifyDomainDNS(domain: string): Promise<VerificationResul
 
     console.log(`[DNS] Verifying: ${cleanDomain} (root=${isRootDomain})`);
 
+    // Check Vercel status first if registered
+    const vercelCheck = await checkVercelVerification(cleanDomain);
+
     // === Strategy 1: CNAME on exact domain ===
     const cnameResult = await queryDNS(cleanDomain, 5, 'CNAME');
     checks.push(cnameResult);
-    if (cnameResult.status === 'pass') {
+    if (cnameResult.status === 'pass' && vercelCheck.verified) {
         return buildResult(true, 'CNAME', cnameResult.records[0], checks, cleanDomain, resolverUsed);
     }
 
@@ -108,7 +139,7 @@ export async function verifyDomainDNS(domain: string): Promise<VerificationResul
         const wwwDomain = `www.${cleanDomain}`;
         const wwwCnameResult = await queryDNS(wwwDomain, 5, 'CNAME');
         checks.push(wwwCnameResult);
-        if (wwwCnameResult.status === 'pass') {
+        if (wwwCnameResult.status === 'pass' && vercelCheck.verified) {
             console.log(`[DNS] ✅ www CNAME verified: ${wwwCnameResult.records[0]}`);
             return buildResult(true, 'CNAME_WWW', wwwCnameResult.records[0], checks, cleanDomain, resolverUsed);
         }
@@ -117,13 +148,13 @@ export async function verifyDomainDNS(domain: string): Promise<VerificationResul
     // === Strategy 3: A record on exact domain (root domain IP pointing) ===
     const aResult = await queryDNS(cleanDomain, 1, 'A');
     checks.push(aResult);
-    if (aResult.status === 'pass') {
+    if (aResult.status === 'pass' && vercelCheck.verified) {
         return buildResult(true, 'A', aResult.records[0], checks, cleanDomain, resolverUsed);
     }
 
     // === Strategy 4: Try Cloudflare resolver as fallback ===
     const cfCnameResult = await queryDNS(cleanDomain, 5, 'CNAME', 'cloudflare');
-    if (cfCnameResult.status === 'pass') {
+    if (cfCnameResult.status === 'pass' && vercelCheck.verified) {
         resolverUsed = 'cloudflare';
         checks.push(cfCnameResult);
         return buildResult(true, 'CNAME', cfCnameResult.records[0], checks, cleanDomain, resolverUsed);
@@ -131,7 +162,7 @@ export async function verifyDomainDNS(domain: string): Promise<VerificationResul
 
     if (isRootDomain) {
         const cfWwwResult = await queryDNS(`www.${cleanDomain}`, 5, 'CNAME', 'cloudflare');
-        if (cfWwwResult.status === 'pass') {
+        if (cfWwwResult.status === 'pass' && vercelCheck.verified) {
             resolverUsed = 'cloudflare';
             checks.push(cfWwwResult);
             return buildResult(true, 'CNAME_WWW', cfWwwResult.records[0], checks, cleanDomain, resolverUsed);
@@ -141,7 +172,11 @@ export async function verifyDomainDNS(domain: string): Promise<VerificationResul
     // === All strategies failed ===
     console.log(`[DNS] ❌ All strategies failed for: ${cleanDomain}`);
 
-    const error = buildErrorMessage(cleanDomain, isRootDomain, checks);
+    let error = buildErrorMessage(cleanDomain, isRootDomain, checks);
+    if (!vercelCheck.verified && vercelCheck.error) {
+        error = vercelCheck.error;
+    }
+
     return {
         verified: false,
         error,

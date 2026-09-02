@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import Header from '@/components/landing/Header';
 import Hero from '@/components/landing/Hero';
 import Values from '@/components/landing/Values';
@@ -17,7 +17,7 @@ export default async function LandingPage({ params }: PageProps) {
     const { slug } = await params;
     const normalizedSlug = slug.toLowerCase();
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // 1. Buscar dados básicos no Supabase
     const { data: landingPage, error } = await supabase
@@ -202,7 +202,7 @@ export default async function LandingPage({ params }: PageProps) {
 export async function generateMetadata({ params }: PageProps) {
     const { slug } = await params;
     const normalizedSlug = slug.toLowerCase();
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: landingPage } = await supabase
         .from('landing_pages')
