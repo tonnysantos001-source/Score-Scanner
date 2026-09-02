@@ -41,25 +41,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     console.warn('Erro ao buscar role:', error.message);
                 }
                 setIsAdmin(false);
+                setHasActivePlan(true);
                 return;
             }
 
-            setIsAdmin(profile?.role === 'admin');
+            const isAdminUser = profile?.role === 'admin' || profile?.role === 'superadmin';
+            setIsAdmin(isAdminUser);
 
-            // Check active subscription — usa maybeSingle() para não gerar erro 406 quando não há plano
-            const { data: sub } = await supabaseClient
-                .from('subscriptions')
-                .select('status')
-                .eq('user_id', userId)
-                .in('status', ['active', 'trialing'])
-                .limit(1)
-                .maybeSingle();
-            setHasActivePlan(!!sub);
+            // Planos totalmente liberados para uso
+            setHasActivePlan(true);
         } catch (err) {
             if (process.env.NODE_ENV === 'development') {
                 console.error('Check role error:', err);
             }
             setIsAdmin(false);
+            setHasActivePlan(true);
         }
     }, []);
 
