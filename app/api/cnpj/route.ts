@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
         const result = await fetchCNPJFromAnyProvider(cleanCNPJ);
 
         if (!result.success) {
-            console.log(`❌ [API] CNPJ não encontrado em nenhum provider`);
+            console.log(`❌ [API] CNPJ não encontrado em nenhum provider (Status: ${result.status || 404})`);
             return NextResponse.json(
                 { error: 'NOT_FOUND', details: result.error },
-                { status: 404 }
+                { status: result.status || 404 }
             );
         }
 

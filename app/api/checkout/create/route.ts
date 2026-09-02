@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
             method: 'pix',
             externalReference: subscription.id,
             customer: {
-                name: profile?.full_name || 'Cliente VerifiAds',
-                email: user.email || 'cliente@verifiads.com',
+                name: profile?.full_name || 'Cliente VerifyAds',
+                email: user.email || 'cliente@verifyads.net',
                 document: '00000000191', // CPF de teste válido
                 phone: '11999999999',
             },

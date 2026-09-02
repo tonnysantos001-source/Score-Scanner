@@ -43,6 +43,7 @@ export interface ProviderResponse {
     success: boolean;
     data?: CNPJData;
     error?: string;
+    status?: number;
     provider: string;
 }
 
@@ -62,7 +63,7 @@ export async function fetchFromReceitaWS(cnpj: string): Promise<ProviderResponse
 
         if (!response.ok) {
             console.log(`❌ [ReceitaWS] Status: ${response.status}`);
-            return { success: false, error: `HTTP ${response.status}`, provider: 'ReceitaWS' };
+            return { success: false, status: response.status, error: `HTTP ${response.status}`, provider: 'ReceitaWS' };
         }
 
         const data = await response.json();
@@ -70,13 +71,15 @@ export async function fetchFromReceitaWS(cnpj: string): Promise<ProviderResponse
         // Check for ReceitaWS error responses
         if (data.status === 'ERROR') {
             console.log(`❌ [ReceitaWS] Erro: ${data.message}`);
-            return { success: false, error: data.message, provider: 'ReceitaWS' };
+            const isNotFound = data.message?.toLowerCase().includes('não existe') || data.message?.toLowerCase().includes('inválido');
+            return { success: false, status: isNotFound ? 404 : 400, error: data.message, provider: 'ReceitaWS' };
         }
 
         console.log(`✅ [ReceitaWS] Sucesso: ${data.nome}`);
 
         return {
             success: true,
+            status: 200,
             provider: 'ReceitaWS',
             data: {
                 cnpj: data.cnpj,
@@ -121,7 +124,7 @@ export async function fetchFromReceitaWS(cnpj: string): Promise<ProviderResponse
         };
     } catch (error) {
         console.error(`❌ [ReceitaWS] Erro de rede:`, error);
-        return { success: false, error: 'Network error', provider: 'ReceitaWS' };
+        return { success: false, status: 500, error: 'Network error', provider: 'ReceitaWS' };
     }
 }
 
@@ -140,7 +143,7 @@ export async function fetchFromBrasilAPI(cnpj: string): Promise<ProviderResponse
 
         if (!response.ok) {
             console.log(`❌ [BrasilAPI] Status: ${response.status}`);
-            return { success: false, error: `HTTP ${response.status}`, provider: 'BrasilAPI' };
+            return { success: false, status: response.status, error: `HTTP ${response.status}`, provider: 'BrasilAPI' };
         }
 
         const data = await response.json();
@@ -149,6 +152,7 @@ export async function fetchFromBrasilAPI(cnpj: string): Promise<ProviderResponse
 
         return {
             success: true,
+            status: 200,
             provider: 'BrasilAPI',
             data: {
                 cnpj: data.cnpj,
@@ -187,7 +191,7 @@ export async function fetchFromBrasilAPI(cnpj: string): Promise<ProviderResponse
         };
     } catch (error) {
         console.error(`❌ [BrasilAPI] Erro de rede:`, error);
-        return { success: false, error: 'Network error', provider: 'BrasilAPI' };
+        return { success: false, status: 500, error: 'Network error', provider: 'BrasilAPI' };
     }
 }
 
@@ -206,7 +210,7 @@ export async function fetchFromCNPJWS(cnpj: string): Promise<ProviderResponse> {
 
         if (!response.ok) {
             console.log(`❌ [CNPJ.WS] Status: ${response.status}`);
-            return { success: false, error: `HTTP ${response.status}`, provider: 'CNPJ.WS' };
+            return { success: false, status: response.status, error: `HTTP ${response.status}`, provider: 'CNPJ.WS' };
         }
 
         const data = await response.json();
@@ -215,6 +219,7 @@ export async function fetchFromCNPJWS(cnpj: string): Promise<ProviderResponse> {
 
         return {
             success: true,
+            status: 200,
             provider: 'CNPJ.WS',
             data: {
                 cnpj: data.estabelecimento?.cnpj || cnpj,
@@ -242,7 +247,7 @@ export async function fetchFromCNPJWS(cnpj: string): Promise<ProviderResponse> {
         };
     } catch (error) {
         console.error(`❌ [CNPJ.WS] Erro de rede:`, error);
-        return { success: false, error: 'Network error', provider: 'CNPJ.WS' };
+        return { success: false, status: 500, error: 'Network error', provider: 'CNPJ.WS' };
     }
 }
 
@@ -251,9 +256,9 @@ export async function fetchFromCNPJWS(cnpj: string): Promise<ProviderResponse> {
  */
 export async function fetchCNPJFromAnyProvider(cnpj: string): Promise<ProviderResponse> {
     const providers = [
-        fetchFromReceitaWS,
-        fetchFromBrasilAPI,
-        fetchFromCNPJWS,
+        fetchFromBrasilAPI, // 1st priority: BrasilAPI (official, generous rate limits)
+        fetchFromReceitaWS, // 2nd priority: ReceitaWS (free tier: 3 req/min)
+        fetchFromCNPJWS,    // 3rd priority: CNPJ.WS (free tier: 3 req/min)
     ];
 
     for (const provider of providers) {
@@ -262,11 +267,23 @@ export async function fetchCNPJFromAnyProvider(cnpj: string): Promise<ProviderRe
             console.log(`✅ Sucesso com ${result.provider}`);
             return result;
         }
+
+        // If the error is a definitive 404 (Not Found), stop immediately to avoid rate limiting other APIs
+        if (result.status === 404) {
+            console.log(`ℹ️ [API] CNPJ ${cnpj} não cadastrado na Receita (404 de ${result.provider}). Parando.`);
+            return {
+                success: false,
+                status: 404,
+                error: 'NOT_FOUND',
+                provider: result.provider,
+            };
+        }
     }
 
     console.log(`❌ CNPJ ${cnpj} não encontrado em nenhum provider`);
     return {
         success: false,
+        status: 500,
         error: 'NOT_FOUND_IN_ANY_PROVIDER',
         provider: 'ALL',
     };

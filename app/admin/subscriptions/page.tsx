@@ -4,7 +4,8 @@
 // Admin: Subscription Management
 
 import { useState, useEffect } from 'react';
-import { CreditCard, Calendar, DollarSign, Users } from 'lucide-react';
+import { CreditCard, Calendar, DollarSign, Users, CheckCircle, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Subscription {
     id: string;
@@ -22,6 +23,7 @@ export default function SubscriptionsPage() {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>('all');
+    const [activatingId, setActivatingId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchSubscriptions();
@@ -36,6 +38,29 @@ export default function SubscriptionsPage() {
             console.error('Failed to fetch subscriptions:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleActivate = async (subId: string) => {
+        if (!confirm('Deseja realmente liberar e ativar esta assinatura manualmente?')) return;
+        setActivatingId(subId);
+        try {
+            const res = await fetch('/api/admin/subscriptions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscriptionId: subId }),
+            });
+            if (res.ok) {
+                toast.success('Assinatura ativada com sucesso!');
+                fetchSubscriptions();
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Erro ao ativar assinatura');
+            }
+        } catch (err) {
+            toast.error('Erro de conexão ao ativar assinatura');
+        } finally {
+            setActivatingId(null);
         }
     };
 
@@ -152,6 +177,9 @@ export default function SubscriptionsPage() {
                             <th className="text-left px-6 py-4 font-medium text-sm text-[var(--color-text-secondary)]">
                                 Vencimento
                             </th>
+                            <th className="text-right px-6 py-4 font-medium text-sm text-[var(--color-text-secondary)]">
+                                Ações
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -192,6 +220,27 @@ export default function SubscriptionsPage() {
                                             ? new Date(sub.current_period_end).toLocaleDateString('pt-BR')
                                             : '-'}
                                     </div>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                    {sub.status !== 'active' ? (
+                                        <button
+                                            onClick={() => handleActivate(sub.id)}
+                                            disabled={activatingId !== null}
+                                            className="px-3.5 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-colors inline-flex items-center gap-1 shadow-sm"
+                                        >
+                                            {activatingId === sub.id ? (
+                                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <ShieldCheck className="w-3.5 h-3.5" />
+                                            )}
+                                            Liberar Acesso
+                                        </button>
+                                    ) : (
+                                        <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1 justify-end font-medium">
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                            Ativo
+                                        </span>
+                                    )}
                                 </td>
                             </tr>
                         ))}

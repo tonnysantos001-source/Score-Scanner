@@ -55,3 +55,53 @@ export async function GET() {
         );
     }
 }
+
+export async function POST(request: Request) {
+    try {
+        await requireAdmin();
+        const supabase = await createClient();
+        const body = await request.json();
+        const { subscriptionId } = body;
+
+        if (!subscriptionId) {
+            return NextResponse.json(
+                { error: 'subscriptionId é obrigatório' },
+                { status: 400 }
+            );
+        }
+
+        const now = new Date();
+        const periodEnd = new Date(now);
+        periodEnd.setDate(periodEnd.getDate() + 30);
+
+        const { error } = await supabase
+            .from('subscriptions')
+            .update({
+                status: 'active',
+                current_period_start: now.toISOString(),
+                current_period_end: periodEnd.toISOString(),
+                external_id: `manual_activation_${Math.random().toString(36).substring(2, 11)}`,
+                updated_at: now.toISOString(),
+                payment_confirmed_at: now.toISOString(),
+            })
+            .eq('id', subscriptionId);
+
+        if (error) throw error;
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        const err = error as Error;
+
+        if (err.message === 'FORBIDDEN') {
+            return NextResponse.json(
+                { error: 'Admin access required' },
+                { status: 403 }
+            );
+        }
+
+        return NextResponse.json(
+            { error: 'Failed to activate subscription: ' + err.message },
+            { status: 500 }
+        );
+    }
+}

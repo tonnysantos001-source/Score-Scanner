@@ -17,7 +17,7 @@ interface UseMiningReturn {
 
 const MINING_CONFIG = {
     maxParallelRequests: 1,
-    delayBetweenRequests: 5000, // 5 seconds - faster mining, accept some rate limits
+    delayBetweenRequests: 1500, // 1.5 seconds - much faster mining, safe since 404s bypass heavy APIs
     delayOnRateLimit: 30000, // 30 seconds wait on rate limit (reduced)
     retryAttempts: 2,
     maxConsecutiveErrors: 100, // Allow many 404s

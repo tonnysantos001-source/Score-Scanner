@@ -1,34 +1,25 @@
-// app/api/admin/settings/route.ts
-// Admin API: Gateway Settings Management
-
-import { requireSuperAdmin } from '@/lib/auth/server';
-import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
     try {
-        await requireSuperAdmin();
-        const supabase = await createClient();
+        await requireAdmin();
+        const supabase = createAdminClient();
 
         const { data, error } = await supabase
             .from('gateway_settings')
-            .select('*')
-            .eq('provider', 'zentripay')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+            .select('*');
 
-        if (error && error.code !== 'PGRST116') {
-            throw error;
-        }
+        if (error) throw error;
 
-        return NextResponse.json({ settings: data || null });
+        return NextResponse.json({ settings: data || [] });
     } catch (error) {
         const err = error as Error;
 
         if (err.message === 'FORBIDDEN') {
             return NextResponse.json(
-                { error: 'Superadmin access required' },
+                { error: 'Admin access required' },
                 { status: 403 }
             );
         }
@@ -42,107 +33,109 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const admin = await requireSuperAdmin();
-        const supabase = await createClient();
+        const admin = await requireAdmin();
+        const supabase = createAdminClient();
         const body = await request.json();
 
-        const { api_key, api_secret, webhook_secret, is_production } = body;
+        const { provider, api_key, api_secret, webhook_secret, is_production, is_active } = body;
 
-        // Validate required fields
-        if (!api_key || !api_secret || !webhook_secret) {
+        if (!provider) {
             return NextResponse.json(
-                { error: 'Missing required fields' },
+                { error: 'Provedor é obrigatório' },
                 { status: 400 }
             );
         }
 
-        const { data, error } = await supabase
-            .from('gateway_settings')
-            .insert({
-                provider: 'zentripay',
-                api_key,
-                api_secret,
-                webhook_secret,
-                is_production: is_production || false,
-                created_by: admin.id,
-                updated_by: admin.id,
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        return NextResponse.json({ success: true, settings: data });
-    } catch (error) {
-        const err = error as Error;
-
-        if (err.message === 'FORBIDDEN') {
-            return NextResponse.json(
-                { error: 'Superadmin access required' },
-                { status: 403 }
-            );
-        }
-
-        return NextResponse.json(
-            { error: 'Failed to save settings' },
-            { status: 500 }
-        );
-    }
-}
-
-export async function PATCH(request: Request) {
-    try {
-        const admin = await requireSuperAdmin();
-        const supabase = await createClient();
-        const body = await request.json();
-
-        const { api_key, api_secret, webhook_secret, is_production } = body;
-
-        // Get current settings
-        const { data: current } = await supabase
+        // Check if settings already exist for this provider
+        const { data: existing } = await supabase
             .from('gateway_settings')
             .select('id')
-            .eq('provider', 'zentripay')
-            .order('created_at', { ascending: false })
+            .eq('provider', provider)
             .limit(1)
-            .single();
+            .maybeSingle();
 
-        if (!current) {
-            return NextResponse.json(
-                { error: 'No settings found. Create them first.' },
-                { status: 404 }
-            );
+        let result;
+        if (existing) {
+            const { data, error } = await supabase
+                .from('gateway_settings')
+                .update({
+                    api_key,
+                    api_secret,
+                    webhook_secret,
+                    is_production: is_production || false,
+                    updated_by: admin.id,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', existing.id)
+                .select()
+                .single();
+            if (error) throw error;
+            result = data;
+        } else {
+            const { data, error } = await supabase
+                .from('gateway_settings')
+                .insert({
+                    provider,
+                    api_key,
+                    api_secret,
+                    webhook_secret,
+                    is_production: is_production || false,
+                    created_by: admin.id,
+                    updated_by: admin.id,
+                })
+                .select()
+                .single();
+            if (error) throw error;
+            result = data;
         }
 
-        const { data, error } = await supabase
-            .from('gateway_settings')
-            .update({
-                api_key,
-                api_secret,
-                webhook_secret,
-                is_production,
-                updated_by: admin.id,
-            })
-            .eq('id', current.id)
-            .select()
-            .single();
+        // If is_active is true, configure active_gateway row
+        if (is_active) {
+            const { data: activeExisting } = await supabase
+                .from('gateway_settings')
+                .select('id')
+                .eq('provider', 'active_gateway')
+                .limit(1)
+                .maybeSingle();
 
-        if (error) throw error;
+            if (activeExisting) {
+                const { error: activeErr } = await supabase
+                    .from('gateway_settings')
+                    .update({
+                        api_key: provider,
+                        updated_by: admin.id,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', activeExisting.id);
+                if (activeErr) throw activeErr;
+            } else {
+                const { error: activeErr } = await supabase
+                    .from('gateway_settings')
+                    .insert({
+                        provider: 'active_gateway',
+                        api_key: provider,
+                        created_by: admin.id,
+                        updated_by: admin.id,
+                    });
+                if (activeErr) throw activeErr;
+            }
+        }
 
-        return NextResponse.json({ success: true, settings: data });
+        return NextResponse.json({ success: true, settings: result });
     } catch (error) {
         const err = error as Error;
 
         if (err.message === 'FORBIDDEN') {
             return NextResponse.json(
-                { error: 'Superadmin access required' },
+                { error: 'Admin access required' },
                 { status: 403 }
             );
         }
 
         return NextResponse.json(
-            { error: 'Failed to update settings' },
+            { error: 'Failed to save settings: ' + err.message },
             { status: 500 }
         );
     }
 }
+

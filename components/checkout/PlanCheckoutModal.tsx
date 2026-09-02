@@ -29,9 +29,12 @@ export default function PlanCheckoutModal({
     const [errorMsg, setErrorMsg] = useState('');
     const [copied, setCopied] = useState(false);
     const [elapsed, setElapsed] = useState(0);
+    const [paymentData, setPaymentData] = useState<any>(null);
 
-    // Gera QR code via API pública (sem dependência extra)
-    const qrImageUrl = paymentCode
+    const isBRCode = paymentCode.startsWith('000201');
+
+    // Gera QR code via API pública se for um código Pix válido (BR Code)
+    const qrImageUrl = isBRCode && paymentCode
         ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(paymentCode)}&size=220x220&bgcolor=0f172a&color=ffffff&margin=2`
         : '';
 
@@ -46,8 +49,9 @@ export default function PlanCheckoutModal({
                 });
                 const data = await res.json();
                 if (!res.ok || !data.success) throw new Error(data.error || 'Falha ao gerar PIX');
-                setPaymentCode(data.data.paymentCode);
+                setPaymentCode(data.data.qrCode || data.data.paymentCode || '');
                 setSubscriptionId(data.data.subscriptionId);
+                setPaymentData(data.data);
                 setStep('pix');
             } catch (err) {
                 setErrorMsg((err as Error).message);
@@ -67,7 +71,7 @@ export default function PlanCheckoutModal({
             .eq('id', subscriptionId)
             .single();
 
-        if (data?.status === 'active') {
+        if (data?.status === 'active' || data?.status === 'paid') {
             setStep('success');
             setTimeout(onSuccess, 2000);
         }
@@ -86,6 +90,7 @@ export default function PlanCheckoutModal({
         setTimeout(() => setCopied(false), 2500);
     };
 
+    const isManual = paymentData?.provider === 'manual';
     const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
     const seconds = (elapsed % 60).toString().padStart(2, '0');
 
@@ -110,7 +115,7 @@ export default function PlanCheckoutModal({
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
                         <div>
-                            <h3 className="font-bold text-white">Pagar via PIX</h3>
+                            <h3 className="font-bold text-white">{isManual ? 'Pix Manual' : 'Pagar via PIX'}</h3>
                             <p className="text-xs text-slate-400">
                                 {planName} · R$ {Number(planPrice).toFixed(2).replace('.', ',')}/mês
                             </p>
@@ -127,36 +132,52 @@ export default function PlanCheckoutModal({
                         {step === 'loading' && (
                             <div className="text-center py-10">
                                 <Loader2 className="w-10 h-10 text-blue-400 animate-spin mx-auto mb-3" />
-                                <p className="text-sm text-slate-400">Gerando QR Code PIX...</p>
+                                <p className="text-sm text-slate-400">Gerando dados do Pix...</p>
                             </div>
                         )}
 
                         {/* ─── PIX pronto ─── */}
                         {step === 'pix' && (
                             <div className="space-y-4">
-                                {/* QR Code */}
-                                <div className="flex justify-center">
-                                    <div className="bg-[#0f172a] rounded-xl p-1 border border-white/10 shadow-lg">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={qrImageUrl}
-                                            alt="QR Code PIX"
-                                            width={220}
-                                            height={220}
-                                            className="rounded-lg"
-                                        />
+                                {/* QR Code (Only if valid BR Code) */}
+                                {isBRCode && qrImageUrl && (
+                                    <div className="flex justify-center">
+                                        <div className="bg-[#0f172a] rounded-xl p-1 border border-white/10 shadow-lg">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={qrImageUrl}
+                                                alt="QR Code PIX"
+                                                width={220}
+                                                height={220}
+                                                className="rounded-lg"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {/* Manual details (holder name and key type) */}
+                                {isManual && paymentData?.manual && (
+                                    <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 text-xs space-y-2">
+                                        <h4 className="font-semibold text-purple-400">Dados do Recebedor</h4>
+                                        <p><span className="text-slate-400">Titular:</span> <span className="font-medium text-slate-200">{paymentData.manual.holderName}</span></p>
+                                        <p><span className="text-slate-400">Chave Pix:</span> <span className="font-mono font-medium text-slate-200 break-all">{paymentData.manual.pixKey}</span></p>
+                                    </div>
+                                )}
 
                                 {/* Instrução */}
                                 <p className="text-center text-xs text-slate-400">
-                                    Escaneie o QR code com o app do seu banco ou copie o código abaixo
+                                    {isManual 
+                                        ? 'Copie a chave Pix abaixo para realizar o pagamento no seu banco'
+                                        : 'Escaneie o QR code com o app do seu banco ou copie o código abaixo'
+                                    }
                                 </p>
 
                                 {/* Código copia/cola */}
                                 <div className="bg-white/5 rounded-xl border border-white/10 p-3">
-                                    <p className="text-xs text-slate-500 mb-1.5 font-medium">PIX Copia e Cola</p>
-                                    <p className="text-xs text-slate-300 font-mono break-all leading-relaxed line-clamp-3">
+                                    <p className="text-xs text-slate-500 mb-1.5 font-medium">
+                                        {isManual ? 'Chave Pix' : 'PIX Copia e Cola'}
+                                    </p>
+                                    <p className="text-xs text-slate-300 font-mono break-all leading-relaxed line-clamp-3 select-all">
                                         {paymentCode}
                                     </p>
                                 </div>
@@ -170,14 +191,24 @@ export default function PlanCheckoutModal({
                                 >
                                     {copied
                                         ? <><CheckCircle2 className="w-4 h-4" />Copiado!</>
-                                        : <><Copy className="w-4 h-4" />Copiar Código PIX</>
+                                        : <><Copy className="w-4 h-4" />{isManual ? 'Copiar Chave Pix' : 'Copiar Código PIX'}</>
                                     }
                                 </button>
+
+                                {/* Manual Pix Instructions */}
+                                {isManual && paymentData?.manual?.instructions && (
+                                    <div className="bg-yellow-500/5 border border-yellow-500/10 rounded-xl p-3 text-[11px] text-yellow-400/90 whitespace-pre-line leading-relaxed">
+                                        {paymentData.manual.instructions}
+                                    </div>
+                                )}
 
                                 {/* Status polling */}
                                 <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
                                     <Loader2 className="w-3 h-3 animate-spin" />
-                                    Aguardando pagamento... <span className="font-mono text-slate-400">{minutes}:{seconds}</span>
+                                    {isManual 
+                                        ? 'Aguardando liberação pelo administrador...'
+                                        : <><Clock className="w-3 h-3" /> Aguardando pagamento... <span className="font-mono text-slate-400">{minutes}:{seconds}</span></>
+                                    }
                                 </div>
                             </div>
                         )}
@@ -214,7 +245,7 @@ export default function PlanCheckoutModal({
                     </div>
 
                     {/* Rodapé segurança */}
-                    {step === 'pix' && (
+                    {step === 'pix' && !isManual && (
                         <div className="px-5 pb-4 flex items-center justify-center gap-1.5 text-xs text-slate-600">
                             <QrCode className="w-3 h-3" />
                             Pagamento seguro via Pix · Banco Central do Brasil

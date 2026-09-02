@@ -9,6 +9,7 @@ import { Check, Copy, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { PLANS } from '@/lib/plans/constants';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function CheckoutPage() {
     const params = useParams();
@@ -31,6 +32,11 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         if (!payment) return;
+
+        // Skip countdown for manual Pix
+        if (payment.provider === 'manual') {
+            setTimeLeft(86400 * 7); // 7 days in seconds
+        }
 
         // Countdown timer
         const timer = setInterval(() => {
@@ -86,7 +92,7 @@ export default function CheckoutPage() {
             );
             const data = await res.json();
 
-            if (data.status === 'paid') {
+            if (data.status === 'active' || data.status === 'paid') {
                 toast.success('Pagamento confirmado!');
                 router.push('/dashboard?payment=success');
             }
@@ -107,6 +113,10 @@ export default function CheckoutPage() {
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
+        if (seconds > 86400) {
+            const days = Math.floor(seconds / 86400);
+            return `${days} dias`;
+        }
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
@@ -124,6 +134,8 @@ export default function CheckoutPage() {
             </div>
         );
     }
+
+    const isManual = payment?.provider === 'manual';
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white py-12 px-4">
@@ -166,36 +178,55 @@ export default function CheckoutPage() {
 
                     {/* Right: PIX Payment */}
                     <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-2xl p-8">
-                        <h2 className="text-2xl font-bold mb-6">Pagamento via PIX</h2>
+                        <h2 className="text-2xl font-bold mb-6">
+                            {isManual ? 'Pagamento Pix Manual' : 'Pagamento via PIX'}
+                        </h2>
 
-                        {/* Timer */}
-                        <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${timeLeft < 300
-                                ? 'bg-red-500/10 border border-red-500/20'
-                                : 'bg-blue-500/10 border border-blue-500/20'
-                            }`}>
-                            <AlertCircle className={`w-5 h-5 ${timeLeft < 300 ? 'text-red-500' : 'text-blue-500'
-                                }`} />
-                            <div>
-                                <p className="font-medium">
-                                    {timeLeft > 0 ? 'Expira em' : 'QR Code expirado'}
-                                </p>
-                                <p className={`text-2xl font-bold ${timeLeft < 300 ? 'text-red-400' : 'text-blue-400'
-                                    }`}>
-                                    {formatTime(timeLeft)}
-                                </p>
+                        {/* Timer (only for automatic providers) */}
+                        {!isManual && (
+                            <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${timeLeft < 300
+                                    ? 'bg-red-500/10 border border-red-500/20'
+                                    : 'bg-blue-500/10 border border-blue-500/20'
+                                }`}>
+                                <AlertCircle className={`w-5 h-5 ${timeLeft < 300 ? 'text-red-500' : 'text-blue-500'
+                                    }`} />
+                                <div>
+                                    <p className="font-medium">
+                                        {timeLeft > 0 ? 'Expira em' : 'QR Code expirado'}
+                                    </p>
+                                    <p className={`text-2xl font-bold ${timeLeft < 300 ? 'text-red-400' : 'text-blue-400'
+                                        }`}>
+                                        {formatTime(timeLeft)}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* QR Code */}
-                        {payment?.qrCodeBase64 && (
-                            <div className="bg-white p-6 rounded-xl mb-6">
-                                <div className="aspect-square relative">
-                                    <Image
-                                        src={`data:image/png;base64,${payment.qrCodeBase64}`}
-                                        alt="QR Code PIX"
-                                        fill
-                                        className="object-contain"
-                                    />
+                        {/* QR Code rendering */}
+                        {payment?.qrCode && (
+                            <div className="bg-white p-6 rounded-xl mb-6 flex items-center justify-center">
+                                {payment.qrCodeBase64 ? (
+                                    <div className="aspect-square relative w-full max-w-[250px]">
+                                        <Image
+                                            src={`data:image/png;base64,${payment.qrCodeBase64}`}
+                                            alt="QR Code PIX"
+                                            fill
+                                            className="object-contain"
+                                        />
+                                    </div>
+                                ) : (
+                                    <QRCodeSVG value={payment.qrCode} size={220} />
+                                )}
+                            </div>
+                        )}
+
+                        {/* Manual details */}
+                        {isManual && payment?.manual && (
+                            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-6">
+                                <h3 className="font-semibold text-purple-400 mb-2">Dados do Pix</h3>
+                                <div className="space-y-2 text-sm">
+                                    <p><span className="text-gray-400">Titular:</span> <span className="font-medium">{payment.manual.holderName}</span></p>
+                                    <p><span className="text-gray-400">Chave Pix:</span> <span className="font-mono font-medium">{payment.manual.pixKey}</span></p>
                                 </div>
                             </div>
                         )}
@@ -204,18 +235,18 @@ export default function CheckoutPage() {
                         {payment?.qrCode && (
                             <div className="mb-6">
                                 <label className="block text-sm font-medium mb-2">
-                                    Código PIX (Copia e Cola)
+                                    {isManual ? 'Chave Pix (Copia e Cola)' : 'Código PIX (Copia e Cola)'}
                                 </label>
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
                                         value={payment.qrCode}
                                         readOnly
-                                        className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-sm font-mono"
+                                        className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-sm font-mono focus:outline-none"
                                     />
                                     <button
                                         onClick={copyPixCode}
-                                        className="px-6 bg-blue-500 hover:bg-blue-600 rounded-xl flex items-center gap-2 transition-colors"
+                                        className="px-6 bg-blue-500 hover:bg-blue-600 rounded-xl flex items-center gap-2 transition-colors flex-shrink-0"
                                     >
                                         {copied ? (
                                             <>
@@ -236,30 +267,54 @@ export default function CheckoutPage() {
                         {/* Instructions */}
                         <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-4">
                             <h4 className="font-medium mb-3">Como pagar:</h4>
-                            <ol className="space-y-2 text-sm text-gray-300">
-                                <li className="flex gap-2">
-                                    <span className="font-bold text-blue-400">1.</span>
-                                    Abra o app do seu banco
-                                </li>
-                                <li className="flex gap-2">
-                                    <span className="font-bold text-blue-400">2.</span>
-                                    Escaneie o QR Code ou copie o código
-                                </li>
-                                <li className="flex gap-2">
-                                    <span className="font-bold text-blue-400">3.</span>
-                                    Confirme o pagamento
-                                </li>
-                                <li className="flex gap-2">
-                                    <span className="font-bold text-blue-400">4.</span>
-                                    Aguarde a confirmação automática
-                                </li>
-                            </ol>
+                            {isManual ? (
+                                <div className="space-y-4">
+                                    <ol className="space-y-2 text-sm text-gray-300">
+                                        <li className="flex gap-2">
+                                            <span className="font-bold text-blue-400">1.</span>
+                                            Copie a chave Pix acima ou escaneie o QR Code.
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="font-bold text-blue-400">2.</span>
+                                            Faça o Pix de R$ {plan.price} pelo aplicativo do seu banco.
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="font-bold text-blue-400">3.</span>
+                                            Aguarde a liberação do plano pelo administrador do sistema.
+                                        </li>
+                                    </ol>
+                                    {payment.manual.instructions && (
+                                        <div className="border-t border-gray-700 pt-3 mt-2 text-xs text-yellow-400 whitespace-pre-line">
+                                            {payment.manual.instructions}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <ol className="space-y-2 text-sm text-gray-300">
+                                    <li className="flex gap-2">
+                                        <span className="font-bold text-blue-400">1.</span>
+                                        Abra o app do seu banco
+                                    </li>
+                                    <li className="flex gap-2">
+                                        <span className="font-bold text-blue-400">2.</span>
+                                        Escaneie o QR Code ou copie o código
+                                    </li>
+                                    <li className="flex gap-2">
+                                        <span className="font-bold text-blue-400">3.</span>
+                                        Confirme o pagamento
+                                    </li>
+                                    <li className="flex gap-2">
+                                        <span className="font-bold text-blue-400">4.</span>
+                                        Aguarde a confirmação automática
+                                    </li>
+                                </ol>
+                            )}
                         </div>
 
                         {/* Status */}
-                        <div className="mt-6 flex items-center justify-center gap-2 text-yellow-500">
+                        <div className="mt-6 flex items-center justify-center gap-2 text-yellow-500 text-sm font-medium">
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            Aguardando pagamento...
+                            {isManual ? 'Aguardando liberação pelo administrador...' : 'Aguardando pagamento...'}
                         </div>
                     </div>
                 </div>
