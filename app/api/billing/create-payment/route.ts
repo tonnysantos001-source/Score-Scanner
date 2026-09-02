@@ -5,7 +5,7 @@ import { AlphaCashClient } from '@/lib/alphacash/client';
 import { generateCPF, generatePhone, generateName } from '@/lib/utils/random-generator';
 import { NextResponse } from 'next/server';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://verifyads.net';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://score-scanner-7q2s.vercel.app';
 
 export async function POST(request: Request) {
     try {

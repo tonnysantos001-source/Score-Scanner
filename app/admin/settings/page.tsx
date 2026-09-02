@@ -58,7 +58,7 @@ export default function SettingsPage() {
         }
     };
 
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://verifyads.net';
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://score-scanner-7q2s.vercel.app';
     const webhookZentri = `${baseUrl}/api/webhooks/zentripay`;
     const webhookAlpha = `${baseUrl}/api/webhooks/alphacash`;
 
