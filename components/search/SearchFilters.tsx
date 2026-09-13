@@ -8,13 +8,14 @@ interface SearchFiltersProps {
     disabled?: boolean;
 }
 
-// Filtro fixo — capital social de R$ 20.000.000 até R$ 1.000.000.000 (não editável pelo usuário)
+// Filtro fixo — Instituições de Pagamento com capital de R$ 20.000.000 até R$ 1.000.000.000
 const FIXED_FILTERS: MiningFilters = {
     ...DEFAULT_MINING_FILTERS,
     capitalMinimo: 20000000,
     useCapitalFilter: true,
     capitalMaximo: 1000000000,
     useCapitalMaximoFilter: true,
+    apenasPagamentos: true,
 };
 
 export default function SearchFilters({ onStartMining, disabled = false }: SearchFiltersProps) {
@@ -25,6 +26,8 @@ export default function SearchFilters({ onStartMining, disabled = false }: Searc
                 <p className="text-sm font-semibold">
                     🎯 O sistema vai buscar{' '}
                     <span className="text-[var(--color-accent-primary)] text-lg">{MINING_QUANTITY} empresas ATIVAS</span>
+                    {' '}de{' '}
+                    <span className="text-emerald-400 font-black">INSTITUIÇÃO DE PAGAMENTO</span>
                     {' '}com capital de{' '}
                     <span className="text-blue-400 font-black">R$ 20 milhões até R$ 1 bilhão</span>
                 </p>

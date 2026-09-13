@@ -23,6 +23,9 @@ export interface MiningFilters {
 
     // Company size
     porte: 'ME' | 'EPP' | 'DEMAIS' | 'TODOS';
+
+    // Toggle to filter only payment institutions and related companies
+    apenasPagamentos?: boolean;
 }
 
 
@@ -35,6 +38,7 @@ export const DEFAULT_MINING_FILTERS: MiningFilters = {
     useUfFilter: false,
     porte: 'TODOS',
     usePorteFilter: false,
+    apenasPagamentos: true,         // Apenas Instituições de Pagamento e relacionados
 };
 
 

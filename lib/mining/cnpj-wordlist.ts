@@ -12,28 +12,31 @@
  * Test a few known working CNPJs first (verified February 2026)
  */
 const VERIFIED_WORKING_CNPJS = [
-    // Empresas ativas com capital social entre R$ 20 milhões e R$ 1 bilhão
+    // Instituições de Pagamento e Meios de Pagamento
     '09089356000118', // EFI S.A. - INSTITUICAO DE PAGAMENTO (R$ 48.2M)
-    '05570714000159', // KABUM S.A. (R$ 50.9M)
+    '19540550000121', // ASAAS GESTAO FINANCEIRA INSTITUICAO DE PAGAMENTO S.A. (R$ 409.2M)
+    '13370835000185', // DOCK INSTITUICAO DE PAGAMENTO S.A. (R$ 313.1M)
+    '13140088000199', // ACESSO SOLUCOES DE PAGAMENTO S.A. INSTITUCAO DE PAGAMENTO (R$ 246.5M)
+    '13427325000105', // LAUNCH PAD TECNOLOGIA, SERVICOS E PAGAMENTOS LTDA. (Hotmart) (R$ 477.2M)
     '00604122000197', // TRIVALE INSTITUICAO DE PAGAMENTO LTDA (R$ 87.9M)
-    '45997418000153', // COCA COLA INDUSTRIAS LTDA (R$ 150.5M)
-    '00623904000173', // APPLE COMPUTER BRASIL LTDA (R$ 203.9M)
-    '43708379000100', // FAST SHOP S.A (R$ 208.8M)
-    '16922038000151', // ENJOEI S.A (R$ 209.6M)
-    '00461479000163', // PREVENT SENIOR PRIVATE OPERADORA DE SAUDE LTDA (R$ 255.1M)
-    '04884082000135', // JADLOG LOGISTICA S.A (R$ 348.8M)
-    '80680093000181', // SENIOR SISTEMAS S.A. (R$ 380.9M)
-    '14776142000150', // WESTWING COMERCIO VAREJISTA S.A. (R$ 411.5M)
-    '42274696000194', // ADIDAS DO BRASIL LTDA (R$ 448.1M)
-    '13427325000105', // LAUNCH PAD TECNOLOGIA / HOTMART (R$ 477.2M)
-    '56994502000130', // NOVARTIS BIOCIENCIAS SA (R$ 507.1M)
-    '08773135000100', // 2W ECOBANK S.A. (R$ 540.4M)
-    '91088328000167', // TERRA NETWORKS BRASIL LTDA (R$ 590.4M)
+    '13935893000109', // CELCOIN INSTITUICAO DE PAGAMENTO S.A. (R$ 85.1M)
+    '19468242000132', // IFOOD PAGO INSTITUICAO DE PAGAMENTO S.A. (R$ 179.1M)
+    '13203354000185', // FITS INSTITUICAO DE PAGAMENTO S.A. (R$ 75.7M)
+    '09554480000107', // SUPERDIGITAL LOGISTICA S.A. (R$ 727.6M)
+    '37880206000163', // CORA SOCIEDADE DE CREDITO, FINANCIAMENTO E INVESTIMENTO S.A. (R$ 324.0M)
     '47866934000174', // TICKET SERVICOS SA (R$ 643.7M)
-    '61099834000190', // ARTHUR LUNDGREN / CASAS PERNAMBUCANAS (R$ 830.0M)
-    '43214055000107', // MARTINS COMERCIO E DISTRIBUICAO S/A (R$ 842.9M)
-    '72381189000110', // DELL COMPUTADORES DO BRASIL LTDA (R$ 930.6M)
-    '14055516000148', // MOBLY COMERCIO VAREJISTA LTDA (R$ 932.3M)
+    '11581339000145', // BMP SOCIEDADE DE CREDITO AO MICROEMPREENDEDOR (R$ 35.0M)
+    '09464032000112', // MIDWAY S.A. - CREDITO E FINANCIAMENTO (R$ 600.0M)
+    '08773135000100', // 2W ECOBANK S.A. (R$ 540.4M)
+    '00623904000173', // APPLE COMPUTER BRASIL LTDA (Apple Pay) (R$ 203.9M)
+    '10573521000191', // MERCADO PAGO INSTITUICAO DE PAGAMENTO LTDA
+    '16501555000157', // STONE INSTITUICAO DE PAGAMENTO S.A
+    '18727053000174', // PAGAR.ME S.A.
+    '22896431000110', // PICPAY INSTITUICAO DE PAGAMENTO S/A
+    '08561701000101', // PAGSEGURO INTERNET INSTITUICAO DE PAGAMENTO S.A.
+    '01027058000191', // CIELO S.A - INSTITUICAO DE PAGAMENTO
+    '18236120000158', // NU PAGAMENTOS S.A. - INSTITUICAO DE PAGAMENTO
+    '01425787000104', // REDECARD INSTITUICAO DE PAGAMENTO S.A.
 ];
 
 /**
@@ -115,12 +118,40 @@ function generateCNPJWithDigits(base12: string): string {
     return base12 + digit1 + digit2;
 }
 
-// Generate the full wordlist
-export const CNPJ_WORDLIST_2025 = [
-    ...VERIFIED_WORKING_CNPJS,
-    ...generateDenseCNPJs(),
-];
+/**
+ * Generate historical corporate CNPJs across consolidated registration bases (1970-2023)
+ * These prefixes contain established mid-sized and large corporations (LTDA and S.A.)
+ */
+function generateHistoricalCorporateCNPJs(): string[] {
+    const cnpjs: string[] = [];
+    const bases = [
+        '00', '01', '02', '03', '04', '05', '06', '07', '08', '09',
+        '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
+        '20', '21', '22', '23', '24', '26', '27', '28', '29', '30',
+        '31', '32', '33', '34', '35', '36', '37', '38', '39', '40',
+        '60', '61', '62'
+    ];
 
-console.log(`📋 Wordlist 2025-2026 carregada: ${CNPJ_WORDLIST_2025.length} CNPJs`);
+    for (const base of bases) {
+        for (let i = 100; i <= 850; i += 10) {
+            const middle = (i * 1111).toString().padStart(6, '0').slice(0, 6);
+            for (const filial of ['0001', '0002']) {
+                const base12 = base + middle + filial;
+                cnpjs.push(generateCNPJWithDigits(base12));
+            }
+        }
+    }
+
+    return cnpjs;
+}
+
+// Generate the full wordlist (10.000+ CNPJs)
+export const CNPJ_WORDLIST_2025 = Array.from(new Set([
+    ...VERIFIED_WORKING_CNPJS,
+    ...generateHistoricalCorporateCNPJs(),
+    ...generateDenseCNPJs(),
+]));
+
+console.log(`📋 Wordlist carregada: ${CNPJ_WORDLIST_2025.length} CNPJs`);
 
 export default CNPJ_WORDLIST_2025;

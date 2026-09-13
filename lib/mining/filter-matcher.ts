@@ -38,7 +38,59 @@ export function matchesFilters(
         if (company.porte !== filters.porte) return false;
     }
 
+    // Check payment institution & related companies - ONLY if filter is enabled
+    if (filters.apenasPagamentos) {
+        if (!isPaymentInstitution(company)) return false;
+    }
+
     return true;
+}
+
+/**
+ * Check if a company is a Payment Institution or payment-related entity
+ */
+export function isPaymentInstitution(company: EnhancedCompanyData): boolean {
+    const textToSearch = [
+        company.razao_social || '',
+        company.nome_fantasia || '',
+        company.cnae_fiscal_descricao || '',
+        ...(company.cnaes_secundarios || []).map(c => c.descricao || '')
+    ].join(' ').toUpperCase();
+
+    const paymentKeywords = [
+        'INSTITUICAO DE PAGAMENTO',
+        'INSTITUICAO DE PAGAMENTOS',
+        'INSTITUCAO DE PAGAMENTO',
+        'MEIOS DE PAGAMENTO',
+        'MEIO DE PAGAMENTO',
+        'SERVICOS DE PAGAMENTO',
+        'SOLUCOES DE PAGAMENTO',
+        'SOLUCAO DE PAGAMENTO',
+        'INTERMEDIACAO DE PAGAMENTO',
+        'INTERMEDIACAO DE PAGAMENTOS',
+        'PROCESSAMENTO DE PAGAMENTO',
+        'PROCESSADORA',
+        'SUBADQUIRENTE',
+        'ADQUIRENCIA',
+        'PAGAMENTO',
+        'PAGAMENTOS',
+        'PAGAR.ME',
+        'PAGBANK',
+        'PICPAY',
+        'HOTMART',
+        'GATEWAY',
+        'CHECKOUT',
+        'CARTOES DE CREDITO',
+        'CARTAO DE CREDITO',
+        'ADMINISTRACAO DE CARTOES',
+        'OPERADORAS DE CARTOES',
+        'AUXILIARES DOS SERVICOS FINANCEIROS',
+        'ECOBANK',
+        'FINTECH',
+        'SOCIEDADE DE CREDITO'
+    ];
+
+    return paymentKeywords.some(keyword => textToSearch.includes(keyword));
 }
 
 /**
