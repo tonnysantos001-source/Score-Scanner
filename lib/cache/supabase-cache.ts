@@ -145,16 +145,16 @@ export class SupabaseCache {
         try {
             const { error } = await supabase
                 .from('cnpj_blacklist')
-                .insert({
+                .upsert({
                     cnpj: entry.cnpj,
                     reason: entry.reason,
+                }, {
+                    onConflict: 'cnpj',
+                    ignoreDuplicates: true,
                 });
 
             if (error) {
-                // Ignore duplicate key errors
-                if (error.code !== '23505') {
-                    console.error('Error inserting blacklist:', error);
-                }
+                console.error('Error inserting blacklist:', error);
             } else {
                 console.log(`❌ Synced to Supabase blacklist: ${entry.cnpj}`);
             }
@@ -173,8 +173,11 @@ export class SupabaseCache {
         try {
             const { error } = await supabase
                 .from('cnpj_used')
-                .insert({
+                .upsert({
                     cnpj,
+                }, {
+                    onConflict: 'cnpj',
+                    ignoreDuplicates: true,
                 });
 
             if (error) {
