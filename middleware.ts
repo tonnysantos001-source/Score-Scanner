@@ -63,12 +63,20 @@ export async function middleware(request: NextRequest) {
 
     if (!isMainDomain) {
         // It's a custom domain!
-        console.log(`[Middleware] Custom Domain detected: ${hostname}`);
+        console.log(`[Middleware] Custom Domain detected: ${hostname}, path: ${request.nextUrl.pathname}`);
 
         // Rewrite to the landing page handler
-        // We pass the hostname as a query param so the page knows which content to load
         const url = request.nextUrl.clone();
-        url.pathname = `/l/domain/${hostname}`;
+        const path = request.nextUrl.pathname.replace(/\/+$/, '');
+
+        if (path === '/privacidade') {
+            url.pathname = `/l/domain/${hostname}/privacidade`;
+        } else if (path === '/termos') {
+            url.pathname = `/l/domain/${hostname}/termos`;
+        } else {
+            url.pathname = `/l/domain/${hostname}`;
+        }
+
         return NextResponse.rewrite(url);
     }
 
