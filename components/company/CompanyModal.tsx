@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { EnhancedCompanyData } from '@/types/company';
 import { formatCNPJ } from '@/lib/utils/cnpj';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import { X, Share2, CheckCircle2, Eye, Link as LinkIcon, FileText, Loader2, Globe, Lock, Save, ExternalLink } from 'lucide-react';
+import { X, Share2, CheckCircle2, Eye, Link as LinkIcon, FileText, Loader2, Globe, Lock, Save, ExternalLink, Scroll } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,31 +67,41 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
         return () => { cancelled = true; };
     }, []);
 
-    const handleOpenPDF = async () => {
+    const handleOpenPDF = async (docType: 'cnpj' | 'contrato' = 'cnpj') => {
         try {
             setIsPdfLoading(true);
 
-            // If this is a fast-path stub (missing data_inicio_atividade), we must fetch the full data first
+            // If this is a fast-path stub (missing data_inicio_atividade or qsa), fetch full data first
             let fullCompanyData = company;
-            if (!company.data_inicio_atividade && !company.data_abertura) {
+            if (!company.data_inicio_atividade || (docType === 'contrato' && (!company.qsa || company.qsa.length === 0))) {
                 const cleanCnpj = company.cnpj.replace(/\D/g, '');
                 const res = await fetch(`/api/cnpj?cnpj=${cleanCnpj}`);
                 if (res.ok) {
-                    fullCompanyData = await res.json();
+                    const fetched = await res.json();
+                    fullCompanyData = { ...company, ...fetched };
                 } else {
                     console.warn('[CompanyModal] Failed to fetch full company data for PDF, using stub.');
                 }
             }
 
-            const { generateOfficialPDF } = await import('@/lib/pdf/official-pdf');
-            const blob = await generateOfficialPDF(fullCompanyData, {
-                telefone: telefone || undefined,
-                email: email || undefined,
-            });
+            let blob: Blob;
+            if (docType === 'contrato') {
+                const { generateContratoSocialPDF } = await import('@/lib/pdf/contrato-social-pdf');
+                blob = await generateContratoSocialPDF(fullCompanyData);
+                toast.success('Contrato Social gerado!', { description: 'Use Ctrl+S para salvar o PDF' });
+            } else {
+                const { generateOfficialPDF } = await import('@/lib/pdf/official-pdf');
+                blob = await generateOfficialPDF(fullCompanyData, {
+                    telefone: telefone || undefined,
+                    email: email || undefined,
+                });
+                toast.success('Cartão CNPJ gerado!', { description: 'Use Ctrl+S para salvar o PDF' });
+            }
+
             const url = URL.createObjectURL(blob);
             window.open(url, '_blank');
-            toast.success('PDF gerado!', { description: 'Use Ctrl+S para salvar' });
-        } catch {
+        } catch (err) {
+            console.error('Erro ao gerar PDF:', err);
             toast.error('Erro ao gerar PDF');
         } finally {
             setIsPdfLoading(false);
@@ -388,23 +398,49 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                 {/* ── FOOTER ── */}
                 <div className="px-3 pb-3 shrink-0">
                     {hasActivePlan ? (
-                        <button
-                            onClick={handleOpenPDF}
-                            disabled={isPdfLoading}
-                            className="w-full py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 disabled:opacity-60 text-white transition flex items-center justify-center gap-2 shadow shadow-red-900/30"
-                        >
-                            {isPdfLoading ? (
-                                <><Loader2 className="w-4 h-4 animate-spin" /> GERANDO PDF...</>
-                            ) : (
-                                <><FileText className="w-4 h-4" /> GERAR PDF</>
-                            )}
-                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => handleOpenPDF('cnpj')}
+                                disabled={isPdfLoading}
+                                className="py-2.5 px-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 disabled:opacity-60 text-white transition flex flex-col items-center justify-center gap-0.5 shadow shadow-red-900/30"
+                            >
+                                {isPdfLoading ? (
+                                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> GERANDO...</>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-1.5">
+                                            <FileText className="w-3.5 h-3.5" />
+                                            <span>CARTÃO CNPJ</span>
+                                        </div>
+                                        <span className="text-[9px] text-red-200 font-normal">Opção CNPJ no Meta</span>
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => handleOpenPDF('contrato')}
+                                disabled={isPdfLoading}
+                                className="py-2.5 px-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 disabled:opacity-60 text-white transition flex flex-col items-center justify-center gap-0.5 shadow shadow-blue-900/30"
+                            >
+                                {isPdfLoading ? (
+                                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> GERANDO...</>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-1.5">
+                                            <Scroll className="w-3.5 h-3.5" />
+                                            <span>CONTRATO SOCIAL</span>
+                                        </div>
+                                        <span className="text-[9px] text-blue-200 font-normal">Opção Contrato no Meta</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     ) : (
                         <button
                             onClick={() => toast.error('Assine um plano para gerar o PDF', { description: 'Acesse Minha Conta → Planos.' })}
                             className="w-full py-2.5 rounded-xl text-sm font-bold bg-gray-800 border border-gray-700 text-gray-500 flex items-center justify-center gap-2 cursor-not-allowed"
                         >
-                            <Lock className="w-4 h-4" /> GERAR PDF — Plano necessário
+                            <Lock className="w-4 h-4" /> GERAR DOCUMENTO — Plano necessário
                         </button>
                     )}
                 </div>
