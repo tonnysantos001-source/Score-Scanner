@@ -26,15 +26,17 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://score-scanner-7q2s
 
 export default async function CustomDomainPage({ params }: Props) {
     const { domain } = await params;
-    const decodedDomain = decodeURIComponent(domain);
+    const rawDomain = decodeURIComponent(domain).toLowerCase().replace(/:\d+$/, '').trim();
+    const apexDomain = rawDomain.replace(/^www\./, '');
+    const decodedDomain = rawDomain;
     const supabase = createAdminClient();
 
     // 1. Fetch domain record + landing page config
-    const { data: verifiedDomain } = await supabase
+    let { data: verifiedDomain } = await supabase
         .from('verified_domains')
         .select('*, landing_pages(*)')
-        .eq('domain', decodedDomain)
-        .single();
+        .or(`domain.eq.${rawDomain},domain.eq.${apexDomain}`)
+        .maybeSingle();
 
     if (!verifiedDomain) {
         return (

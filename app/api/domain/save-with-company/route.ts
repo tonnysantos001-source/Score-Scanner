@@ -147,10 +147,15 @@ export async function POST(request: NextRequest) {
             .update(domainUpdatePayload)
             .eq('id', targetDomain.id);
 
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://score-scanner-7q2s.vercel.app';
+        const generatedSlug = generateSlug(company_name, cleanCnpj);
+
         return NextResponse.json({
             success: true,
             message: 'Página vinculada com sucesso!',
-            url: `https://${targetDomain.domain}` // Root URL
+            url: `https://${targetDomain.domain}`,
+            preview_url: `${baseUrl}/l/${generatedSlug}`,
+            slug: generatedSlug
         });
 
     } catch (error) {

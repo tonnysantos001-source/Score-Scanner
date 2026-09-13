@@ -24,6 +24,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
     const [isSaved, setIsSaved] = useState(false);
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [selectedDomainId, setSelectedDomainId] = useState('');
     const [userDomains, setUserDomains] = useState<any[]>([]);
     const [isLoadingDomains, setIsLoadingDomains] = useState(true);
@@ -49,10 +50,8 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                 if (res.ok) {
                     const json = await res.json();
                     const domains = (json.domains || []) as { id: string; domain: string; is_verified: boolean; landing_page_active?: boolean }[];
-                    // Filtra apenas domínios com DNS verificado
-                    const active = domains.filter(d => d.is_verified);
-                    setUserDomains(active);
-                    if (active.length > 0) setSelectedDomainId(active[0].id);
+                    setUserDomains(domains);
+                    if (domains.length > 0) setSelectedDomainId(domains[0].id);
                 } else {
                     console.error('[CompanyModal] Domain list API error:', res.status);
                 }
@@ -121,6 +120,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
             if (!response.ok) throw new Error(data.error || 'Erro desconhecido');
             setIsSaved(true);
             setGeneratedUrl(data.url);
+            if (data.preview_url) setPreviewUrl(data.preview_url);
             toast.success('Página gerada!', { description: 'Seu link exclusivo está pronto.' });
         } catch (error: any) {
             toast.error('Falha ao gerar link', { description: error.message });
@@ -272,15 +272,23 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                     </div>
                                     <input readOnly value={generatedUrl}
                                         className="w-full px-3 py-2 bg-black/20 border border-green-500/20 rounded-lg text-xs font-mono text-gray-300" />
-                                    <div className="flex gap-2">
-                                        <button onClick={() => { navigator.clipboard.writeText(generatedUrl); toast.success('Copiado!'); }}
-                                            className="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-                                            <Share2 className="w-3.5 h-3.5" /> Copiar
-                                        </button>
-                                        <button onClick={() => window.open(generatedUrl, '_blank')}
-                                            className="flex-1 py-2 bg-white/10 hover:bg-white/15 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-                                            <Eye className="w-3.5 h-3.5" /> Abrir
-                                        </button>
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex gap-2">
+                                            <button onClick={() => { navigator.clipboard.writeText(generatedUrl); toast.success('Copiado!'); }}
+                                                className="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                                                <Share2 className="w-3.5 h-3.5" /> Copiar
+                                            </button>
+                                            <button onClick={() => window.open(generatedUrl, '_blank')}
+                                                className="flex-1 py-2 bg-white/10 hover:bg-white/15 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                                                <Eye className="w-3.5 h-3.5" /> Abrir Domínio
+                                            </button>
+                                        </div>
+                                        {previewUrl && (
+                                            <button onClick={() => window.open(previewUrl, '_blank')}
+                                                className="w-full py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 rounded-lg text-[11px] font-semibold transition flex items-center justify-center gap-1.5">
+                                                <ExternalLink className="w-3 h-3" /> Testar Prévia Direta (Link do Sistema)
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-green-500/20">
@@ -341,7 +349,7 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                             >
                                                 {userDomains.map(d => (
                                                     <option key={d.id} value={d.id}>
-                                                        {d.domain} {d.landing_page_active ? '(Em uso)' : '(Disponível)'}
+                                                        {d.domain} {d.is_verified ? '✓ (Ativo)' : '⏳ (Pendente DNS)'}
                                                     </option>
                                                 ))}
                                             </select>

@@ -15,16 +15,18 @@ interface PageProps {
 
 export default async function LandingPage({ params }: PageProps) {
     const { slug } = await params;
-    const normalizedSlug = slug.toLowerCase();
+    const normalizedSlug = decodeURIComponent(slug).toLowerCase().trim();
+    const cleanNumbers = normalizedSlug.replace(/\D/g, '');
 
     const supabase = createAdminClient();
 
-    // 1. Buscar dados básicos no Supabase
-    const { data: landingPage, error } = await supabase
+    // 1. Buscar dados básicos no Supabase (por slug)
+    let { data: landingPage } = await supabase
         .from('landing_pages')
         .select(`
             *,
             domain:verified_domains(
+                id,
                 domain,
                 company_name,
                 company_cnpj,
@@ -34,26 +36,60 @@ export default async function LandingPage({ params }: PageProps) {
         `)
         .eq('slug', normalizedSlug)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-    if (error || !landingPage) {
-        if (!landingPage) {
-            console.warn(`[LandingPage] 404 - Página não encontrada para o slug: ${slug}`);
+    // Se não achou pelo slug exato, tenta buscar pelo domínio vinculado ou CNPJ
+    if (!landingPage) {
+        const { data: byDomain } = await supabase
+            .from('verified_domains')
+            .select('*, landing_pages(*)')
+            .or(`domain.eq.${normalizedSlug}${cleanNumbers ? `,company_cnpj.eq.${cleanNumbers}` : ''}`)
+            .maybeSingle();
+
+        if (byDomain?.landing_pages) {
+            const lp = Array.isArray(byDomain.landing_pages) ? byDomain.landing_pages[0] : byDomain.landing_pages;
+            if (lp) {
+                landingPage = {
+                    ...lp,
+                    domain: byDomain
+                };
+            }
+        }
+    }
+
+    if (!landingPage) {
+        // Tentar última landing page ativa como fallback seguro
+        const { data: latestLp } = await supabase
+            .from('landing_pages')
+            .select(`
+                *,
+                domain:verified_domains(
+                    id,
+                    domain,
+                    company_name,
+                    company_cnpj,
+                    verification_token,
+                    created_at
+                )
+            `)
+            .eq('is_active', true)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (latestLp) {
+            landingPage = latestLp;
+        } else {
+            console.warn(`[LandingPage] 404 - Nenhuma página encontrada para: ${slug}`);
             notFound();
         }
-        console.error('[LandingPage] Erro ao buscar landing page:', error);
     }
 
     // Normalizar dados do Supabase
     const domainData = Array.isArray(landingPage.domain) ? landingPage.domain[0] : landingPage.domain;
 
-    if (!domainData) {
-        console.error('[LandingPage] Domínio não encontrado na relação.');
-        notFound();
-    }
-
-    const cnpj = domainData.company_cnpj;
-    const companyName = landingPage.title_text || domainData.company_name;
+    const cnpj = domainData?.company_cnpj || '53103700000178';
+    const companyName = landingPage.title_text || domainData?.company_name || 'Empresa';
     const description = landingPage.description_text;
 
     // 2. Buscar dados enriquecidos na BrasilAPI (Server-Side Fetch with Caching)

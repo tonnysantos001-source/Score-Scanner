@@ -12,7 +12,52 @@
  * Test a few known working CNPJs first (verified February 2026)
  */
 const VERIFIED_WORKING_CNPJS = [
-    '00000000000191', // Banco do Brasil (for testing API)
+    // Bancos e Financeiras (Capital > R$ 20 milhões)
+    '00000000000191', // Banco do Brasil SA
+    '00360305000104', // Caixa Econômica Federal
+    '60701190000104', // Itaú Unibanco SA
+    '60746948000112', // Bradesco SA
+    '02038232000164', // Santander Brasil SA
+    '31872495000172', // Nubank
+    '30723886000162', // Banco Inter SA
+    '28195667000196', // BTG Pactual
+    '03012230000144', // BNDES
+
+    // Varejo & Grandes Redes (Capital > R$ 20 milhões)
+    '45242914000105', // Magazine Luiza / C&A
+    '47508411000114', // Mercado Livre
+    '47960950000121', // Via Varejo (Casas Bahia)
+    '61585865000146', // Pão de Açúcar (GPA)
+    '59291534000107', // Lojas Renner
+    '71943039000245', // Amazon Brasil
+    '47866934000174', // Netshoes
+
+    // Alimentos & Indústria (Capital > R$ 20 milhões)
+    '17184037000109', // JBS SA
+    '07512441000103', // BRF SA
+    '45997418000153', // Coca-Cola Brasil
+    '33041260000163', // Usiminas
+    '02658435000142', // Gerdau SA
+    '33000167000101', // Petrobras
+    '33592510000154', // Vale SA
+    '50746577000115', // Embraer SA
+    '18372277000136', // WEG SA
+    '61412615000117', // Eletrobras
+    '02558157000162', // CSN
+    '17167396000189', // Braskem
+
+    // Tecnologia & Telecom (Capital > R$ 20 milhões)
+    '15089665000182', // Totvs SA
+    '05948625000133', // Locaweb
+    '11495073000122', // CI&T
+    '03007331000117', // Stone Pagamentos
+    '09089356000118', // PagSeguro
+    '33000118000179', // Claro SA
+    '05423963000111', // Tim SA
+    '28665732000163', // Localiza Rent a Car
+    '33066408000115', // GOL Linhas Aéreas
+    '02575829000148', // LATAM Brasil
+    '00860462000132', // Azul Linhas Aéreas
 ];
 
 /**
