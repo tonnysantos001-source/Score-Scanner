@@ -27,10 +27,10 @@ export interface MiningFilters {
 
 
 export const DEFAULT_MINING_FILTERS: MiningFilters = {
-    capitalMinimo: 20000000,        // R$ 20.000.000 (a partir de 20 milhões)
-    useCapitalFilter: true,         // ENABLED by default
-    capitalMaximo: 0,               // 0 = sem teto máximo
-    useCapitalMaximoFilter: false,  // Disabled
+    capitalMinimo: 20000000,        // R$ 20.000.000 (mínimo)
+    useCapitalFilter: true,         // ENABLED
+    capitalMaximo: 1000000000,      // R$ 1.000.000.000 (máximo 1 bilhão)
+    useCapitalMaximoFilter: true,   // ENABLED
     uf: 'AUTO',
     useUfFilter: false,
     porte: 'TODOS',

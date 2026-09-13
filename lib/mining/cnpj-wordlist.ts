@@ -12,52 +12,28 @@
  * Test a few known working CNPJs first (verified February 2026)
  */
 const VERIFIED_WORKING_CNPJS = [
-    // Bancos e Financeiras (Capital > R$ 20 milhões)
-    '00000000000191', // Banco do Brasil SA
-    '00360305000104', // Caixa Econômica Federal
-    '60701190000104', // Itaú Unibanco SA
-    '60746948000112', // Bradesco SA
-    '02038232000164', // Santander Brasil SA
-    '31872495000172', // Nubank
-    '30723886000162', // Banco Inter SA
-    '28195667000196', // BTG Pactual
-    '03012230000144', // BNDES
-
-    // Varejo & Grandes Redes (Capital > R$ 20 milhões)
-    '45242914000105', // Magazine Luiza / C&A
-    '47508411000114', // Mercado Livre
-    '47960950000121', // Via Varejo (Casas Bahia)
-    '61585865000146', // Pão de Açúcar (GPA)
-    '59291534000107', // Lojas Renner
-    '71943039000245', // Amazon Brasil
-    '47866934000174', // Netshoes
-
-    // Alimentos & Indústria (Capital > R$ 20 milhões)
-    '17184037000109', // JBS SA
-    '07512441000103', // BRF SA
-    '45997418000153', // Coca-Cola Brasil
-    '33041260000163', // Usiminas
-    '02658435000142', // Gerdau SA
-    '33000167000101', // Petrobras
-    '33592510000154', // Vale SA
-    '50746577000115', // Embraer SA
-    '18372277000136', // WEG SA
-    '61412615000117', // Eletrobras
-    '02558157000162', // CSN
-    '17167396000189', // Braskem
-
-    // Tecnologia & Telecom (Capital > R$ 20 milhões)
-    '15089665000182', // Totvs SA
-    '05948625000133', // Locaweb
-    '11495073000122', // CI&T
-    '03007331000117', // Stone Pagamentos
-    '09089356000118', // PagSeguro
-    '33000118000179', // Claro SA
-    '05423963000111', // Tim SA
-    '28665732000163', // Localiza Rent a Car
-    '33066408000115', // GOL Linhas Aéreas
-    '02575829000148', // LATAM Brasil
-    '00860462000132', // Azul Linhas Aéreas
+    // Empresas ativas com capital social entre R$ 20 milhões e R$ 1 bilhão
+    '09089356000118', // EFI S.A. - INSTITUICAO DE PAGAMENTO (R$ 48.2M)
+    '05570714000159', // KABUM S.A. (R$ 50.9M)
+    '00604122000197', // TRIVALE INSTITUICAO DE PAGAMENTO LTDA (R$ 87.9M)
+    '45997418000153', // COCA COLA INDUSTRIAS LTDA (R$ 150.5M)
+    '00623904000173', // APPLE COMPUTER BRASIL LTDA (R$ 203.9M)
+    '43708379000100', // FAST SHOP S.A (R$ 208.8M)
+    '16922038000151', // ENJOEI S.A (R$ 209.6M)
+    '00461479000163', // PREVENT SENIOR PRIVATE OPERADORA DE SAUDE LTDA (R$ 255.1M)
+    '04884082000135', // JADLOG LOGISTICA S.A (R$ 348.8M)
+    '80680093000181', // SENIOR SISTEMAS S.A. (R$ 380.9M)
+    '14776142000150', // WESTWING COMERCIO VAREJISTA S.A. (R$ 411.5M)
+    '42274696000194', // ADIDAS DO BRASIL LTDA (R$ 448.1M)
+    '13427325000105', // LAUNCH PAD TECNOLOGIA / HOTMART (R$ 477.2M)
+    '56994502000130', // NOVARTIS BIOCIENCIAS SA (R$ 507.1M)
+    '08773135000100', // 2W ECOBANK S.A. (R$ 540.4M)
+    '91088328000167', // TERRA NETWORKS BRASIL LTDA (R$ 590.4M)
+    '47866934000174', // TICKET SERVICOS SA (R$ 643.7M)
+    '61099834000190', // ARTHUR LUNDGREN / CASAS PERNAMBUCANAS (R$ 830.0M)
+    '43214055000107', // MARTINS COMERCIO E DISTRIBUICAO S/A (R$ 842.9M)
+    '72381189000110', // DELL COMPUTADORES DO BRASIL LTDA (R$ 930.6M)
+    '14055516000148', // MOBLY COMERCIO VAREJISTA LTDA (R$ 932.3M)
 ];
 
 /**
