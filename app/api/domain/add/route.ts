@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { registerDomainOnVercel } from '@/lib/vercel/domain-manager';
-
+import { activateDomainOnVercel } from '@/lib/vercel/domain-manager';
 
 export async function POST(request: NextRequest) {
     try {
@@ -49,21 +48,23 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // ─── 1. Registrar na Vercel ANTES de salvar no banco ─────────────────
-        const vercelResult = await registerDomainOnVercel(domain);
+        // ─── 1. Registrar na Vercel + atribuir alias ao deployment de produção ──
+        // activateDomainOnVercel faz 3 passos:
+        //   a) Registra o domínio no projeto Vercel
+        //   b) Busca o deployment de produção ativo (READY + PROMOTED)
+        //   c) Atribui o domínio como alias desse deployment
+        // Sem o passo c), a Vercel retorna timeout mesmo com DNS e SSL corretos.
+        const vercelResult = await activateDomainOnVercel(domain);
+
+        console.log(`[domain/add] Vercel activation for ${domain}:`, {
+            registered: vercelResult.registered,
+            aliasAssigned: vercelResult.aliasAssigned,
+            deploymentId: vercelResult.deploymentId,
+            error: vercelResult.error,
+        });
 
         // Instruções de DNS
-        const dnsInstructions = `Configure no seu registrador de domínio:
-
-Tipo: CNAME
-Nome: @ (ou deixe em branco)
-Valor: cname.vercel-dns.com
-
-OU
-
-Tipo: A  
-Nome: @ (ou deixe em branco)
-Valor: 76.76.21.21`;
+        const dnsInstructions = `Configure no seu registrador de domínio:\n\nTipo: CNAME\nNome: www\nValor: cname.vercel-dns.com\n\nOU\n\nTipo: A\nNome: @ (ou deixe em branco)\nValor: 76.76.21.21`;
 
         // ─── 2. Inserir domínio no banco ─────────────────────────────────────
         const { data: verifiedDomain, error: insertError } = await supabase
@@ -94,10 +95,13 @@ Valor: 76.76.21.21`;
             success: true,
             domain_id: verifiedDomain.id,
             dns_instructions: dnsInstructions,
-            vercel_registered: vercelResult.ok,
-            message: vercelResult.ok
-                ? 'Domínio adicionado e registrado na Vercel! Configure o DNS conforme as instruções.'
-                : `Domínio salvo, mas falha ao registrar na Vercel: ${vercelResult.error}`,
+            vercel_registered: vercelResult.registered,
+            vercel_alias_assigned: vercelResult.aliasAssigned,
+            message: vercelResult.aliasAssigned
+                ? 'Domínio adicionado e ativado na Vercel! Configure o DNS conforme as instruções.'
+                : vercelResult.registered
+                    ? 'Domínio salvo e registrado na Vercel. Configure o DNS e verifique para ativar.'
+                    : `Domínio salvo, mas falha ao registrar na Vercel: ${vercelResult.error}`,
         });
 
     } catch (error) {
