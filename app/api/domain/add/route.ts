@@ -1,48 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { registerDomainOnVercel } from '@/lib/vercel/domain-manager';
 
-// ─── Vercel API helper ────────────────────────────────────────────────────────
-
-async function registerDomainOnVercel(domain: string): Promise<{ ok: boolean; error?: string }> {
-    const token = process.env.VERCEL_TOKEN;
-    const projectId = process.env.VERCEL_PROJECT_ID;
-
-    if (!token || !projectId) {
-        console.warn('[Vercel] VERCEL_TOKEN ou VERCEL_PROJECT_ID não configurado');
-        return { ok: false, error: 'Vercel credentials not configured' };
-    }
-
-    try {
-        const res = await fetch(`https://api.vercel.com/v10/projects/${projectId}/domains`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name: domain }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            // 409 = domínio já existe no projeto (não é erro fatal)
-            if (res.status === 409) {
-                console.log(`[Vercel] Domínio ${domain} já estava registrado na Vercel (409).`);
-                return { ok: true };
-            }
-            console.error('[Vercel] Erro ao registrar domínio:', data);
-            return { ok: false, error: data.error?.message || 'Vercel registration failed' };
-        }
-
-        console.log(`[Vercel] ✅ Domínio ${domain} registrado com sucesso na Vercel.`);
-        return { ok: true };
-    } catch (err) {
-        console.error('[Vercel] Exceção ao registrar domínio:', err);
-        return { ok: false, error: 'Network error calling Vercel API' };
-    }
-}
-
-// ─── Route Handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
     try {
