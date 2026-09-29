@@ -59,8 +59,10 @@ const ALLOWED_CNAME_TARGETS = [
 ];
 
 const ALLOWED_A_RECORDS = [
-    '76.76.21.21',      // Vercel primary IPv4
+    '76.76.21.21',      // Vercel primary IPv4 (Padrão)
     '76.76.21.22',      // Vercel secondary IPv4
+    '216.198.79.1',     // Vercel Anycast IPv4
+    '64.29.17.1',       // Vercel Anycast IPv4 secondary
 ];
 
 const DNS_RESOLVERS = [

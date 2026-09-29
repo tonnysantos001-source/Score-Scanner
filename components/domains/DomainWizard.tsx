@@ -418,15 +418,15 @@ function buildDNSInstructions(domain: string): DNSInstructions {
         return {
             isRoot: true,
             // A record is the CORRECT way for root/apex domains
-            primaryOption: { type: 'A', host: '@', value: '216.198.79.1' },
+            primaryOption: { type: 'A', host: '@', value: '76.76.21.21' },
             // CNAME www as secondary (works on most providers)
             alternativeOption: { type: 'CNAME', host: 'www', value: 'cname.vercel-dns.com' },
             providerNotes: [
-                '✅ Adicione registro A com host "@" ou deixe em branco → IP: 216.198.79.1',
-                'Registro.br: Tipo A, host "@", valor 216.198.79.1',
-                'GoDaddy: A Record, host "@", valor 216.198.79.1',
-                'Cloudflare: Tipo A, nome "@", conteúdo 216.198.79.1 (Proxy: desabilitado)',
-                'Hostinger / UOL: A Record "@" → 216.198.79.1',
+                '✅ Adicione registro A com host "@" ou deixe em branco → IP: 76.76.21.21',
+                'Registro.br: Tipo A, host "@", valor 76.76.21.21',
+                'GoDaddy: A Record, host "@", valor 76.76.21.21',
+                'Cloudflare: Tipo A, nome "@", conteúdo 76.76.21.21 (Proxy: desabilitado)',
+                'HostGator / Hostinger / UOL: A Record "@" → 76.76.21.21',
             ],
         };
     }
