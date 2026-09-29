@@ -1,11 +1,12 @@
-import crypto from 'crypto';
-
 /**
  * Gera um token de verificação único e seguro para o Facebook
  * Formato: string hexadecimal de 32 caracteres
  */
 export function generateVerificationToken(): string {
-    return crypto.randomBytes(16).toString('hex');
+    // Usa Web Crypto API (disponível em Node 16+ e Edge Runtime)
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**

@@ -84,7 +84,7 @@ export async function generateContratoSocialPDF(company: EnhancedCompanyData): P
     const isSA = company.razao_social.toUpperCase().includes(' S.A.')
         || company.razao_social.toUpperCase().includes(' S/A')
         || company.razao_social.toUpperCase().endsWith(' S.A')
-        || (company.natureza_juridica && company.natureza_juridica.toLowerCase().includes('anônima'));
+        || String(company.codigo_natureza_juridica ?? '').startsWith('204'); // 2046=S.A. Fechada, 2054=S.A. Aberta
 
     const documentType = isSA ? 'ESTATUTO SOCIAL' : 'CONTRATO SOCIAL';
     const documentTitle = isSA
@@ -184,7 +184,7 @@ export async function generateContratoSocialPDF(company: EnhancedCompanyData): P
 
     if (qsaList.length > 0) {
         partnersText = qsaList.map((socio, idx) => {
-            const role = socio.qualificacao_socio || (idx === 0 ? 'Sócio-Administrador' : 'Sócio');
+            const role = idx === 0 ? 'Sócio-Administrador' : 'Sócio';
             const docNum = socio.cnpj_cpf_do_socio || `***.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}-**`;
             return `${idx + 1}. ${socio.nome_socio.toUpperCase()}, brasileiro(a), qualificado(a) na condição de ${role}, portador(a) do documento nº ${docNum}, com domicílio comercial e residência na sede da sociedade;`;
         }).join('\n\n');
@@ -294,7 +294,8 @@ a) Atividade Principal: ${mainActivity} (CNAE Fiscal: ${company.cnae_fiscal || '
 
     partners.forEach((p, idx) => {
         checkPageBreak(7);
-        doc.setFillColor(idx % 2 === 0 ? 255 : 248);
+        const fillValue = idx % 2 === 0 ? 255 : 248;
+        doc.setFillColor(fillValue, fillValue, fillValue);
         doc.rect(lm, y, bodyW, 6.5, 'FD');
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
