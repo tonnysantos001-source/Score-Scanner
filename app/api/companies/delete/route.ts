@@ -22,15 +22,54 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Não autenticado' }, { status: 401 });
         }
 
-        // Fetch the domain associated with this company before deleting
-        const { data: companyData } = await supabase
+        // Fetch the company info (including CNPJ and domain) before deleting
+        const { data: companyData, error: fetchError } = await supabase
             .from('empresas_usadas')
-            .select('domain_id')
+            .select('id, cnpj, domain_id, company_name')
             .eq('id', companyId)
             .eq('user_id', user.id)
             .single();
 
-        // Ensure the company belongs to this user
+        if (fetchError || !companyData) {
+            return NextResponse.json({ success: false, error: 'Empresa não encontrada ou permissão negada' }, { status: 404 });
+        }
+
+        const cleanCnpj = companyData.cnpj ? companyData.cnpj.replace(/\D/g, '') : null;
+
+        if (cleanCnpj) {
+            console.log(`🚫 [companies/delete] Enviando CNPJ ${cleanCnpj} (${companyData.company_name}) para a blacklist permanente...`);
+
+            // 1. Inserir na tabela cnpj_blacklist com motivo DISCARDED
+            await supabase
+                .from('cnpj_blacklist')
+                .upsert({
+                    cnpj: cleanCnpj,
+                    reason: 'DISCARDED',
+                }, {
+                    onConflict: 'cnpj',
+                });
+
+            // 2. Remover da tabela cnpj_whitelist para que nunca mais apareça na mineração
+            await supabase
+                .from('cnpj_whitelist')
+                .delete()
+                .eq('cnpj', cleanCnpj);
+
+            // 3. Garantir presença em cnpj_used
+            const { data: existingUsed } = await supabase
+                .from('cnpj_used')
+                .select('id')
+                .eq('cnpj', cleanCnpj)
+                .maybeSingle();
+
+            if (!existingUsed) {
+                await supabase
+                    .from('cnpj_used')
+                    .insert({ cnpj: cleanCnpj });
+            }
+        }
+
+        // Ensure the company is deleted from empresas_usadas
         const { error: deleteError } = await supabase
             .from('empresas_usadas')
             .delete()
@@ -38,12 +77,12 @@ export async function DELETE(request: NextRequest) {
             .eq('user_id', user.id);
 
         if (deleteError) {
-            console.error('[companies/delete] Error:', deleteError);
+            console.error('[companies/delete] Error deleting from empresas_usadas:', deleteError);
             return NextResponse.json({ success: false, error: 'Erro ao excluir empresa' }, { status: 500 });
         }
 
         // Clean up linked domain and landing page if they existed
-        if (companyData?.domain_id) {
+        if (companyData.domain_id) {
             // Remove the landing page
             await supabase
                 .from('landing_pages')
@@ -58,7 +97,12 @@ export async function DELETE(request: NextRequest) {
                 .eq('user_id', user.id);
         }
 
-        return NextResponse.json({ success: true, message: 'Empresa excluída com sucesso' });
+        return NextResponse.json({
+            success: true,
+            cnpj: cleanCnpj,
+            company_name: companyData.company_name,
+            message: 'Empresa excluída e movida para a blacklist com sucesso'
+        });
     } catch (error) {
         console.error('[companies/delete] Error:', error);
         return NextResponse.json({ success: false, error: 'Erro interno' }, { status: 500 });

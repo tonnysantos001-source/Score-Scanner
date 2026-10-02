@@ -136,6 +136,30 @@ export class SupabaseCache {
     }
 
     /**
+     * Delete whitelist entry from Supabase
+     */
+    static async deleteFromWhitelist(cnpj: string): Promise<void> {
+        let supabase: ReturnType<typeof createClient>;
+        try { supabase = createClient(); } catch { return; }
+
+        try {
+            const cleanCnpj = cnpj.replace(/\D/g, '');
+            const { error } = await supabase
+                .from('cnpj_whitelist')
+                .delete()
+                .eq('cnpj', cleanCnpj);
+
+            if (error) {
+                console.error('Error deleting from whitelist:', error);
+            } else {
+                console.log(`🗑️ Removed from Supabase whitelist: ${cleanCnpj}`);
+            }
+        } catch (error) {
+            console.error('Supabase whitelist delete failed:', error);
+        }
+    }
+
+    /**
      * Insert blacklist entry
      */
     static async insertBlacklist(entry: CNPJBlacklistEntry): Promise<void> {
@@ -171,19 +195,22 @@ export class SupabaseCache {
         try { supabase = createClient(); } catch { return; }
 
         try {
-            const { error } = await supabase
+            const { data: existing } = await supabase
                 .from('cnpj_used')
-                .upsert({
-                    cnpj,
-                }, {
-                    onConflict: 'cnpj',
-                    ignoreDuplicates: true,
-                });
+                .select('id')
+                .eq('cnpj', cnpj)
+                .maybeSingle();
 
-            if (error) {
-                console.error('Error inserting used:', error);
-            } else {
-                console.log(`🗑️ Synced to Supabase used: ${cnpj}`);
+            if (!existing) {
+                const { error } = await supabase
+                    .from('cnpj_used')
+                    .insert({ cnpj });
+
+                if (error) {
+                    console.error('Error inserting used:', error);
+                } else {
+                    console.log(`🗑️ Synced to Supabase used: ${cnpj}`);
+                }
             }
         } catch (error) {
             console.error('Supabase used insert failed:', error);

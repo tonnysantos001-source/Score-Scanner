@@ -103,10 +103,17 @@ export async function POST(request: NextRequest) {
         // ── GLOBAL BLACKLIST: mark CNPJ as used so ALL miners skip it ──
         // This inserts into cnpj_used which is fetched by cnpjCache.initialize()
         // Ignore duplicate errors (CNPJ already blacklisted is fine)
-        await supabase.from('cnpj_used').upsert(
-            { cnpj: cleanCnpj },
-            { onConflict: 'cnpj', ignoreDuplicates: true }
-        );
+        const { data: existingUsed } = await supabase
+            .from('cnpj_used')
+            .select('id')
+            .eq('cnpj', cleanCnpj)
+            .maybeSingle();
+
+        if (!existingUsed) {
+            await supabase
+                .from('cnpj_used')
+                .insert({ cnpj: cleanCnpj });
+        }
 
         // UPSERT Landing Page for this Domain
         // A custom domain typically has ONE main landing page (root).

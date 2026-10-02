@@ -52,14 +52,14 @@ export default function MinhaAreaPage() {
         if (!company) return;
 
         const confirmed = window.confirm(
-            `Excluir "${company.company_name}"?\n\nA empresa será removida da sua lista.`
+            `Excluir "${company.company_name}"?\n\nA empresa será removida da sua lista e bloqueada permanentemente na blacklist.`
         );
 
         if (!confirmed) return;
 
         try {
             await deleteCompany.mutateAsync(companyId);
-            toast.success('Empresa removida!');
+            toast.success('Empresa excluída e movida para a blacklist!');
         } catch {
             toast.error('Erro ao excluir empresa');
         }

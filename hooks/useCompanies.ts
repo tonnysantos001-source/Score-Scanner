@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { cnpjCache } from '@/lib/cache/cnpj-cache';
 
 // ============================================
 // Types
@@ -40,10 +41,11 @@ export function useCompanies() {
     });
 }
 
+
 // ============================================
 // Delete Company
 // ============================================
-async function deleteCompany(companyId: string): Promise<void> {
+async function deleteCompany(companyId: string): Promise<{ success: boolean; cnpj?: string }> {
     const res = await fetch('/api/companies/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -51,6 +53,7 @@ async function deleteCompany(companyId: string): Promise<void> {
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Erro ao excluir empresa');
+    return data;
 }
 
 export function useDeleteCompany() {
@@ -58,7 +61,10 @@ export function useDeleteCompany() {
 
     return useMutation({
         mutationFn: deleteCompany,
-        onSuccess: () => {
+        onSuccess: (data) => {
+            if (data?.cnpj) {
+                cnpjCache.discardCNPJ(data.cnpj);
+            }
             queryClient.invalidateQueries({ queryKey: ['companies'] });
             queryClient.invalidateQueries({ queryKey: ['domain-stats'] });
         },

@@ -145,7 +145,9 @@ export class CNPJCache {
             // Add to blacklist
             let reason: CNPJBlacklistEntry['reason'] = 'NOT_FOUND';
 
-            if (result.found && !result.active) {
+            if (result.reason === 'DISCARDED') {
+                reason = 'DISCARDED';
+            } else if (result.found && !result.active) {
                 reason = 'INACTIVE';
             } else if (result.reason === 'FILTERED') {
                 reason = 'FILTERED';
@@ -184,6 +186,29 @@ export class CNPJCache {
         // Sync to Supabase (async, don't wait)
         SupabaseCache.insertUsed(cnpj).catch(err =>
             console.error('Supabase used sync error:', err)
+        );
+    }
+
+    /**
+     * Discard and blacklist a CNPJ permanently (when deleted by user)
+     * Removes from local & remote whitelist, adds to local & remote blacklist
+     */
+    discardCNPJ(cnpj: string): void {
+        const cleanCnpj = cnpj.replace(/\D/g, '');
+        LocalStorage.removeFromWhitelist(cleanCnpj);
+        LocalStorage.addToBlacklist(cleanCnpj, 'DISCARDED');
+
+        // Sync to Supabase (async, don't wait)
+        SupabaseCache.insertBlacklist({
+            cnpj: cleanCnpj,
+            reason: 'DISCARDED',
+            added_at: new Date().toISOString()
+        }).catch(err =>
+            console.error('Supabase blacklist sync error:', err)
+        );
+
+        SupabaseCache.deleteFromWhitelist(cleanCnpj).catch(err =>
+            console.error('Supabase whitelist delete error:', err)
         );
     }
 

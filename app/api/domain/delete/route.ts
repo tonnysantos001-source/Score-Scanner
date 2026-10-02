@@ -24,10 +24,10 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
-        // Verificar se o domínio pertence ao usuário
+        // Verificar se o domínio pertence ao usuário (e obter eventual company_cnpj vinculada)
         const { data: domain, error: domainError } = await supabase
             .from('verified_domains')
-            .select('id')
+            .select('id, company_cnpj')
             .eq('id', domain_id)
             .eq('user_id', user.id)
             .single();
@@ -37,6 +37,22 @@ export async function DELETE(request: NextRequest) {
                 { success: false, error: 'Domain not found or access denied' },
                 { status: 404 }
             );
+        }
+
+        // Se houver empresa vinculada ao domínio sendo excluído, move para a blacklist
+        const cleanCnpj = domain.company_cnpj ? domain.company_cnpj.replace(/\D/g, '') : null;
+        if (cleanCnpj) {
+            console.log(`🚫 [domain/delete] Movendo empresa vinculada ao domínio para a blacklist: ${cleanCnpj}`);
+            await supabase.from('cnpj_blacklist').upsert(
+                { cnpj: cleanCnpj, reason: 'DISCARDED' },
+                { onConflict: 'cnpj' }
+            );
+            await supabase.from('cnpj_whitelist').delete().eq('cnpj', cleanCnpj);
+            const { data: existingUsed } = await supabase.from('cnpj_used').select('id').eq('cnpj', cleanCnpj).maybeSingle();
+            if (!existingUsed) {
+                await supabase.from('cnpj_used').insert({ cnpj: cleanCnpj });
+            }
+            await supabase.from('empresas_usadas').delete().eq('cnpj', cleanCnpj);
         }
 
         // O Supabase vai deletar automaticamente a landing_page e facebook_configs

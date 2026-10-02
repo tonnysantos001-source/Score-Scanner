@@ -25,33 +25,50 @@ export async function GET(request: NextRequest) {
             }, { status: 401 });
         }
 
-        // Verificar se CNPJ existe na wordlist
-        const { data, error } = await supabase
-            .from('empresas_usadas')
-            .select('id, user_id, company_name, created_at')
-            .eq('cnpj', cnpj)
-            .maybeSingle();
+        const cleanCnpj = cnpj.replace(/\D/g, '');
 
-        if (error) {
-            console.error('Erro ao verificar CNPJ:', error);
-            return NextResponse.json({
-                success: false,
-                error: 'Erro ao verificar disponibilidade'
-            }, { status: 500 });
+        // Verificar concorrentemente se está em empresas_usadas, cnpj_blacklist ou cnpj_used
+        const [usedResult, blacklistResult, usedTableResult] = await Promise.all([
+            supabase
+                .from('empresas_usadas')
+                .select('id, user_id, company_name, created_at')
+                .eq('cnpj', cleanCnpj)
+                .maybeSingle(),
+            supabase
+                .from('cnpj_blacklist')
+                .select('cnpj, reason')
+                .eq('cnpj', cleanCnpj)
+                .maybeSingle(),
+            supabase
+                .from('cnpj_used')
+                .select('cnpj')
+                .eq('cnpj', cleanCnpj)
+                .maybeSingle(),
+        ]);
+
+        if (usedResult.error) {
+            console.error('Erro ao verificar empresas_usadas:', usedResult.error);
         }
 
-        // Se encontrou, CNPJ está em uso
-        const isUsed = !!data;
+        const data = usedResult.data;
+        const blacklisted = blacklistResult.data;
+        const inUsedTable = usedTableResult.data;
+
+        // Se estiver em empresas_usadas, ou na blacklist, ou na tabela de usados, está indisponível
+        const isUsed = !!data || !!blacklisted || !!inUsedTable;
+        const isBlacklisted = !!blacklisted;
         const isOwnedByCurrentUser = data?.user_id === user.id;
 
         return NextResponse.json({
             success: true,
             isUsed,
             used: isUsed, // compatibilidade
+            isBlacklisted,
+            blacklistReason: blacklisted?.reason || null,
             isOwnedByCurrentUser,
-            data: isUsed ? {
-                company_name: data!.company_name,
-                created_at: data!.created_at
+            data: data ? {
+                company_name: data.company_name,
+                created_at: data.created_at
             } : null
         });
 
