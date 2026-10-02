@@ -382,10 +382,10 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                             </button>
                                         ) : (
                                             <button
-                                                onClick={() => toast.error('Assine um plano para gerar landing pages', { description: 'Acesse Minha Conta → Planos.' })}
+                                                onClick={() => toast.error('Acesso não liberado para gerar landing pages', { description: 'Entre em contato com o administrador do sistema.' })}
                                                 className="w-full py-2.5 rounded-xl text-xs font-bold bg-gray-800 border border-gray-700 text-gray-500 flex items-center justify-center gap-2 cursor-not-allowed"
                                             >
-                                                <Lock className="w-3.5 h-3.5" /> GERAR LINK — Plano necessário
+                                                <Lock className="w-3.5 h-3.5" /> GERAR LINK — Acesso necessário
                                             </button>
                                         )}
                                     </div>
@@ -437,10 +437,10 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                         </div>
                     ) : (
                         <button
-                            onClick={() => toast.error('Assine um plano para gerar o PDF', { description: 'Acesse Minha Conta → Planos.' })}
+                            onClick={() => toast.error('Acesso não liberado para gerar documentos', { description: 'Entre em contato com o administrador do sistema.' })}
                             className="w-full py-2.5 rounded-xl text-sm font-bold bg-gray-800 border border-gray-700 text-gray-500 flex items-center justify-center gap-2 cursor-not-allowed"
                         >
-                            <Lock className="w-4 h-4" /> GERAR DOCUMENTO — Plano necessário
+                            <Lock className="w-4 h-4" /> GERAR DOCUMENTO — Acesso necessário
                         </button>
                     )}
                 </div>

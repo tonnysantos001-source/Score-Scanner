@@ -128,6 +128,24 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/minerar', request.url));
     }
 
+    // 3. APPROVAL & EXPIRATION CHECK FOR REGULAR USERS
+    if (isUserRoute && session && !isAdmin) {
+        const metadata = session.user?.user_metadata;
+        const approvalStatus = metadata?.approval_status;
+        const accessExpiresAt = metadata?.access_expires_at;
+
+        if (approvalStatus === 'pending') {
+            return NextResponse.redirect(new URL('/aguardando-aprovacao', request.url));
+        }
+
+        if (accessExpiresAt) {
+            const isExpired = new Date(accessExpiresAt).getTime() < Date.now();
+            if (isExpired) {
+                return NextResponse.redirect(new URL('/acesso-expirado', request.url));
+            }
+        }
+    }
+
     return response;
 }
 

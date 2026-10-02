@@ -58,16 +58,32 @@ export default function CadastroPage() {
                 password,
                 options: {
                     emailRedirectTo: `${window.location.origin}/auth/callback`,
-                    data: { full_name: fullName, role: 'user' },
+                    data: {
+                        full_name: fullName,
+                        role: 'user',
+                        approval_status: 'pending',
+                    },
                 },
             });
             if (signUpError) throw signUpError;
 
-            if (data.session) {
-                router.push('/minha-area');
-            } else if (data.user) {
-                setSuccess(true);
+            // Criar registro pendente em subscriptions se já tiver o ID do usuário
+            if (data.user) {
+                try {
+                    await supabase.from('subscriptions').insert({
+                        user_id: data.user.id,
+                        status: 'pending',
+                        payment_method: 'admin_approval',
+                        metadata: {
+                            registration_note: 'Aguardando aprovação inicial do administrador',
+                        }
+                    });
+                } catch (subErr) {
+                    console.warn('Registro pendente inicial:', subErr);
+                }
             }
+
+            router.push('/aguardando-aprovacao');
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Erro ao criar conta';
             setError(message);

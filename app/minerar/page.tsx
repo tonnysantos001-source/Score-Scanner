@@ -16,7 +16,7 @@ import WelcomePopup from '@/components/layout/WelcomePopup';
 
 
 export default function MinerarPage() {
-    const { user, loading, isAdmin } = useAuth();
+    const { user, loading, isAdmin, approvalStatus } = useAuth();
     const router = useRouter();
     const { companies, progress, isMining, error, startMining, stopMining } = useMining();
     const [selectedCompany, setSelectedCompany] = useState<EnhancedCompanyData | null>(null);
@@ -27,9 +27,13 @@ export default function MinerarPage() {
                 router.push('/login');
             } else if (isAdmin) {
                 router.push('/admin');
+            } else if (approvalStatus === 'pending') {
+                router.push('/aguardando-aprovacao');
+            } else if (approvalStatus === 'expired') {
+                router.push('/acesso-expirado');
             }
         }
-    }, [user, loading, isAdmin, router]);
+    }, [user, loading, isAdmin, approvalStatus, router]);
 
     // Se estiver carregando OU se for admin (enquanto redireciona), não renderiza a UI complexa
     if (loading || isAdmin) {

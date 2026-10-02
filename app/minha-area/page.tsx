@@ -18,7 +18,7 @@ import { useDomainStats } from '@/hooks/useDomains';
 import { useCompanies, useDeleteCompany } from '@/hooks/useCompanies';
 
 export default function MinhaAreaPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, isAdmin, approvalStatus, loading: authLoading } = useAuth();
     const router = useRouter();
 
     // Tab State
@@ -40,10 +40,18 @@ export default function MinhaAreaPage() {
 
     // Route protection
     useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
+        if (!authLoading) {
+            if (!user) {
+                router.push('/login');
+            } else if (!isAdmin) {
+                if (approvalStatus === 'pending') {
+                    router.push('/aguardando-aprovacao');
+                } else if (approvalStatus === 'expired') {
+                    router.push('/acesso-expirado');
+                }
+            }
         }
-    }, [user, authLoading, router]);
+    }, [user, isAdmin, approvalStatus, authLoading, router]);
 
 
 

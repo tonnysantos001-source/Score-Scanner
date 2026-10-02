@@ -42,7 +42,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function MinhaContaPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, isAdmin, loading: authLoading } = useAuth();
     const router = useRouter();
 
     const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
@@ -60,8 +60,9 @@ export default function MinhaContaPage() {
 
     useEffect(() => {
         if (!authLoading && !user) router.push('/login');
+        else if (!authLoading && user && !isAdmin) router.push('/minerar');
         else if (user) fetchData();
-    }, [user, authLoading, router]);
+    }, [user, isAdmin, authLoading, router]);
 
     const fetchData = async () => {
         try {

@@ -4,11 +4,17 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { User, type SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 
+export type ApprovalStatus = 'loading' | 'pending' | 'approved' | 'expired' | 'blocked';
+
 interface AuthContextType {
     user: User | null;
     isAdmin: boolean;
     hasActivePlan: boolean;
+    approvalStatus: ApprovalStatus;
+    accessExpiresAt: string | null;
+    remainingTimeText: string;
     loading: boolean;
+    refreshAccessStatus: () => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signUp: (email: string, password: string, fullName: string) => Promise<void>;
     signInWithGoogle: () => Promise<void>;
@@ -21,43 +27,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [hasActivePlan, setHasActivePlan] = useState(false);
+    const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus>('loading');
+    const [accessExpiresAt, setAccessExpiresAt] = useState<string | null>(null);
+    const [remainingTimeText, setRemainingTimeText] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
 
     // Timeout de inatividade: 15 minutos
     const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 min em ms
 
-    const checkUserRole = useCallback(async (userId: string, client?: any) => {
+    const checkUserRole = useCallback(async (userId: string) => {
         try {
-            const supabaseClient = client || createClient();
-            const { data: profile, error } = await supabaseClient
-                .from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .single();
-
-            if (error) {
-                if (process.env.NODE_ENV === 'development') {
-                    console.warn('Erro ao buscar role:', error.message);
-                }
-                setIsAdmin(false);
-                setHasActivePlan(true);
+            const res = await fetch('/api/auth/me/status', { cache: 'no-store' });
+            if (res.ok) {
+                const status = await res.json();
+                setIsAdmin(!!status.isAdmin);
+                setApprovalStatus(status.approvalStatus || 'pending');
+                setAccessExpiresAt(status.accessExpiresAt || null);
+                setRemainingTimeText(status.remainingFormatted || (status.isLifetime ? 'Acesso Vitalício' : ''));
+                setHasActivePlan(!!status.hasAccess);
                 return;
             }
-
-            const isAdminUser = profile?.role === 'admin' || profile?.role === 'superadmin';
-            setIsAdmin(isAdminUser);
-
-            // Planos totalmente liberados para uso
-            setHasActivePlan(true);
         } catch (err) {
             if (process.env.NODE_ENV === 'development') {
-                console.error('Check role error:', err);
+                console.error('Check user status error:', err);
             }
-            setIsAdmin(false);
-            setHasActivePlan(true);
         }
+
+        setIsAdmin(false);
+        setApprovalStatus('pending');
+        setHasActivePlan(false);
     }, []);
+
+    const refreshAccessStatus = useCallback(async () => {
+        if (user) {
+            await checkUserRole(user.id);
+        }
+    }, [user, checkUserRole]);
 
     const handleLogout = useCallback(async () => {
         if (supabase) {
@@ -238,7 +244,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user,
                 isAdmin,
                 hasActivePlan,
+                approvalStatus,
+                accessExpiresAt,
+                remainingTimeText,
                 loading,
+                refreshAccessStatus,
                 signIn,
                 signUp,
                 signInWithGoogle,

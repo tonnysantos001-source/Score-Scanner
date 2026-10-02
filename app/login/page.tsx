@@ -40,17 +40,33 @@ export default function LoginPage() {
 
         try {
             await signIn(email, password);
-            const { data: { session } } = await import('@/lib/supabase/client').then(m => m.supabase.auth.getSession());
-            if (session) {
-                const role = session.user?.user_metadata?.role;
-                if (role === 'admin' || role === 'superadmin') {
-                    window.location.href = '/admin';
-                } else {
-                    window.location.href = '/minerar';
+
+            try {
+                const res = await fetch('/api/auth/me/status', { cache: 'no-store' });
+                if (res.ok) {
+                    const statusData = await res.json();
+                    if (statusData.isAdmin) {
+                        window.location.href = '/admin';
+                        return;
+                    }
+                    if (statusData.approvalStatus === 'pending') {
+                        window.location.href = '/aguardando-aprovacao';
+                        return;
+                    }
+                    if (statusData.approvalStatus === 'expired') {
+                        window.location.href = '/acesso-expirado';
+                        return;
+                    }
+                    if (statusData.approvalStatus === 'blocked') {
+                        setError('Sua conta está inativa ou bloqueada pelo administrador.');
+                        return;
+                    }
                 }
-            } else {
-                window.location.href = '/minerar';
+            } catch {
+                // Fallback normal
             }
+
+            window.location.href = '/minerar';
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Erro ao fazer login';
             setError(message);
