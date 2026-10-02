@@ -55,9 +55,10 @@ export function isPaymentInstitution(company: EnhancedCompanyData): boolean {
         company.nome_fantasia || '',
         company.cnae_fiscal_descricao || '',
         ...(company.cnaes_secundarios || []).map(c => c.descricao || '')
-    ].join(' ').toUpperCase();
+    ].join(' ').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
     const paymentKeywords = [
+        'TICKET',
         'INSTITUICAO DE PAGAMENTO',
         'INSTITUICAO DE PAGAMENTOS',
         'INSTITUCAO DE PAGAMENTO',
@@ -82,12 +83,40 @@ export function isPaymentInstitution(company: EnhancedCompanyData): boolean {
         'CHECKOUT',
         'CARTOES DE CREDITO',
         'CARTAO DE CREDITO',
+        'CARTOES DE DEBITO',
+        'CARTAO DE DEBITO',
+        'CARTOES',
+        'CARTAO',
         'ADMINISTRACAO DE CARTOES',
         'OPERADORAS DE CARTOES',
         'AUXILIARES DOS SERVICOS FINANCEIROS',
         'ECOBANK',
         'FINTECH',
-        'SOCIEDADE DE CREDITO'
+        'SOCIEDADE DE CREDITO',
+        'CREDITO DIRETO',
+        'FINANCEIRA',
+        'FINANCIAMENTO E INVESTIMENTO',
+        'SEGURO',
+        'SEGUROS',
+        'SEGURADORA',
+        'SEGURADORAS',
+        'PREVIDENCIA',
+        'CAPITALIZACAO',
+        'RESSEGURO',
+        'RESSEGUROS',
+        'CORRETORA DE SEGUROS',
+        'CORRETAGEM DE SEGUROS',
+        'SECURITIZADORA',
+        'CORRETORA',
+        'CORRETORAS',
+        'DISTRIBUIDORA',
+        'DISTRIBUIDORAS',
+        'VALORES MOBILIARIOS',
+        'DTVM',
+        'CTVM',
+        'WIRECARD',
+        'MOIP',
+        'BANCO'
     ];
 
     return paymentKeywords.some(keyword => textToSearch.includes(keyword));
