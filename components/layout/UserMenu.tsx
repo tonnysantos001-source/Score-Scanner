@@ -100,14 +100,16 @@ export default function UserMenu() {
                                 Minerar CNPJs
                             </Link>
 
-                            <Link
-                                href="/minha-area"
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-white transition-colors"
-                            >
-                                <LayoutDashboard className="w-4 h-4 text-purple-400" />
-                                Minha Área
-                            </Link>
+                            {isAdmin && (
+                                <Link
+                                    href="/minha-area"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-white transition-colors"
+                                >
+                                    <LayoutDashboard className="w-4 h-4 text-purple-400" />
+                                    Minha Área
+                                </Link>
+                            )}
 
 
                             <Link

@@ -15,7 +15,7 @@ interface CompanyModalProps {
 }
 
 export default function CompanyModal({ company, onClose }: CompanyModalProps) {
-    const { hasActivePlan } = useAuth();
+    const { hasActivePlan, isAdmin } = useAuth();
     const [telefone, setTelefone] = useState(company.telefone || company.ddd_telefone_1 || company.custom_phone || '');
     const [email, setEmail] = useState(company.email || company.custom_email || '');
     const [verificationToken, setVerificationToken] = useState('');
@@ -310,12 +310,14 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                         {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                                         {isSaving ? 'SALVANDO...' : 'ATUALIZAR PIXEL/META'}
                                     </button>
-                                    <button
-                                        onClick={() => window.location.href = '/minha-area'}
-                                        className="w-full py-2.5 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5"
-                                    >
-                                        <ExternalLink className="w-3.5 h-3.5" /> IR PARA MINHA ÁREA
-                                    </button>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={() => window.location.href = '/minha-area'}
+                                            className="w-full py-2.5 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5"
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5" /> IR PARA MINHA ÁREA
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ) : (
@@ -342,10 +344,12 @@ export default function CompanyModal({ company, onClose }: CompanyModalProps) {
                                         <p className="text-[10px] text-amber-200/60 leading-snug">
                                             Conecte seu domínio para gerar páginas verificadas.
                                         </p>
-                                        <a href="/minha-area?tab=domains"
-                                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold transition">
-                                            Conectar Domínio
-                                        </a>
+                                        {isAdmin && (
+                                            <a href="/minha-area?tab=domains"
+                                                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold transition">
+                                                Conectar Domínio
+                                            </a>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="flex-1 flex flex-col gap-2">
