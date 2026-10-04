@@ -36,16 +36,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Timeout de inatividade: 15 minutos
     const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 min em ms
 
-    const checkUserRole = useCallback(async (userId: string) => {
+    const checkUserRole = useCallback(async (userId: string, clientInstance?: SupabaseClient | null) => {
         try {
             const res = await fetch('/api/auth/me/status', { cache: 'no-store' });
             if (res.ok) {
                 const status = await res.json();
-                setIsAdmin(!!status.isAdmin);
-                setApprovalStatus(status.approvalStatus || 'pending');
-                setAccessExpiresAt(status.accessExpiresAt || null);
-                setRemainingTimeText(status.remainingFormatted || (status.isLifetime ? 'Acesso Vitalício' : ''));
-                setHasActivePlan(!!status.hasAccess);
+                if (status.isAdmin) {
+                    setIsAdmin(true);
+                    setApprovalStatus('approved');
+                    setAccessExpiresAt(null);
+                    setRemainingTimeText('Acesso Ilimitado (Administrador)');
+                    setHasActivePlan(true);
+                    return;
+                }
+
+                // Usuário comum: revogar sessão imediatamente
+                const activeClient = clientInstance || supabase;
+                if (activeClient) {
+                    try {
+                        await activeClient.auth.signOut();
+                    } catch {}
+                }
+                setUser(null);
+                setIsAdmin(false);
+                setApprovalStatus('blocked');
+                setHasActivePlan(false);
                 return;
             }
         } catch (err) {
@@ -55,9 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setIsAdmin(false);
-        setApprovalStatus('pending');
+        setApprovalStatus('blocked');
         setHasActivePlan(false);
-    }, []);
+    }, [supabase]);
 
     const refreshAccessStatus = useCallback(async () => {
         if (user) {
@@ -125,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                     setUser(session?.user ?? null);
                     if (session?.user) {
-                        await checkUserRole(session.user.id);
+                        await checkUserRole(session.user.id, client);
                     }
                 }
             } catch (err) {
@@ -185,45 +200,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             password,
         });
 
-        if (error) throw error;
-        // Role check handled by onAuthStateChange
+        if (error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('banned') || msg.includes('disabled') || msg.includes('suspended')) {
+                throw new Error('Acesso bloqueado: Logins de usuários desativados pelo administrador.');
+            }
+            throw error;
+        }
+
+        // Verifica se é administrador imediatamente
+        try {
+            const res = await fetch('/api/auth/me/status', { cache: 'no-store' });
+            if (res.ok) {
+                const status = await res.json();
+                if (!status.isAdmin) {
+                    await supabase.auth.signOut();
+                    setUser(null);
+                    setIsAdmin(false);
+                    setHasActivePlan(false);
+                    throw new Error('Acesso bloqueado: Logins de usuários desativados pelo administrador. Apenas administradores têm permissão de acesso.');
+                }
+            }
+        } catch (statusErr: any) {
+            if (statusErr.message?.includes('Acesso bloqueado')) {
+                throw statusErr;
+            }
+        }
     };
 
     const signUp = async (email: string, password: string, fullName: string) => {
-        if (!supabase) {
-            throw new Error(
-                'Configuração do Supabase não encontrada. ' +
-                'Verifique se as variáveis de ambiente estão configuradas e recarregue a página.'
-            );
-        }
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    full_name: fullName,
-                },
-            },
-        });
-
-        if (error) throw error;
+        throw new Error('Novos cadastros de usuários estão temporariamente desativados pelo administrador.');
     };
 
     const signInWithGoogle = async () => {
-        if (!supabase) {
-            throw new Error(
-                'Configuração do Supabase não encontrada. ' +
-                'Verifique se as variáveis de ambiente estão configuradas e recarregue a página.'
-            );
-        }
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
-            },
-        });
-
-        if (error) throw error;
+        throw new Error('Logins sociais estão temporariamente desativados pelo administrador.');
     };
 
     const signOut = async () => {

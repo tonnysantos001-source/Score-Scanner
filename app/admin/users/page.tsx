@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Shield, User, Crown, Zap, X, CheckCircle2, Clock,
-    AlertTriangle, Ban, Trash2, Calendar, Sparkles, Hourglass, Lock, Unlock
+    AlertTriangle, Ban, Trash2, Calendar, Sparkles, Hourglass, Lock, Unlock, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';

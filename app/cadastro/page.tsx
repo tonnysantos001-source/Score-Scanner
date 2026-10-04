@@ -40,56 +40,7 @@ export default function CadastroPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-
-        if (password !== confirmPassword) {
-            setError('As senhas não coincidem');
-            return;
-        }
-        if (password.length < 6) {
-            setError('A senha deve ter no mínimo 6 caracteres');
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const { data, error: signUpError } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback`,
-                    data: {
-                        full_name: fullName,
-                        role: 'user',
-                        approval_status: 'pending',
-                    },
-                },
-            });
-            if (signUpError) throw signUpError;
-
-            // Criar registro pendente em subscriptions se já tiver o ID do usuário
-            if (data.user) {
-                try {
-                    await supabase.from('subscriptions').insert({
-                        user_id: data.user.id,
-                        status: 'pending',
-                        payment_method: 'admin_approval',
-                        metadata: {
-                            registration_note: 'Aguardando aprovação inicial do administrador',
-                        }
-                    });
-                } catch (subErr) {
-                    console.warn('Registro pendente inicial:', subErr);
-                }
-            }
-
-            router.push('/aguardando-aprovacao');
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Erro ao criar conta';
-            setError(message);
-        } finally {
-            setLoading(false);
-        }
+        setError('Novos cadastros de usuários foram suspensos pelo administrador do sistema.');
     };
 
     return (
@@ -176,11 +127,19 @@ export default function CadastroPage() {
                         </motion.div>
                     ) : (
                         <>
-                            <div className="text-center mb-7">
+                            <div className="text-center mb-6">
                                 <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                                    Criar conta gratuita
+                                    Cadastro de Usuários
                                 </h1>
-                                <p className="text-gray-500 text-sm">Sem cartão de crédito • Configuração em 3 minutos</p>
+                                <p className="text-gray-500 text-sm">VerifyAds</p>
+                            </div>
+
+                            <div className="rounded-xl p-4 mb-6 border border-amber-500/30 bg-amber-500/10 text-amber-200 text-sm flex items-start gap-3">
+                                <Shield className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-semibold text-amber-300">Cadastros Suspensos</p>
+                                    <p className="text-xs text-amber-200/80 mt-1">O registro de novos usuários e acessos de teste foram suspensos pelo administrador do sistema.</p>
+                                </div>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
@@ -269,16 +228,10 @@ export default function CadastroPage() {
 
                                 <button
                                     type="submit"
-                                    disabled={loading}
-                                    className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                        boxShadow: '0 8px 30px rgba(99,102,241,0.30)',
-                                    }}
+                                    disabled={true}
+                                    className="w-full py-3.5 rounded-xl text-sm font-bold text-gray-400 bg-gray-800/80 border border-white/10 cursor-not-allowed opacity-60 flex items-center justify-center gap-2"
                                 >
-                                    {loading ? (
-                                        <><Loader2 className="w-4 h-4 animate-spin" /> Criando conta...</>
-                                    ) : 'Criar Minha Conta Grátis'}
+                                    Cadastros Temporariamente Desativados
                                 </button>
                             </form>
 

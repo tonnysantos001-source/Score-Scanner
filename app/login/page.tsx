@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Shield, Search, Mail, Lock } from 'lucide-react';
@@ -33,6 +33,16 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const { signIn } = useAuth();
 
+    // Detectar erro da URL (?error=blocked)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('error') === 'blocked') {
+                setError('Acesso bloqueado: Logins de usuários foram desativados pelo administrador.');
+            }
+        }
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -49,24 +59,12 @@ export default function LoginPage() {
                         window.location.href = '/admin';
                         return;
                     }
-                    if (statusData.approvalStatus === 'pending') {
-                        window.location.href = '/aguardando-aprovacao';
-                        return;
-                    }
-                    if (statusData.approvalStatus === 'expired') {
-                        window.location.href = '/acesso-expirado';
-                        return;
-                    }
-                    if (statusData.approvalStatus === 'blocked') {
-                        setError('Sua conta está inativa ou bloqueada pelo administrador.');
-                        return;
-                    }
                 }
             } catch {
-                // Fallback normal
+                // Fallback
             }
 
-            window.location.href = '/minerar';
+            setError('Acesso bloqueado: Logins de usuários desativados pelo administrador. Apenas administradores têm permissão.');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Erro ao fazer login';
             setError(message);
