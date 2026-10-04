@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Clock, Shield, Search, RefreshCw, LogOut, CheckCircle2 } from 'lucide-react';
+import { Clock, Shield, Search, RefreshCw, LogOut, CheckCircle2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -177,9 +177,19 @@ export default function AguardandoAprovacaoPage() {
                         </button>
                     </div>
 
-                    <div className="mt-6 pt-6 border-t border-white/[0.06] text-xs text-gray-500 flex items-center justify-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Assim que aprovado, você terá acesso imediato.</span>
+                    <div className="mt-6 pt-5 border-t border-white/[0.06] text-center">
+                        <p className="text-xs text-gray-400 mb-2">
+                            Quer agilizar sua liberação? Fale com o administrador:
+                        </p>
+                        <a
+                            href="https://wa.me/5521990829242?text=Ol%C3%A1%2C%20fiz%20meu%20cadastro%20e%20estou%20aguardando%20aprova%C3%A7%C3%A3o."
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all hover:scale-[1.01]"
+                        >
+                            <MessageCircle className="w-4 h-4 text-emerald-400" />
+                            <span>WhatsApp: (21) 99082-9242</span>
+                        </a>
                     </div>
                 </div>
             </motion.div>
