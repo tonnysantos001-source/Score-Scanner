@@ -101,9 +101,10 @@ export async function POST(request: Request) {
             })
             .eq('id', userId);
 
-        // 6. Atualizar metadados no Supabase Auth para propagar no JWT do usuário
+        // 6. Desbanir no Supabase Auth e atualizar metadados para propagar no JWT do usuário
         try {
             await supabase.auth.admin.updateUserById(userId, {
+                ban_duration: 'none',
                 user_metadata: {
                     approval_status: 'approved',
                     access_expires_at: expiresAt,
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
                 },
             });
         } catch (metaErr) {
-            console.warn('Erro ao atualizar user_metadata:', metaErr);
+            console.warn('Erro ao desbanir e atualizar user_metadata:', metaErr);
         }
 
         const expiresAtFormatted = expiresAt

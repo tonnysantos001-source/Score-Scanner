@@ -29,15 +29,16 @@ export async function POST(request: Request) {
             .update({ is_active: false })
             .eq('id', userId);
 
-        // 3. Atualizar metadata de auth
+        // 3. Banir no Auth e atualizar metadata
         try {
             await supabase.auth.admin.updateUserById(userId, {
+                ban_duration: '876000h',
                 user_metadata: {
                     approval_status: 'blocked',
                 },
             });
         } catch (metaErr) {
-            console.warn('Erro ao atualizar user_metadata no bloqueio:', metaErr);
+            console.warn('Erro ao banir e atualizar user_metadata no bloqueio:', metaErr);
         }
 
         return NextResponse.json({

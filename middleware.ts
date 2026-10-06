@@ -115,24 +115,41 @@ export async function middleware(request: NextRequest) {
         });
     }
 
-    // 1. BLOCK REGULAR USERS: Block any non-admin logged-in user from system
-    if (session && !isAdmin) {
-        if (!request.nextUrl.pathname.startsWith('/login')) {
-            console.log('[Middleware] Blocking non-admin user session:', session.user.email);
-            return NextResponse.redirect(new URL('/login?error=blocked', request.url));
-        }
-    }
-
-    // 2. PROTECTION: Block unauthenticated users from protected routes
+    // 1. PROTECTION: Block unauthenticated users from protected routes
     if (isProtectedRoute && !session) {
         const redirectUrl = new URL('/login', request.url);
         redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
         return NextResponse.redirect(redirectUrl);
     }
 
-    // 3. RBAC: Block non-admin users from accessing admin routes
+    // 2. RBAC: Block non-admin users from accessing admin routes
     if (isAdminRoute && session && !isAdmin) {
-        return NextResponse.redirect(new URL('/login?error=blocked', request.url));
+        return NextResponse.redirect(new URL('/minerar', request.url));
+    }
+
+    // 3. APPROVAL & EXPIRATION CHECK FOR REGULAR USERS
+    if (session && !isAdmin) {
+        const metadata = session.user?.user_metadata;
+        const approvalStatus = metadata?.approval_status;
+        const accessExpiresAt = metadata?.access_expires_at;
+
+        if (approvalStatus === 'blocked') {
+            if (!request.nextUrl.pathname.startsWith('/login')) {
+                return NextResponse.redirect(new URL('/login?error=blocked', request.url));
+            }
+        }
+
+        if (isUserRoute) {
+            if (approvalStatus === 'pending') {
+                return NextResponse.redirect(new URL('/aguardando-aprovacao', request.url));
+            }
+            if (accessExpiresAt) {
+                const isExpired = new Date(accessExpiresAt).getTime() < Date.now();
+                if (isExpired) {
+                    return NextResponse.redirect(new URL('/acesso-expirado', request.url));
+                }
+            }
+        }
     }
 
 

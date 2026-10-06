@@ -50,17 +50,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                // Usuário comum: revogar sessão imediatamente
-                const activeClient = clientInstance || supabase;
-                if (activeClient) {
-                    try {
-                        await activeClient.auth.signOut();
-                    } catch {}
+                if (status.approvalStatus === 'blocked') {
+                    // Usuário bloqueado: revogar sessão imediatamente
+                    const activeClient = clientInstance || supabase;
+                    if (activeClient) {
+                        try {
+                            await activeClient.auth.signOut();
+                        } catch {}
+                    }
+                    setUser(null);
+                    setIsAdmin(false);
+                    setApprovalStatus('blocked');
+                    setHasActivePlan(false);
+                    return;
                 }
-                setUser(null);
+
                 setIsAdmin(false);
-                setApprovalStatus('blocked');
-                setHasActivePlan(false);
+                setApprovalStatus(status.approvalStatus || 'pending');
+                setAccessExpiresAt(status.accessExpiresAt || null);
+                setRemainingTimeText(status.remainingFormatted || (status.isLifetime ? 'Acesso Vitalício' : ''));
+                setHasActivePlan(!!status.hasAccess);
                 return;
             }
         } catch (err) {
@@ -70,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setIsAdmin(false);
-        setApprovalStatus('blocked');
+        setApprovalStatus('pending');
         setHasActivePlan(false);
     }, [supabase]);
 
@@ -208,17 +217,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             throw error;
         }
 
-        // Verifica se é administrador imediatamente
+        // Verifica status da conta
         try {
             const res = await fetch('/api/auth/me/status', { cache: 'no-store' });
             if (res.ok) {
                 const status = await res.json();
-                if (!status.isAdmin) {
+                if (status.approvalStatus === 'blocked') {
                     await supabase.auth.signOut();
                     setUser(null);
                     setIsAdmin(false);
                     setHasActivePlan(false);
-                    throw new Error('Acesso bloqueado: Logins de usuários desativados pelo administrador. Apenas administradores têm permissão de acesso.');
+                    throw new Error('Acesso bloqueado: Sua conta está inativa ou bloqueada pelo administrador.');
                 }
             }
         } catch (statusErr: any) {

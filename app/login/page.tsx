@@ -72,12 +72,28 @@ export default function LoginPage() {
                         window.location.href = '/admin';
                         return;
                     }
+                    if (statusData.hasAccess && statusData.approvalStatus === 'approved') {
+                        window.location.href = '/minerar';
+                        return;
+                    }
+                    if (statusData.approvalStatus === 'pending') {
+                        window.location.href = '/aguardando-aprovacao';
+                        return;
+                    }
+                    if (statusData.approvalStatus === 'expired') {
+                        window.location.href = '/acesso-expirado';
+                        return;
+                    }
+                    if (statusData.approvalStatus === 'blocked') {
+                        setError('Acesso bloqueado: Sua conta está inativa ou bloqueada pelo administrador.');
+                        return;
+                    }
                 }
             } catch {
                 // Fallback
             }
 
-            setError('Acesso bloqueado: Logins de usuários desativados pelo administrador. Apenas administradores têm permissão.');
+            window.location.href = '/minerar';
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Erro ao fazer login';
             setError(message);
