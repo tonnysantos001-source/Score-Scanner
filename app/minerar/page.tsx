@@ -9,7 +9,8 @@ import CompanyTable from '@/components/company/CompanyTable';
 import CompanyModal from '@/components/company/CompanyModal';
 import { EnhancedCompanyData } from '@/types/company';
 import { MiningFilters, MINING_QUANTITY } from '@/types/filters';
-import { Loader2, Zap } from 'lucide-react';
+import { Loader2, Zap, LayoutDashboard } from 'lucide-react';
+import Link from 'next/link';
 import UserMenu from '@/components/layout/UserMenu';
 import AuroraBackground from '@/components/layout/AuroraBackground';
 import WelcomePopup from '@/components/layout/WelcomePopup';
@@ -66,7 +67,16 @@ export default function MinerarPage() {
                             <span className="text-gradient">Ads</span>
                         </h2>
                     </div>
-                    <UserMenu />
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/minha-area"
+                            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--color-bg-tertiary)]/70 hover:bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] text-sm font-semibold text-purple-400 hover:text-white transition-all shadow-sm"
+                        >
+                            <LayoutDashboard className="w-4 h-4 text-purple-400" />
+                            <span>Minha Área</span>
+                        </Link>
+                        <UserMenu />
+                    </div>
                 </div>
 
                 {/* Header */}

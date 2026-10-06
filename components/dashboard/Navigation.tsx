@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { Pickaxe } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -37,6 +39,13 @@ export default function Navigation({ title, description }: NavigationProps) {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <Link
+                        href="/minerar"
+                        className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--color-bg-tertiary)]/70 hover:bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] text-sm font-semibold text-blue-400 hover:text-white transition-all shadow-sm"
+                    >
+                        <Pickaxe className="w-4 h-4 text-blue-400" />
+                        <span>Minerar CNPJs</span>
+                    </Link>
                     <div className="hidden md:block text-right">
                         <p className="text-sm text-[var(--color-text-primary)] font-medium">
                             Olá, {displayName}
